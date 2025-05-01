@@ -1,0 +1,91 @@
+#[derive(Debug, PartialEq)]
+pub enum Token {
+    Let,
+    Int,
+
+    Id(String),
+    Number(i64),
+    Float(f32),
+    Equal,
+
+    Plus,
+    Dash,
+    Star,
+    Slash,
+    Semicolon,
+
+    Quote,
+    DoubleQuotes,
+    OpenParenthese,
+    CloseParenthese,
+    Comma,
+    OpenBracket,
+    CloseBracket,
+
+    Function,
+}
+
+impl Token {
+    pub fn tokenize(code: &str) -> Vec<Token> {
+        let mut tokens = Vec::new();
+        let mut current = String::new();
+
+        let mut iter = code.chars().peekable();
+
+        while let Some(ch) = iter.next() {
+            match ch {
+                '=' => tokens.push(Token::Equal),
+                '+' => tokens.push(Token::Plus),
+                '-' => tokens.push(Token::Dash),
+                '*' => tokens.push(Token::Star),
+                '/' => tokens.push(Token::Slash),
+                ';' => tokens.push(Token::Semicolon),
+                '\'' => tokens.push(Token::Quote),
+                '"' => tokens.push(Token::DoubleQuotes),
+                '(' => tokens.push(Token::OpenParenthese),
+                ')' => tokens.push(Token::CloseParenthese),
+                '{' => tokens.push(Token::OpenBracket),
+                '}' => tokens.push(Token::CloseBracket),
+                '0'..='9' => {
+                    current.push(ch);
+                    while let Some(&next_ch) = iter.peek() {
+                        if next_ch.is_digit(10) {
+                            current.push(iter.next().unwrap());
+                        } else {
+                            break;
+                        }
+                    }
+
+                    tokens.push(Token::Number(current.parse::<i64>().unwrap()));
+                    current.clear(); // Reset for next token
+                }
+                'a'..='z' | 'A'..='Z' => {
+                    current.push(ch);
+                    while let Some(&next_ch) = iter.peek() {
+                        if next_ch.is_alphanumeric() {
+                            current.push(iter.next().unwrap());
+                        } else {
+                            break;
+                        }
+                    }
+
+                    match current.as_str() {
+                        "int" => tokens.push(Token::Int),
+                        "let" => tokens.push(Token::Let),
+                        "fn" => tokens.push(Token::Function),
+                        _ => tokens.push(Token::Id(current.clone())),
+                    }
+                    current.clear();
+                }
+                ' ' | '\n' | '\t' => {}, // skip whitespace
+                _ => {
+                    // unknown char? throw hands (or error)
+                    panic!("Unexpected character: {}", ch);
+                }
+            }
+        }
+
+        // if it was `int `
+        tokens
+    }
+}
