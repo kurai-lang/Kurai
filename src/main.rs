@@ -8,9 +8,9 @@ fn main() {
     let parsed_stmt = parse(&tokens);
  
     println!("{:?}", parsed_stmt);
-    if let Some(stmt) = parsed_stmt {
-        stmt.execute(&mut scope);
-    }
+    // if let Some(stmt) = parsed_stmt {
+    //     stmt.execute(&mut scope);
+    // }
 
     println!("{:?}", scope);
     println!("{:?}", tokens);

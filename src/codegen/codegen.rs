@@ -1,4 +1,4 @@
-use crate::{eat::eat, parse::{parse::parse, stmt::{self, Stmt}}, token::token::Token, typedArg::TypedArg, value::Value};
+use crate::{eat::eat, parse::{expr::Expr, parse::parse, stmt::{self, Stmt}}, token::token::Token, typedArg::TypedArg, value::Value};
 use inkwell::{
     builder::Builder, context::Context, module::Module, types::{BasicMetadataTypeEnum::{self, PointerType}, IntType}, values::{BasicMetadataValueEnum, BasicValueEnum, GenericValue, IntValue}, AddressSpace
 };
@@ -49,7 +49,8 @@ impl<'ctx> CodeGen<'ctx> {
         let entry_block = self.context.append_basic_block(main_fn, "entry");
         self.builder.position_at_end(entry_block);
 
-        let mut some_value: IntValue = self.context.i64_type().const_int(5, false);
+        let return_val = i32_type.const_int(0, false);
+        self.builder.build_return(Some(&return_val));
 
         for stmt in parsed_stmt {
             match stmt {
@@ -65,34 +66,48 @@ impl<'ctx> CodeGen<'ctx> {
                     //         "printf_call"
                     //     );
                     // }
+                    
+                    if let Some(Value::Int(v)) = value {
+                        let value = self.context.i64_type().const_int(v as u64, false);
+                    }
                 }
                 Stmt::Assign { name, value } => {
                     todo!();
                 }
                 Stmt::FnCall { name, args } => {
-                    if name == "printf" {
-                        let printf_fn = module.get_function("printf").unwrap();
-                        let format_str = self.builder.build_global_string_ptr("%d%s\n", "format_str").unwrap();
+                    let function = module.get_function(&name).unwrap();
 
-                        self.builder.build_call(
-                            printf_fn,
-                            &[format_str.as_pointer_value().into(), some_value.into()],
-                            "printf_call"
-                        );
-                    }
+                    // TODO: Im continuing this tomorrow
+                    // let mut compiled_args = Vec::new();
+                    // for arg in args {
+                    //     let value = self.
+                    // }
                 }
                 Stmt::FnDecl { name, args, body } => {
+                    // Map the argument types to LLVM types 
+                    // remember, we need to speak LLVM IR language, not rust!
+                    dbg!("converting args to llvm args types");
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ.as_str() {
-                            "int" => i32_type.into(),
+                            "int" => self.context.i32_type().into(),
                             "float" => self.context.f32_type().into(),
                             "bool" => self.context.bool_type().into(),
                             "str" => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
                             _ => panic!("Unknown type: {}", arg.typ),
                         }
                     }).collect();
-                    let fn_type = i32_type.fn_type(&arg_types, false);
-                    let function = module.add_function(, ty, linkage)
+                    dbg!("done");
+
+                    // WARNING: pls dont uncommonet this
+                    // dbg!("locking module");
+                    // let module = self.module.lock().unwrap();
+
+                    dbg!("creating function named: {}", &name);
+                    let fn_type = self.context.i32_type().fn_type(&arg_types, false);
+                    let function = module.add_function(&name, fn_type, None);
+                    let basic_block = self.context.append_basic_block(function, "entry");
+                    self.builder.position_at_end(basic_block);
+                    dbg!("done");
                 }
             }
         }
@@ -106,6 +121,22 @@ impl<'ctx> CodeGen<'ctx> {
         let return_val = i32_type.const_int(0, false);
         self.builder.build_return(Some(&return_val));
     }
+    
+    // TODO: this too, i need to masturbate at exactly 11:40
+    fn lower_expr_to_llvm(&self, expr: &Expr) -> Result<BasicValueEnum, String> {
+        match expr {
+            Expr::Int(v) => {
+                Ok(self.context.i64_type().const_int(*v as u64, false).into())
+            }
+            _ => Err("mwa".to_string())
+        }
+    }
+
+    // pub context: &'ctx Context,
+    // pub builder: Builder<'ctx>,
+    // pub module: Arc<Mutex<Module<'ctx>>>,
+    // fn handle_fn_decl(&self, name: String, args: Vec<TypedArg>, body: Vec<Stmt>, module: &Module<'ctx>, builder: &Builder<'ctx>, context: &Context) {
+    // }
 
     // fn allocate_i64(context: &mut Context, builder: &mut Builder) {
     //     let i64_type = context.i64_type();
