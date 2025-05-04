@@ -1,4 +1,4 @@
-<details>
+<details open>
 <summary>🇲🇾 Bahasa Melayu</summary>
 
 ## Tentang bahasa pengaturcaraan
@@ -20,10 +20,7 @@ Daripada “kura”, nama Kurai diambil kerana ia membawa makna ketabahan, keten
 
 </details>
 
----
-
-<details open>
-<summary>🇬🇧 English</summary>
+<summary>🇺🇸 English</summary>
 
 ## About the Programming Language
 
