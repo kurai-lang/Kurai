@@ -20,6 +20,7 @@ Daripada “kura”, nama Kurai diambil kerana ia membawa makna ketabahan, keten
 
 </details>
 
+<details>
 <summary>🇺🇸 English</summary>
 
 ## About the Programming Language
