@@ -4,6 +4,8 @@ use crate::value::Value;
 use crate::eat::eat;
 use crate::parse::parse_var_decl::parse_var_decl;
 
+use super::parse_var_assign::parse_var_assign;
+
 fn parse_fn(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
     if !eat(&Token::Function, tokens, pos) {
         return None;
@@ -60,6 +62,9 @@ pub fn parse_stmt(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
         }
         Some(Token::Let) => {
             parse_var_decl(tokens, pos)
+        }
+        Some(Token::Id(_)) => {
+            parse_var_assign(tokens, pos)
         }
         // Some(Token::Id(_)) => {
         //     // parse_func_call(tokens, pos)

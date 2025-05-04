@@ -1,4 +1,4 @@
-use bahasac::{parse::{parse::parse, stmt::Stmt}, scope::Scope, token::token::Token, value::Value};
+use Kurai::{parse::{parse::parse, stmt::Stmt}, scope::Scope, token::token::Token, value::Value};
 // use std::io::{self, Write};
 
 fn main() {

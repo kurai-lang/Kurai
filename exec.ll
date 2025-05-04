@@ -5,11 +5,8 @@ declare i32 @printf(ptr, ...)
 
 define i32 @main(i32 %0, ptr %1) {
 entry:
-  call i32 @printf(i8 5)
-  ret i32 0
-}
-
-define i32 @a() {
-entry:
+  %x = alloca i64, align 8
+  store i64 3, ptr %x, align 4
+  store i64 1, ptr %x, align 4
   ret i32 0
 }

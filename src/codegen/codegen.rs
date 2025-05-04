@@ -1,28 +1,31 @@
-use crate::{eat::eat, parse::{expr::Expr, parse::parse, stmt::{self, Stmt}}, token::token::Token, typedArg::TypedArg, value::Value};
+use crate::{parse::stmt::Stmt, value::Value};
 use inkwell::{
-    builder::Builder, context::Context, module::Module, types::{BasicMetadataTypeEnum::{self, PointerType}, IntType}, values::{BasicMetadataValueEnum, BasicValueEnum, GenericValue, IntValue}, AddressSpace
+    builder::Builder, context::Context, module::Module, types::BasicMetadataTypeEnum::{self, PointerType}, values::{BasicValueEnum, PointerValue}, AddressSpace
 };
-use std::sync::{Arc, Mutex};
+use std::{collections::HashMap, sync::{Arc, Mutex}};
 
 #[derive(Debug)]
 pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
     pub builder: Builder<'ctx>,
     pub module: Arc<Mutex<Module<'ctx>>>,
+    pub variables: HashMap<String, PointerValue<'ctx>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn new(context: &'ctx Context) -> Self {
         let builder = context.create_builder();
         let module = Arc::new(Mutex::new(context.create_module("main_module")));
+        let variables = HashMap::new();
         Self {
             context,
             builder,
             module,
+            variables,
             // context: &'ctx Context
         }
     }
-    pub fn generate_code(&self, parsed_stmt: Vec<Stmt> /*, context: &'ctx Context, builder: &Builder, module: &mut Arc<Mutex<Module<'ctx>>> */) {
+    pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt> /*, context: &'ctx Context, builder: &Builder, module: &mut Arc<Mutex<Module<'ctx>>> */) {
         // main function signature
         // (i32, i8**)
         let i32_type = self.context.i32_type();
@@ -49,30 +52,27 @@ impl<'ctx> CodeGen<'ctx> {
         let entry_block = self.context.append_basic_block(main_fn, "entry");
         self.builder.position_at_end(entry_block);
 
-        let return_val = i32_type.const_int(0, false);
-        self.builder.build_return(Some(&return_val));
-
         for stmt in parsed_stmt {
             match stmt {
                 Stmt::VarDecl { name, typ, value } => {           
-                    self.handle_var_decl(name, value.clone(), &self.builder, &self.context);
+                    let i64_type = self.context.i64_type();
+                    let alloca = self.builder.build_alloca(i64_type, &name).unwrap();
 
-                    // if let Some(Value::Int(v)) = value {
-                    //     some_value = self.context.i64_type().const_int(v as u64, true);
-                    //
-                    //     self.builder.build_call(
-                    //         printf_fn,
-                    //         &[format_str.as_pointer_value().into(), some_value.into()],
-                    //         "printf_call"
-                    //     );
-                    // }
-                    
                     if let Some(Value::Int(v)) = value {
-                        let value = self.context.i64_type().const_int(v as u64, false);
+                        let init_val = i64_type.const_int(v as u64, true);
+                        self.builder.build_store(alloca, init_val).unwrap();
+                        let v_pointer_val = alloca;
+
+                        self.variables.insert(name.to_string(), v_pointer_val);
                     }
                 }
                 Stmt::Assign { name, value } => {
-                    todo!();
+                    if let Some(var_ptr) = self.variables.get(&name) {
+                        let value = self.lower_expr_to_llvm(&value).unwrap();
+                        self.builder.build_store(*var_ptr, value);
+                    } else {
+                        println!("Variable {} could not be found!", name);
+                    }
                 }
                 Stmt::FnCall { name, args } => {
                     let function = module.get_function(&name).unwrap();
@@ -123,9 +123,9 @@ impl<'ctx> CodeGen<'ctx> {
     }
     
     // TODO: this too, i need to masturbate at exactly 11:40
-    fn lower_expr_to_llvm(&self, expr: &Expr) -> Result<BasicValueEnum, String> {
-        match expr {
-            Expr::Int(v) => {
+    fn lower_expr_to_llvm(&self, value: &Value) -> Result<BasicValueEnum, String> {
+        match value {
+            Value::Int(v) => {
                 Ok(self.context.i64_type().const_int(*v as u64, false).into())
             }
             _ => Err("mwa".to_string())
@@ -166,15 +166,8 @@ impl<'ctx> CodeGen<'ctx> {
     //     }
     // }
 
-    fn handle_var_decl<'a>(&self, name: String, value: Option<Value>, builder: &Builder<'a>, context: &Context) {
-        let i64_type = context.i64_type();
-        let alloca = builder.build_alloca(i64_type, &name).unwrap();
-
-        if let Some(Value::Int(v)) = value {
-            let init_val = i64_type.const_int(v as u64, true);
-            builder.build_store(alloca, init_val).unwrap();
-        }
-    }
+    // fn handle_var_decl<'a>(&self, name: String, value: Option<Value>, builder: &Builder<'a>, context: &Context) {
+    // }
 }
 
 impl<'ctx> CodeGen<'ctx> {
