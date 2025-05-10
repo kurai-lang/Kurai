@@ -1,8 +1,8 @@
-use Kurai::{parse::{parse::parse, stmt::Stmt}, scope::Scope, token::token::Token, value::Value};
+use Kurai::{parse::parse::parse, scope::Scope, token::token::Token};
 // use std::io::{self, Write};
 
 fn main() {
-    let mut scope = Scope::new();
+    let scope = Scope::new();
     let code = "printf(\"yo\")";
     let tokens = Token::tokenize(code);
     let parsed_stmt = parse(&tokens);

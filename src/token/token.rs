@@ -49,6 +49,7 @@ impl Token {
                 '0'..='9' => {
                     current.push(ch);
                     while let Some(&next_ch) = iter.peek() {
+                        #[allow(warnings)]
                         if next_ch.is_digit(10) {
                             current.push(iter.next().unwrap());
                         } else {
@@ -59,16 +60,17 @@ impl Token {
                     tokens.push(Token::Number(current.parse::<i64>().unwrap()));
                     current.clear(); // Reset for next token
                 }
-                'a'..='z' | 'A'..='Z' => {
+                'a'..='z' | 'A'..='Z' | '_' => {
                     current.push(ch);
                     while let Some(&next_ch) = iter.peek() {
-                        if next_ch.is_alphanumeric() {
+                        if next_ch.is_alphanumeric() || next_ch == '_'{
                             current.push(iter.next().unwrap());
                         } else {
                             break;
                         }
                     }
 
+                    // keywords i guess
                     match current.as_str() {
                         "int" => tokens.push(Token::Int),
                         "let" => tokens.push(Token::Let),

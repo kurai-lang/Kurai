@@ -17,3 +17,9 @@ impl Scope {
         self.a.insert(name, value);
     }
 }
+
+impl Default for Scope {
+    fn default() -> Self {
+        Self::new()
+    }
+}
