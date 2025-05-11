@@ -24,6 +24,15 @@ pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
                     });
                     *pos += 1;
                 }
+                Token::StringLiteral(s) => {
+                    args.push(TypedArg {
+                        name: "_".to_string(), // Using `_` as a placeholder fr
+                        typ: "str".to_string(),
+                        value: Some(Expr::Literal(Value::Str(s.clone()))),
+                    });
+                    *pos += 1; // now it skips the string and moves on to the next thing in
+                                // token
+                }
                 Token::Comma => {
                     *pos += 1;  // skips comma by moving the cursor (pos) hehe
                     continue;
@@ -31,7 +40,8 @@ pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
 
                 // This marks the end of args
                 Token::CloseParenthese => break,
-                _ => panic!("Unexpected token in function call args: {:?}", token)
+                // _ => panic!("Unexpected token in function call args: {:?}", token)
+                _ => eprintln!("Unexpected token at pos: {}, {:?} \n {:?}", *pos, tokens.get(*pos),tokens)
             }
         }
 

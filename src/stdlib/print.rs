@@ -19,8 +19,10 @@ impl<'ctx> CodeGen<'ctx> {
                         compiled_args.push(int);
                     }
                     ("str", Expr::Literal(Value::Str(s))) => {
-                        let str_ptr = self.builder.build_alloca(self.context.i8_type(), "str_ptr").unwrap().into();
-                        compiled_args.push(str_ptr);
+                        let str_global = self.builder.
+                            build_global_string_ptr(&s, "str")
+                            .unwrap();
+                        compiled_args.push(str_global.as_pointer_value().into());
                     }
                     _ => panic!("Unsupported type in printf_format")
                 }
@@ -31,12 +33,17 @@ impl<'ctx> CodeGen<'ctx> {
 }
 
 pub fn printf(/* env: &mut IRContext, */args: Vec<TypedArg>, codegen: &mut CodeGen) -> Result<(), String>{
-    let compiled_args = codegen.printf_format(args);
+    let format = match args.get(0) {
+        Some(TypedArg { typ, .. }) if typ == "str" => "%s\n",
+        _ => "%d\n"
+    };
 
     let format_str = codegen.builder
-        .build_global_string_ptr("%d\n", "fmt")
+        .build_global_string_ptr(format, "fmt")
         .map_err(|e| format!("Error building global string pointer: {:?}", e))?
         .as_pointer_value();
+
+    let compiled_args = codegen.printf_format(args);
 
     let mut final_args: Vec<BasicMetadataValueEnum> = vec![format_str.into()];
     final_args.extend(

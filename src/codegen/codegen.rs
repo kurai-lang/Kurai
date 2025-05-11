@@ -1,7 +1,7 @@
 use crate::{parse::{expr::Expr, stmt::Stmt}, stdlib::{self, print::{import_printf, printf}}, typedArg::TypedArg, value::Value};
 use colored::Colorize;
 use inkwell::{
-    builder::Builder, context::Context, module::Module, types::BasicMetadataTypeEnum::{self, PointerType}, values::{BasicMetadataValueEnum, BasicValueEnum, PointerValue}, AddressSpace
+    builder::Builder, context::Context, module::Module, types::{BasicMetadataTypeEnum::{self, PointerType}, BasicType}, values::{BasicMetadataValueEnum, BasicValueEnum, PointerValue}, AddressSpace
 };
 use std::{collections::HashMap, sync::{Arc, Mutex, MutexGuard}};
 

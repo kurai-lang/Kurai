@@ -6,6 +6,7 @@ pub enum Token {
     Id(String),
     Number(i64),
     Float(f32),
+    StringLiteral(String),
     Equal,
 
     Plus,
@@ -41,7 +42,21 @@ impl Token {
                 '/' => tokens.push(Token::Slash),
                 ';' => tokens.push(Token::Semicolon),
                 '\'' => tokens.push(Token::Quote),
-                '"' => tokens.push(Token::DoubleQuotes),
+                '"' => {
+                    let mut string_literal = String::new();
+
+                    while let Some(&next_char) = iter.peek() {
+                        if next_char == '"' { // Another quote found? welp, thats the ending
+                            iter.next();
+                            break;
+                        } else {
+                            string_literal.push(next_char);
+                            iter.next();
+                        }
+                    }
+
+                    tokens.push(Token::StringLiteral(string_literal));
+                }
                 '(' => tokens.push(Token::OpenParenthese),
                 ')' => tokens.push(Token::CloseParenthese),
                 '{' => tokens.push(Token::OpenBracket),

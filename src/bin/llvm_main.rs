@@ -18,7 +18,7 @@ fn main() {
     // ";
     let code = "
         fn main() {
-            printf(6942000);
+            printf(\"bb can i be honest\");
         }
     ";
     // let args: String = env::args().skip(1).collect::<Vec<String>>().join(" ");
