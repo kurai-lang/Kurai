@@ -7,7 +7,7 @@ use Kurai::token::token::Token;
 // use std::sync::{Arc, Mutex};
 use std::fs::File;
 use std::io::prelude::*;
-use std::env;
+use std::process::Command;
 
 fn main() {
     let context = Context::create();
@@ -18,7 +18,9 @@ fn main() {
     // ";
     let code = "
         fn main() {
-            printf(\"ily\");
+            printf(\"yo\n\");
+            printf(\"ily\n\");
+            printf(\"will you marry me?\n\");
         }
     ";
     // let args: String = env::args().skip(1).collect::<Vec<String>>().join(" ");
@@ -35,4 +37,16 @@ fn main() {
     
     let mut llvm_ir_code_file = File::create("exec.ll").unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
+
+    let status = Command::new("clang")
+        .arg("exec.ll")
+        .arg("-o")
+        .arg("exec")
+        .status()
+        .unwrap();
+
+    match status.success() {
+        true => println!("Compilation successful"),
+        false => println!("meh"),
+    }
 }

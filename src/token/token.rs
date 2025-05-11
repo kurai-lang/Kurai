@@ -61,6 +61,7 @@ impl Token {
                 ')' => tokens.push(Token::CloseParenthese),
                 '{' => tokens.push(Token::OpenBracket),
                 '}' => tokens.push(Token::CloseBracket),
+                ',' => tokens.push(Token::Comma),
                 '0'..='9' => {
                     current.push(ch);
                     while let Some(&next_ch) = iter.peek() {

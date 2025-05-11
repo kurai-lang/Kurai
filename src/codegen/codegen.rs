@@ -92,30 +92,31 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                 }
                 Stmt::FnCall { name, args } => {
-                    if name == "printf" {
-                        stdlib::print::printf(args, self);
-                        return;
-                    }
-                    {
-                        let module = self.module.lock().unwrap();
+                    match name.as_str() {
+                        "printf" => {
+                            stdlib::print::printf(&args, self);
+                        }
+                        _ => {
+                            let module = self.module.lock().unwrap();
 
-                        println!("Module: {:?}", module);
-                        let function = module.get_function(&name);
+                            println!("Module: {:?}", module);
+                            let function = module.get_function(&name);
 
-                        if let Some(function) = function {
-                            let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
-                            for arg in &args {
-                                if let Some(value) = &arg.value {
-                                    if let Some(llvm_value) = self.lower_expr_to_llvm(&value) {
-                                        compiled_args.push(llvm_value.into());
+                            if let Some(function) = function {
+                                let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
+                                for arg in &args {
+                                    if let Some(value) = &arg.value {
+                                        if let Some(llvm_value) = self.lower_expr_to_llvm(&value) {
+                                            compiled_args.push(llvm_value.into());
+                                        }
+                                    } else {
+                                        println!("{} {}", "Failed to compile arguments for function".red(), name.red());
                                     }
-                                } else {
-                                    println!("{} {}", "Failed to compile arguments for function".red(), name.red());
                                 }
+                                self.builder.build_call(function, &compiled_args, &name);
+                            } else {
+                                println!("{} {}", "Couldnt find function named:".red(), name.red());
                             }
-                            self.builder.build_call(function, &compiled_args, &name);
-                        } else {
-                            println!("{} {}", "Couldnt find function named:".red(), name.red());
                         }
                     }
                 }
