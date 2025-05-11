@@ -2,7 +2,7 @@
 source_filename = "main_module"
 
 @fmt = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@str = private unnamed_addr constant [19 x i8] c"bb can i be honest\00", align 1
+@str = private unnamed_addr constant [4 x i8] c"ily\00", align 1
 
 declare i32 @printf(ptr, ...)
 
