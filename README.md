@@ -1,4 +1,4 @@
-<details open>
+<details>
 <summary>🇲🇾 Bahasa Melayu</summary>
 
 ## Tentang bahasa pengaturcaraan
