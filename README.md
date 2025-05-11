@@ -18,6 +18,8 @@ Kurai wujud untuk jadikan penulisan kod satu benda yang natural, seronok, dan ta
 ### Asal Usul Nama “Kurai”
 Daripada “kura”, nama Kurai diambil kerana ia membawa makna ketabahan, ketenangan, dan ekspresi yang mendalam. Walaupun bunyinya macam bahasa Jepun (“Kurai” bermaksud gelap), kami melihatnya sebagai *ruang untuk mencipta cahaya* – bukan kelemahan.
 
+*NOTA: KURAI TIADA KAITAN DENGAN BAHASA JEPUN*
+
 </details>
 
 <details>
@@ -39,5 +41,7 @@ Kurai exists to make writing code a natural, fun, and headache-free experience.
 
 ### Where Did We Get the Name “Kurai”?
 Inspired by “kura” (Malay for turtle), the name Kurai reflects perseverance, calmness, and deep expression. Though “Kurai” can mean “dark” in Japanese, we see it differently: *darkness is not weakness, but a space to create light*.
+
+*NOTE: KURAI HAS NOTHING TO DO WITH JAPANESE LANGUAGE*
 
 </details>
