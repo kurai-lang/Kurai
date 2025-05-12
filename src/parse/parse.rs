@@ -4,6 +4,7 @@ use crate::parse::parse_var_decl::parse_var_decl;
 
 use super::parse_fn_call::parse_fn_call;
 use super::parse_fn_decl::parse_fn_decl;
+use super::parse_import::parse_import;
 use super::parse_var_assign::parse_var_assign;
 
 // this function just wants to return stmt
@@ -14,6 +15,9 @@ pub fn parse_stmt(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
         }
         Some(Token::Let) => {
             parse_var_decl(tokens, pos)
+        }
+        Some(Token::Import) => {
+            parse_import(tokens, pos)
         }
         Some(Token::Id(_)) => {
             match tokens.get(*pos + 1) {

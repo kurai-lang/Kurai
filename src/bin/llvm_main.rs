@@ -17,6 +17,8 @@ fn main() {
     //     x = 1;
     // ";
     let code = "
+    use purr;
+
         fn main() {
             printf(\"yo\n\");
             printf(\"ily\n\");

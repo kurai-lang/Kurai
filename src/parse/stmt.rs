@@ -20,7 +20,11 @@ pub enum Stmt {
         name: String,
         args: Vec<TypedArg>,
         body: Vec<Stmt>,
-    }
+    },
+    Import {
+        name: String,
+        nickname: Option<String>,
+    },
 }
 
 // This is only for debugging purposes.
@@ -45,10 +49,20 @@ impl fmt::Display for Stmt {
             Stmt::FnDecl { name, args, body } => {
                 write!(f, "FnDecl(name: {}, args: {:?}, body: {:?})", name, args, body)
             }
+            Stmt::Import { name, nickname } => {
+                if let Some(nickname) = nickname {
+                    write!(f, "Import(name: {}, nickname: {})", name, nickname)
+                } else {
+                    write!(f, "Import(name: {}, nickname: {:?})", name, nickname)
+                }
+            }
         }
     }
 }
 
+// This is literally just interpreter shit
+// pls dont use this
+// NOTE: DISCONTINUED.
 impl Stmt {
     pub fn execute(&self, scope: &mut Scope) {
         match self {

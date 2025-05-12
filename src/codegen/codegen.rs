@@ -187,6 +187,9 @@ impl<'ctx> CodeGen<'ctx> {
                         let return_value = self.context.i32_type().const_int(0 as u64, false);
                         self.builder.build_return(Some(&return_value)).unwrap();
                 }
+                Stmt::Import { name, nickname } => {
+                    todo!()
+                }
             }
         }
     }

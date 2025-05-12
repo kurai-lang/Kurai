@@ -24,6 +24,8 @@ pub enum Token {
     CloseBracket,
 
     Function,
+    Import,
+    As,
 }
 
 impl Token {
@@ -91,6 +93,8 @@ impl Token {
                         "int" => tokens.push(Token::Int),
                         "let" => tokens.push(Token::Let),
                         "fn" => tokens.push(Token::Function),
+                        "use" => tokens.push(Token::Import),
+                        "as" => tokens.push(Token::As),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
                     current.clear();
