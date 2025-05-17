@@ -1,6 +1,6 @@
 use crate::{parse::bin_op::BinOp, value::Value};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Var(String),                 // refers to variable name
     Id(String),
@@ -10,7 +10,7 @@ pub enum Expr {
         left: Box<Expr>,
         right: Box<Expr>,
     },
-    Call {
+    FnCall {
         name: String,
         args: Vec<Expr>,
     },

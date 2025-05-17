@@ -1,7 +1,9 @@
 use crate::{scope::Scope, typedArg::TypedArg, value::Value};
 use std::fmt;
 
-#[derive(Debug)]
+use super::expr::Expr;
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
     VarDecl { 
         name: String,
@@ -22,9 +24,20 @@ pub enum Stmt {
         body: Vec<Stmt>,
     },
     Import {
-        name: String,
+        path: Vec<String>, // Originally String lol, its turned into vector to support "directory
+                           // joining" stuff
         nickname: Option<String>,
     },
+    If {
+        branches: Vec<IfBranch>,
+        else_body: Result<Vec<Stmt>, String>,
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct IfBranch {
+    pub condition: Expr,
+    pub body: Vec<Stmt>
 }
 
 // This is only for debugging purposes.
@@ -47,14 +60,17 @@ impl fmt::Display for Stmt {
                 write!(f, "FnCall(name: {}, args: {:?})", name, args)
             }
             Stmt::FnDecl { name, args, body } => {
-                write!(f, "FnDecl(name: {}, args: {:?}, body: {:?})", name, args, body)
+                    write!(f, "FnDecl(name: {}, args: {:?}, body: {:?})", name, args, body)
             }
-            Stmt::Import { name, nickname } => {
+            Stmt::Import { path, nickname } => {
                 if let Some(nickname) = nickname {
-                    write!(f, "Import(name: {}, nickname: {})", name, nickname)
+                    write!(f, "Import(name: {:?}, nickname: {})", path, nickname)
                 } else {
-                    write!(f, "Import(name: {}, nickname: {:?})", name, nickname)
+                    write!(f, "Import(name: {:?}, nickname: {:?})", path, nickname)
                 }
+            }
+            Stmt::If { branches, else_body } => {
+                write!(f, "If(branches: {:?}, else_body: {:?}", branches, else_body)
             }
         }
     }

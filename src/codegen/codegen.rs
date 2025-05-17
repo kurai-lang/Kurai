@@ -1,9 +1,14 @@
-use crate::{parse::{expr::Expr, stmt::Stmt}, stdlib::{self, print::{import_printf, printf}}, typedArg::TypedArg, value::Value};
+use crate::{parse::{bin_op::BinOp, parse_import::parse_imported_file::parse_imported_file}, stdlib::{self, print::{import_printf, printf}}};
+use crate::token::token::Token;
+use crate::value::Value;
+use crate::parse::{expr::Expr, stmt::Stmt};
+use crate::parse::parse_import::parse_import_decl::parse_import_decl;
 use colored::Colorize;
 use inkwell::{
-    builder::Builder, context::Context, module::Module, types::{BasicMetadataTypeEnum::{self, PointerType}, BasicType}, values::{BasicMetadataValueEnum, BasicValueEnum, PointerValue}, AddressSpace
+    builder::Builder, context::Context, module::Module, types::BasicMetadataTypeEnum::{self}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, PointerValue}, AddressSpace, IntPredicate
 };
-use std::{collections::HashMap, sync::{Arc, Mutex, MutexGuard}};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
 pub struct CodeGen<'ctx> {
@@ -11,6 +16,7 @@ pub struct CodeGen<'ctx> {
     pub builder: Builder<'ctx>,
     pub module: Arc<Mutex<Module<'ctx>>>,
     pub variables: HashMap<String, PointerValue<'ctx>>,
+    pub loaded_modules: HashMap<String, Vec<Stmt>>
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -18,15 +24,17 @@ impl<'ctx> CodeGen<'ctx> {
         let builder = context.create_builder();
         let module = Arc::new(Mutex::new(context.create_module("main_module")));
         let variables = HashMap::new();
+        let loaded_modules = HashMap::new();
         Self {
             context,
             builder,
             module,
             variables,
+            loaded_modules,
             // context: &'ctx Context
         }
     }
-    pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt> /*, context: &'ctx Context, builder: &Builder, module: &mut Arc<Mutex<Module<'ctx>>> */) {
+    pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String> /*, context: &'ctx Context, builder: &Builder, module: &mut Arc<Mutex<Module<'ctx>>> */) {
         {
             // let module = self.module.lock().unwrap();
 
@@ -53,9 +61,12 @@ impl<'ctx> CodeGen<'ctx> {
             // let main_fn = module.add_function("main", fn_type, None);
             // let entry_block = self.context.append_basic_block(main_fn, "entry");
             // self.builder.position_at_end(entry_block);
-            import_printf(self);
         }
-        self.execute_every_stmt_in_code(parsed_stmt);
+
+        import_printf(self);
+
+        self.execute_every_stmt_in_code(parsed_stmt, discovered_modules);
+        self.execute_every_expr_in_code(exprs);
 
         // self.builder.build_call(
         //     printf_fn,
@@ -68,7 +79,7 @@ impl<'ctx> CodeGen<'ctx> {
     // pub builder: Builder<'ctx>,
     // pub module: Arc<Mutex<Module<'ctx>>>,
     // pub variables: HashMap<String, PointerValue<'ctx>>,
-    fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>) {
+    fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>, discovered_modules: &mut Vec<String>) {
         for stmt in parsed_stmt {
             match stmt {
                 Stmt::VarDecl { name, typ, value } => {
@@ -183,15 +194,129 @@ impl<'ctx> CodeGen<'ctx> {
                             self.variables.insert(arg.name.clone(), alloca);
                         }
                     }
-                        self.execute_every_stmt_in_code(body);
+                        self.execute_every_stmt_in_code(body, discovered_modules);
                         let return_value = self.context.i32_type().const_int(0 as u64, false);
                         self.builder.build_return(Some(&return_value)).unwrap();
                 }
-                Stmt::Import { name, nickname } => {
-                    todo!()
+                Stmt::Import { path, nickname } => {
+                    let key = path.join("/");
+                    if self.loaded_modules.contains_key(&key) {
+                        eprintln!("Module `{}` already loaded", key);
+                        return;
+                    }
+
+                    let path_str = format!("{}.kurai", path.join("/"));
+                    let code = std::fs::read_to_string(&path_str).expect(&format!("Failed to load module {}", path_str));
+
+                    let tokens = Token::tokenize(&code);
+                    let mut pos = 0;
+                    let mut stmts = Vec::new();
+
+                    while pos < tokens.len() {
+                        match parse_imported_file(&tokens, &mut pos, discovered_modules) {
+                            Ok(stmt) => stmts.push(stmt),
+                            Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
+                        }
+                    }
+
+                    self.loaded_modules.insert(key.clone(), stmts.clone());
+                    self.execute_every_stmt_in_code(stmts, discovered_modules);
+
+                    // NOTE: Later
+                    // if let Some(nick) = nickname {
+                    //     self.imports.insert(nick.clone(), name.clone()); // Make sure `imports` is in your struct
+                    // } else {
+                    //     self.imports.insert(name.clone(), name.clone());
+                    // }
+                }
+                Stmt::If { branches, else_body } => {
+                    let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+                    let merge_block = self.context.append_basic_block(current_function, "merge");
+
+                    let prev_block = self.builder.get_insert_block().unwrap();
+
+                    // process each branch hehe
+                    for (i, branch) in branches.iter().enumerate() {
+                        let condition = self.lower_expr_to_llvm(&branch.condition).unwrap();
+                        let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
+                        // Not sure if this is supposed to be next_block or else_block
+                        let next_block = self.context.append_basic_block(current_function, &format!("next_{}", i));
+
+                        // Create conditional branch
+                        let _ = self.builder.build_conditional_branch(
+                            condition.into_int_value(),
+                            then_block,
+                            next_block
+                            );
+
+                        // generate the then block 
+                        self.builder.position_at_end(then_block);
+                        self.execute_every_stmt_in_code(branch.body.clone(), discovered_modules);
+                        let _ = self.builder.build_unconditional_branch(merge_block);
+
+                        self.builder.position_at_end(next_block);
+
+                        // last branch gets the else block if it exists
+                        if i == branches.len() - 1 {
+                            if let Ok(ref else_body) = else_body {
+                                let else_block = self.context.append_basic_block(current_function, "else");
+                                let _ = self.builder.build_unconditional_branch(else_block);
+                                self.builder.position_at_end(else_block);
+                                self.execute_every_stmt_in_code(else_body.clone(), discovered_modules);
+                            }
+                            let _ = self.builder.build_unconditional_branch(merge_block);
+                        }
+                    }
+
+                    // restore builder position if needed
+                    // or move to merge block 
+                    if self.builder.get_insert_block().is_some() {
+                        self.builder.position_at_end(merge_block);
+                    } else {
+                        self.builder.position_at_end(prev_block);
+                    }
                 }
             }
         }
+    }
+
+    // The reason why this function returns something and execute_every_expr_in_code doesnt
+    // is because expr returns a value meanwhile stmt doesnt 
+    // go learn about expr and stmt if youre confused xD
+    fn execute_every_expr_in_code(&mut self, exprs: Vec<Expr>) -> Result<BasicValueEnum<'ctx>, String> {
+        let mut result = Err("Empty expression list".to_string());
+
+        for expr in exprs {
+            result = match expr {
+                Expr::Literal(Value::Int(v)) => {
+                    Ok(self.context.i64_type().const_int(v as u64, true).as_basic_value_enum())
+                }
+                Expr::Binary { op, left, right } => {
+                    let left_val = self.execute_every_expr_in_code(vec![*left])?;
+                    let right_val = self.execute_every_expr_in_code(vec![*right])?;
+
+                    match op {
+                        BinOp::Eq => {
+                            let cmp = if left_val.is_int_value() {
+                                self.builder.build_int_compare(
+                                    IntPredicate::EQ,
+                                    left_val.into_int_value(),
+                                    right_val.into_int_value(),
+                                    "eq"
+                                )
+                            } else {
+                                return Err("== operator only supports integers and booleans".to_string());
+                            };
+                            Ok(cmp.unwrap().as_basic_value_enum())
+                        }
+                        _ => Err(format!("Unsupported binary operator: {:?}", op))
+                    }
+                }
+                _ => Err("Unsupported expression".to_string())
+            }
+        }
+
+        result
     }
 
     fn lower_value_to_llvm(&self, value: &Value) -> Option<BasicValueEnum<'ctx>> {
@@ -225,8 +350,32 @@ impl<'ctx> CodeGen<'ctx> {
                 }
             }
             Expr::Id(_) => todo!(),
-            Expr::Binary { op, left, right } => todo!(),
-            Expr::Call { name, args } => todo!(),
+            Expr::Binary { op, left, right } => {
+                let left_val = self.lower_expr_to_llvm(left)?;
+                let right_val = self.lower_expr_to_llvm(right)?;
+
+                match op {
+                    BinOp::Eq => {
+                        if left_val.is_int_value() && right_val.is_int_value() {
+                            println!("both variables are int!");
+                            let cmp = self.builder.build_int_compare(
+                                IntPredicate::EQ,
+                                left_val.into_int_value(),
+                                right_val.into_int_value(),
+                                "eq_cmp"
+                            );
+                            println!("Everything wroked out");
+                            Some(cmp.unwrap().as_basic_value_enum())
+                        }
+                        else {
+                            println!("things didnt go well");
+                            None
+                        }
+                    }
+                    _ => None
+                }
+            },
+            Expr::FnCall { name, args } => todo!(),
         }
     }
 }

@@ -2,12 +2,12 @@ use crate::{eat::eat, token::token::Token, typedArg::TypedArg, value::Value};
 
 use super::{expr::Expr, stmt::Stmt};
 
-pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
+pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {
         *pos += 1;
 
         if !eat(&Token::OpenParenthese, tokens, pos) {
-            panic!("Expected '(' after function name");
+            return Err(format!("Expected an opening paranthese `(` after `{}`", id));
         }
 
         let mut args: Vec<TypedArg> = Vec::new();
@@ -46,18 +46,18 @@ pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
         }
 
         if !eat(&Token::CloseParenthese, tokens, pos) {
-            panic!("Expected '(' after ')'");
+            return Err("Expected a closing paranthese `)` after passing in arguments".to_string());
         }
 
         if !eat(&Token::Semicolon, tokens, pos) {
-            return None;
+            return Err(format!("Expected semicolon after attempting to call function `{}`", id));
         }
 
-        Some(Stmt::FnCall {
+        Ok(Stmt::FnCall {
             name: id.to_string(),
             args,
         })
     } else {
-        None
+        Err("Expected an identifier name".to_string())
     }
 }

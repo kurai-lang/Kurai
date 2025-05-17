@@ -2,12 +2,12 @@ use crate::{eat::eat, token::token::Token, value::Value};
 
 use super::stmt::Stmt;
 
-pub fn parse_var_assign(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
+pub fn parse_var_assign(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {
         *pos += 1;
 
         if !eat(&Token::Equal, tokens, pos) {
-            return None;
+            return Err(format!("Expected an equal sign `=` after `{}`", id));
         }
 
         let value: Option<Value> = match tokens.get(*pos) {
@@ -24,18 +24,18 @@ pub fn parse_var_assign(tokens: &[Token], pos: &mut usize) -> Option<Stmt> {
                 *pos += 1;
                 Value::Str(id.clone()).into()
             }
-            _ => return None
+            _ => return Err(format!("Unsupported value: {:?}", tokens.get(*pos)))
         };
 
         if !eat(&Token::Semicolon, tokens, pos) {
-            return None;
+            return Err(format!("Expected a semicolon `;` after `{:?}`", value));
         }
 
-        Some(Stmt::Assign {
+        Ok(Stmt::Assign {
             name: id.to_string(),
-            value: value?,
+            value: value.unwrap(),
         })
     } else {
-        return None;
+        return Err("Where identifier".to_string());
     }
 }

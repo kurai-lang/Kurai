@@ -1,6 +1,6 @@
-use crate::{parse::expr::Expr, value::Value};
+use crate::parse::expr::Expr;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TypedArg {
     pub name: String,
     pub typ: String,

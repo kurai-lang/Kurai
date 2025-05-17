@@ -2,10 +2,13 @@
 pub enum Token {
     Let,
     Int,
+    If,
+    Else,
 
     Id(String),
     Number(i64),
     Float(f32),
+    Bool(bool),
     StringLiteral(String),
     Equal,
 
@@ -26,6 +29,13 @@ pub enum Token {
     Function,
     Import,
     As,
+    Colon,
+    Less,
+    LessEqual,
+    GreaterEqual,
+    Greater,
+    BangEqual,
+    EqualEqual,
 }
 
 impl Token {
@@ -37,12 +47,20 @@ impl Token {
 
         while let Some(ch) = iter.next() {
             match ch {
-                '=' => tokens.push(Token::Equal),
+                '=' => {
+                    if let Some('=') = iter.peek() {
+                        iter.next();
+                        tokens.push(Token::EqualEqual)
+                    } else {
+                        tokens.push(Token::Equal);
+                    }
+                }
                 '+' => tokens.push(Token::Plus),
                 '-' => tokens.push(Token::Dash),
                 '*' => tokens.push(Token::Star),
                 '/' => tokens.push(Token::Slash),
                 ';' => tokens.push(Token::Semicolon),
+                ':' => tokens.push(Token::Colon),
                 '\'' => tokens.push(Token::Quote),
                 '"' => {
                     let mut string_literal = String::new();
@@ -64,6 +82,8 @@ impl Token {
                 '{' => tokens.push(Token::OpenBracket),
                 '}' => tokens.push(Token::CloseBracket),
                 ',' => tokens.push(Token::Comma),
+                '<' => tokens.push(Token::Less),
+                '>' => tokens.push(Token::Greater),
                 '0'..='9' => {
                     current.push(ch);
                     while let Some(&next_ch) = iter.peek() {
@@ -93,8 +113,12 @@ impl Token {
                         "int" => tokens.push(Token::Int),
                         "let" => tokens.push(Token::Let),
                         "fn" => tokens.push(Token::Function),
-                        "use" => tokens.push(Token::Import),
-                        "as" => tokens.push(Token::As),
+                        "use" | "gunakan" => tokens.push(Token::Import),
+                        "as" | "sebagai" => tokens.push(Token::As),
+                        "if" | "jika" => tokens.push(Token::If),
+                        "else" | "lain" => tokens.push(Token::Else),
+                        "true" | "benar" => tokens.push(Token::Bool(true)),
+                        "false" | "palsu" => tokens.push(Token::Bool(false)),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
                     current.clear();
@@ -102,7 +126,7 @@ impl Token {
                 ' ' | '\n' | '\t' => {}, // skip whitespace
                 _ => {
                     // unknown char? throw hands (or error)
-                    panic!("Unexpected character: {}", ch);
+                    panic!("Unexpected character {}", ch);
                 }
             }
         }

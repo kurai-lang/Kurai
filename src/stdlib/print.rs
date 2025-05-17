@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use inkwell::values::{BasicMetadataValueEnum, BasicValueEnum};
+use inkwell::values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum};
 use inkwell::AddressSpace;
 use inkwell::types::BasicMetadataTypeEnum::PointerType;
 
@@ -37,7 +37,7 @@ impl<'ctx> CodeGen<'ctx> {
                         for (i, arg) in args.iter().enumerate() {
                             if let Some(Expr::Literal(Value::Str(s))) = &arg.value {
                                 let str_global = self.builder
-                                    .build_global_string_ptr(&s, &format!("str_{}_{}", id, i))
+                                    .build_global_string_ptr(s, &format!("str_{}_{}", id, i))
                                     .unwrap();
 
                                 compiled_args.push(str_global.as_pointer_value().into());
@@ -63,9 +63,11 @@ pub fn printf(/* env: &mut IRContext, */args: &Vec<TypedArg>, codegen: &mut Code
     let format_str = codegen.builder
         .build_global_string_ptr(format, &format!("fmt_{}", id))
         .map_err(|e| format!("Error building global string pointer: {:?}", e))?
-        .as_pointer_value();
+        .as_pointer_value()
+        .as_basic_value_enum();
 
-    let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
+    // let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
+    let mut final_args: Vec<BasicMetadataValueEnum> = vec![format_str.into()];
     {
         let compiled_args = codegen.printf_format(&args, id);
         final_args.extend(
@@ -91,7 +93,7 @@ pub fn printf(/* env: &mut IRContext, */args: &Vec<TypedArg>, codegen: &mut Code
     //     }
     // }
 
-    let printf_fn = module.get_function("printf").unwrap();
+    let printf_fn = module.get_function("printf").expect("printf isnt defined. Did you mean to import printf?");
     codegen.builder.build_call(printf_fn, &final_args, &format!("printf_call_{}", id));   
 
     Ok(())
