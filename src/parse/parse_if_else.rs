@@ -11,6 +11,8 @@ pub fn parse_if_else(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
         return Err("Expected an opening parenthesis `(` after keyword `if`".to_string());
     }
     let condition = parse_expr(tokens, pos).unwrap();
+    println!("{:?}", condition);
+    *pos += 2;
     if !eat(&Token::CloseParenthese, tokens, pos) {
         return Err("Expected a closing paranthesis `)` after condition".to_string());
     }

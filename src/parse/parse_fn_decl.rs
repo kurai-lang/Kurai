@@ -19,7 +19,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
         return Err(format!("Expected an opening paranthese `(` after `{}`", name));
     }
 
-    // TODO: Add arguments passing here later 
+    // TODO: Add arguments passing here later
 
     if !eat(&Token::CloseParenthese, tokens, pos) {
         return Err("Expected a closing paranthese `)` after passing in arguments".to_string());
@@ -35,7 +35,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
 
             match parse_stmt(tokens, pos, discovered_modules) {
                 Ok(stmt) => body.push(stmt),
-                Err(_) => return Err("Couldnt work on the body".to_string())
+                Err(e) => return Err(format!("Couldnt work on the body\nREASON: {}", e))
             }
         }
     } else {

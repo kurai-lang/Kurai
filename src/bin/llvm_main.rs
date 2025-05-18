@@ -31,8 +31,10 @@ fn main() {
         fn main() {
             printf("Do you like sara?");
             let do_i_like_sara = 1;
-            if (do_i_like_sara == 1) {
+            if (do_i_like_sara < 2) {
                 printf("YES I DO!");
+            } else {
+                printf("Nah i dont");
             }
         }
     "#;
@@ -48,7 +50,6 @@ fn main() {
     // pub fn generate_code(&self, parsed_stmt: Vec<Stmt>, context: &'ctx Context, builder: &Builder, module: &mut Module<'ctx>)
     println!("STATEMENTS:\n{:?}", parsed_stmt_vec);
     println!("EXPRESSIONS:\n{:?}", parsed_expr_vec);
-    println!("{:#?}", tokens);
     codegen.generate_code(parsed_stmt_vec, parsed_expr_vec.expect("purr!"), &mut discovered_modules);
     let result = codegen.show_result(); //result returns String
 
