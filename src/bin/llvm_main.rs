@@ -28,14 +28,18 @@ fn main() {
     //     }
     // "#;
     let code = r#"
-        fn main() {
-            printf("Do you like sara?");
-            let do_i_like_sara = 1;
-            if (do_i_like_sara < 2) {
+        fn check() {
+            let do_i_like_sara = 10;
+            if (do_i_like_sara > 10) {
                 printf("YES I DO!");
             } else {
                 printf("Nah i dont");
             }
+        }
+
+        fn main() {
+            printf("Do you like sara?");
+            check();
         }
     "#;
 

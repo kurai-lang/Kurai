@@ -21,8 +21,11 @@ impl<'ctx> CodeGen<'ctx> {
                     let right_val = self.execute_every_expr_in_code(vec![*right])?;
 
                     let op: Result<IntPredicate, String> = match op {
-                        BinOp::Eq => Ok(IntPredicate::EQ),
+                        BinOp::Lt => Ok(IntPredicate::SLT),
                         BinOp::Le => Ok(IntPredicate::SLE),
+                        BinOp::Eq => Ok(IntPredicate::EQ),
+                        BinOp::Gt => Ok(IntPredicate::SGT),
+                        BinOp::Ge => Ok(IntPredicate::SGE),
                         // let cmp = if left_val.is_int_value() {
                         //     self.builder.build_int_compare(
                         //         IntPredicate::EQ,

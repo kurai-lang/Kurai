@@ -36,6 +36,7 @@ pub enum Token {
     Greater,
     BangEqual,
     EqualEqual,
+    Bang,
 }
 
 impl Token {
@@ -61,6 +62,14 @@ impl Token {
                 '/' => tokens.push(Token::Slash),
                 ';' => tokens.push(Token::Semicolon),
                 ':' => tokens.push(Token::Colon),
+                '!' => {
+                    if let Some('=') = iter.peek() {
+                        iter.next();
+                        tokens.push(Token::BangEqual);
+                    } else {
+                        tokens.push(Token::Bang)
+                    }
+                }
                 '\'' => tokens.push(Token::Quote),
                 '"' => {
                     let mut string_literal = String::new();
@@ -82,8 +91,22 @@ impl Token {
                 '{' => tokens.push(Token::OpenBracket),
                 '}' => tokens.push(Token::CloseBracket),
                 ',' => tokens.push(Token::Comma),
-                '<' => tokens.push(Token::Less),
-                '>' => tokens.push(Token::Greater),
+                '<' => {
+                    if let Some('=') = iter.peek() {
+                        iter.next();
+                        tokens.push(Token::LessEqual);
+                    } else {
+                        tokens.push(Token::Less);
+                    }
+                }
+                '>' => {
+                    if let Some('=') = iter.peek() {
+                        iter.next();
+                        tokens.push(Token::GreaterEqual);
+                    } else {
+                        tokens.push(Token::Greater);
+                    }
+                }
                 '0'..='9' => {
                     current.push(ch);
                     while let Some(&next_ch) = iter.peek() {

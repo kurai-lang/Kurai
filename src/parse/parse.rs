@@ -34,7 +34,7 @@ pub fn parse_stmt(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Ve
                 _ => Err("Identifier expected, is this supposed to be a function call or variable assignment?".to_string())
             }
         }
-        _ => match parse_expr(tokens, pos) {
+        _ => match parse_expr(tokens, pos, false) {
             Some(Expr::FnCall { name, args }) => {
                 let typed_args = args.into_iter().map(|arg|
                     TypedArg {
@@ -51,7 +51,7 @@ pub fn parse_stmt(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Ve
     }
 }
 
-pub fn parse_expr(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
+pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Option<Expr> {
     // parse_equal(tokens, pos)
     let mut left = match tokens.get(*pos)? {
         Token::Number(v) => {
@@ -74,7 +74,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
             if eat(&Token::OpenParenthese, tokens, pos) {
                 let mut args = Vec::new();
                 while !eat(&Token::CloseParenthese, tokens, pos) {
-                    if let Some(arg) = parse_expr(tokens, pos) {
+                    if let Some(arg) = parse_expr(tokens, pos, false) {
                         args.push(arg);
                         eat(&Token::Comma, tokens, pos);
                     } else {
@@ -91,7 +91,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
         }
         Token::OpenParenthese => {
             *pos += 1;
-            let expr = parse_expr(tokens, pos)?;
+            let expr = parse_expr(tokens, pos, false)?;
             eat(&Token::CloseParenthese, tokens, pos);
             Some(expr)
         }
@@ -101,15 +101,35 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
         }
     }?;
 
-    while let Some(Token::EqualEqual) = tokens.get(*pos) {
-        *pos += 1;
-        let right = parse_expr(tokens, pos)?;
+    // while let Some(Token::EqualEqual) = tokens.get(*pos) {
+    //     *pos += 1;
+    //     let right = parse_expr(tokens, pos)?;
+    //
+    //     left = Expr::Binary { 
+    //         op: BinOp::Eq,
+    //         left: Box::new(left),
+    //         right: Box::new(right)
+    //     };
+    // }
+    if in_condition {
+        while let Some(token) = tokens.get(*pos) {
+            let op = match token {
+                Token::Less => BinOp::Lt,
+                Token::LessEqual => BinOp::Le,
+                Token::EqualEqual => BinOp::Eq,
+                Token::Greater => BinOp::Gt,
+                Token::GreaterEqual => BinOp::Ge,
+                _ => break,
+            };
 
-        left = Expr::Binary { 
-            op: BinOp::Eq,
-            left: Box::new(left),
-            right: Box::new(right)
-        };
+            *pos += 1;
+            let right = parse_expr(tokens, pos, in_condition)?;
+            left = Expr::Binary {
+                op,
+                left: Box::new(left),
+                right: Box::new(right)
+            }
+        }
     }
     Some(left)
 }
@@ -124,7 +144,7 @@ pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
 
     while pos < tokens.len() {
         println!("{}", pos);
-        if let Some(expr) = parse_expr(tokens, &mut pos) {
+        if let Some(expr) = parse_expr(tokens, &mut pos, false) {
             exprs.push(expr);
             if eat(&Token::Comma, tokens, &mut pos) { continue; }
         } else {

@@ -111,10 +111,13 @@ impl<'ctx> CodeGen<'ctx> {
                 let right_val = self.lower_expr_to_llvm(right)?;
 
                 let predicate = match op {
-                    BinOp::Eq => IntPredicate::EQ,
                     BinOp::Lt => IntPredicate::SLT,
+                    BinOp::Le => IntPredicate::SLE,
+                    BinOp::Eq => IntPredicate::EQ,
+                    BinOp::Ge => IntPredicate::SGE,
+                    BinOp::Gt => IntPredicate::SGT,
                     _ => {
-                        println!("Operator {:?} not supported", op);
+                        panic!("Operator {:?} not supported", op);
                         return None;
                     }
                 };

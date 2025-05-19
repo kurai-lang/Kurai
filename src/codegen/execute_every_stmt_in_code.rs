@@ -1,7 +1,7 @@
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
 
-use crate::{parse::{parse_import::parse_imported_file::parse_imported_file, stmt::Stmt}, stdlib, token::token::Token, value::Value};
+use crate::{parse::{bin_op::BinOp, expr::Expr, parse_import::parse_imported_file::parse_imported_file, stmt::Stmt}, stdlib, token::token::Token, value::Value};
 
 use super::codegen::CodeGen;
 
@@ -167,32 +167,44 @@ impl<'ctx> CodeGen<'ctx> {
                         let condition = self.lower_expr_to_llvm(&branch.condition).unwrap();
 
                         // convert condition to boolean if needed
-                        let bool_cond = if condition.is_int_value() {
-                            let zero = self.context.i64_type().const_int(0, false);
-                            self.builder.build_int_compare(
-                                IntPredicate::NE, // this is, not equal aka !=
-                                condition.into_int_value(),
-                                zero,
-                                "bool_cond"
-                            ).unwrap()
-                        } else {
-                            condition.into_int_value() // Already boolean
+                        let bool_cond = match &branch.condition {
+                            // If it's already a comparison operation, use it as-is
+                            Expr::Binary { op: BinOp::Gt | BinOp::Lt | BinOp::Ge | BinOp::Le | BinOp::Eq | BinOp::Ne, .. } => {
+                                println!("One of the operations are found");
+                                condition.into_int_value()
+                            }
+                            // For other expressions, convert to boolean if integer
+                            _ => {
+                                println!("Other operations not found");
+                                if condition.is_int_value() {
+                                    println!("Condition is int value");
+                                    let zero = self.context.i64_type().const_int(0, false);
+                                    self.builder.build_int_compare(
+                                        IntPredicate::NE,
+                                        condition.into_int_value(),
+                                        zero,
+                                        "bool_cond"
+                                    ).unwrap()
+                                } else {
+                                    condition.into_int_value() // Already boolean
+                                }
+                            }
                         };
 
                         let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
                         let next_block = self.context.append_basic_block(current_function, &format!("next_{}", i));
 
                         // Create conditional branch
-                        let _ = self.builder.build_conditional_branch(
+                        self.builder.build_conditional_branch(
                             bool_cond,
                             then_block,
                             next_block
-                        );
+                        ).unwrap();
 
                         // generate the then block 
                         self.builder.position_at_end(then_block);
                         self.execute_every_stmt_in_code(branch.body.clone(), discovered_modules);
-                        let _ = self.builder.build_unconditional_branch(merge_block);
+                        self.builder.build_unconditional_branch(merge_block).unwrap();
 
                         self.builder.position_at_end(next_block);
 
@@ -204,7 +216,7 @@ impl<'ctx> CodeGen<'ctx> {
                                 self.builder.position_at_end(else_block);
                                 self.execute_every_stmt_in_code(else_body.clone(), discovered_modules);
                             }
-                            let _ = self.builder.build_unconditional_branch(merge_block);
+                            self.builder.build_unconditional_branch(merge_block).unwrap();
                         }
                     }
 

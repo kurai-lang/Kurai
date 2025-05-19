@@ -1,12 +1,12 @@
 use crate::{parse::{bin_op::BinOp, expr::Expr, parse::parse_expr}, token::token::Token};
 
 pub fn parse_equal(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
-    let mut left = parse_expr(tokens, pos)?;
+    let mut left = parse_expr(tokens, pos, true)?;
 
     while let Some(op) = parse_comparison_op(tokens, pos) {
         *pos += 1;
+        let right = parse_expr(tokens, pos, true)?;
 
-        let right = parse_expr(tokens, pos)?;
         left = Expr::Binary { 
             op,
             left: Box::new(left),
