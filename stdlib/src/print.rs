@@ -7,10 +7,10 @@ use inkwell::values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, Pointe
 use inkwell::AddressSpace;
 use inkwell::types::BasicMetadataTypeEnum::PointerType;
 
-use crate::codegen::codegen::CodeGen;
-use crate::parse::expr::Expr;
-use crate::typedArg::TypedArg;
-use crate::value::Value;
+use kurai_codegen::codegen::codegen::CodeGen;
+use kurai_core::parse::expr::Expr;
+use kurai_core::typedArg::TypedArg;
+use kurai_core::value::Value;
 
 static GLOBAL_STRING_ID: AtomicUsize = AtomicUsize::new(0);
 

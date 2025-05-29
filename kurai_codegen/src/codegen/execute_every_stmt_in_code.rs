@@ -51,7 +51,7 @@ impl<'ctx> CodeGen<'ctx> {
                                         println!("{} {}", "Failed to compile arguments for function".red(), name.red());
                                     }
                                 }
-                                self.builder.build_call(function, &compiled_args, &name);
+                                self.builder.build_call(function, &compiled_args, &name).unwrap();
                             } else {
                                 println!("{} {}", "Couldnt find function named:".red(), name.red());
                             }

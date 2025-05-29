@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::codegen::codegen::CodeGen;
+use kurai_codegen::codegen::codegen::CodeGen;
 use crate::eat::eat;
 use crate::token::token::Token;
 use crate::parse::stmt::Stmt;

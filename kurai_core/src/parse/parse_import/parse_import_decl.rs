@@ -1,4 +1,4 @@
-use crate::{codegen::codegen::CodeGen, eat::eat, parse::stmt::Stmt, token::token::Token};
+use crate::{eat::eat, parse::stmt::Stmt, token::token::Token};
 
 pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
     if !eat(&Token::Import, tokens, pos) {

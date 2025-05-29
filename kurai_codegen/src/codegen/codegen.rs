@@ -63,10 +63,10 @@ impl<'ctx> CodeGen<'ctx> {
             // self.builder.position_at_end(entry_block);
         }
 
-        import_printf(self);
+        import_printf(self).expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules);
-        self.execute_every_expr_in_code(exprs);
+        self.execute_every_expr_in_code(exprs).unwrap();
 
         // self.builder.build_call(
         //     printf_fn,

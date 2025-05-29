@@ -1,6 +1,5 @@
 // use Kurai::{parse::parse::parse_out_vec_stmt, scope::Scope, token::token::Token};
 // // use std::io::{self, Write};
-//
 fn main() {
 //     let scope = Scope::new();
 //     let code = "printf(\"yo\")";
