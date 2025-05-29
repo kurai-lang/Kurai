@@ -24,6 +24,7 @@ impl<'ctx> CodeGen<'ctx> {
                         BinOp::Lt => Ok(IntPredicate::SLT),
                         BinOp::Le => Ok(IntPredicate::SLE),
                         BinOp::Eq => Ok(IntPredicate::EQ),
+                        BinOp::Ne => Ok(IntPredicate::NE),
                         BinOp::Gt => Ok(IntPredicate::SGT),
                         BinOp::Ge => Ok(IntPredicate::SGE),
                         // let cmp = if left_val.is_int_value() {

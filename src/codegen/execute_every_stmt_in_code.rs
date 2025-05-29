@@ -32,7 +32,7 @@ impl<'ctx> CodeGen<'ctx> {
                 Stmt::FnCall { name, args } => {
                     match name.as_str() {
                         "printf" => {
-                            stdlib::print::printf(&args, self);
+                            stdlib::print::printf(&args, self).unwrap();
                         }
                         _ => {
                             let module = self.module.lock().unwrap();
@@ -44,7 +44,7 @@ impl<'ctx> CodeGen<'ctx> {
                                 let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
                                 for arg in &args {
                                     if let Some(value) = &arg.value {
-                                        if let Some(llvm_value) = self.lower_expr_to_llvm(&value) {
+                                        if let Some(llvm_value) = self.lower_expr_to_llvm(&value, false) {
                                             compiled_args.push(llvm_value.into());
                                         }
                                     } else {
@@ -158,75 +158,34 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::If { branches, else_body } => {
                     let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-                    let merge_block = self.context.append_basic_block(current_function, "merge");
+                    // let merge_block = self.context.append_basic_block(current_function, "merge");
 
-                    let prev_block = self.builder.get_insert_block().unwrap();
+                    let mut prev_block = self.builder.get_insert_block().unwrap();
 
                     // process each branch hehe
                     for (i, branch) in branches.iter().enumerate() {
-                        let condition = self.lower_expr_to_llvm(&branch.condition).unwrap();
-
-                        // convert condition to boolean if needed
-                        let bool_cond = match &branch.condition {
-                            // If it's already a comparison operation, use it as-is
-                            Expr::Binary { op: BinOp::Gt | BinOp::Lt | BinOp::Ge | BinOp::Le | BinOp::Eq | BinOp::Ne, .. } => {
-                                println!("One of the operations are found");
-                                condition.into_int_value()
-                            }
-                            // For other expressions, convert to boolean if integer
-                            _ => {
-                                println!("Other operations not found");
-                                if condition.is_int_value() {
-                                    println!("Condition is int value");
-                                    let zero = self.context.i64_type().const_int(0, false);
-                                    self.builder.build_int_compare(
-                                        IntPredicate::NE,
-                                        condition.into_int_value(),
-                                        zero,
-                                        "bool_cond"
-                                    ).unwrap()
-                                } else {
-                                    condition.into_int_value() // Already boolean
-                                }
-                            }
-                        };
-
-                        let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
-                        let next_block = self.context.append_basic_block(current_function, &format!("next_{}", i));
-
-                        // Create conditional branch
-                        self.builder.build_conditional_branch(
-                            bool_cond,
-                            then_block,
-                            next_block
-                        ).unwrap();
-
-                        // generate the then block 
-                        self.builder.position_at_end(then_block);
-                        self.execute_every_stmt_in_code(branch.body.clone(), discovered_modules);
-                        self.builder.build_unconditional_branch(merge_block).unwrap();
-
-                        self.builder.position_at_end(next_block);
-
-                        // last branch gets the else block if it exists
-                        if i == branches.len() - 1 {
-                            if let Ok(ref else_body) = else_body {
-                                let else_block = self.context.append_basic_block(current_function, "else");
-                                let _ = self.builder.build_unconditional_branch(else_block);
-                                self.builder.position_at_end(else_block);
-                                self.execute_every_stmt_in_code(else_body.clone(), discovered_modules);
-                            }
-                            self.builder.build_unconditional_branch(merge_block).unwrap();
+                        if let Some(block) = Some(prev_block) {
+                            self.builder.position_at_end(block);
                         }
+
+                        let next_block = Some(self.build_conditional_branch(
+                            current_function,
+                            &branch.condition,
+                            &branch.body.clone(),
+                            &else_body,
+                            discovered_modules,
+                            &i.to_string()));
+
+                        // prev_block = next_block.unwrap();
                     }
 
                     // restore builder position if needed
                     // or move to merge block 
-                    if self.builder.get_insert_block().is_some() {
-                        self.builder.position_at_end(merge_block);
-                    } else {
-                        self.builder.position_at_end(prev_block);
-                    }
+                    // if self.builder.get_insert_block().is_some() {
+                    //     self.builder.position_at_end(merge_block);
+                    // } else {
+                    //     self.builder.position_at_end(prev_block);
+                    // }
                 }
             }
         }

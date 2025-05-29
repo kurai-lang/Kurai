@@ -33,6 +33,14 @@ pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> 
                     *pos += 1; // now it skips the string and moves on to the next thing in
                                 // token
                 }
+                Token::Id(id) => {
+                    args.push(TypedArg {
+                        name: id.to_string(),
+                        typ: "id".to_string(),
+                        value: None,
+                    });
+                    *pos += 1;
+                }
                 Token::Comma => {
                     *pos += 1;  // skips comma by moving the cursor (pos) hehe
                     continue;

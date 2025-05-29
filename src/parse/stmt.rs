@@ -30,7 +30,7 @@ pub enum Stmt {
     },
     If {
         branches: Vec<IfBranch>,
-        else_body: Result<Vec<Stmt>, String>,
+        else_body: Option<Vec<Stmt>>,
     }
 }
 

@@ -20,9 +20,9 @@ pub fn parse_if_else(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
     let then_branch = parse_block(tokens, pos, discovered_modules);
 
     let else_branch = if eat(&Token::Else, tokens, pos) {
-        Ok(parse_block(tokens, pos, discovered_modules).unwrap())
+        Some(parse_block(tokens, pos, discovered_modules).unwrap())
     } else {
-        Err("puru".to_string())
+        None 
     };
         // IfBranch {
         //     condition: Expr::Binary { 

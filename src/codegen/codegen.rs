@@ -5,7 +5,7 @@ use crate::parse::{expr::Expr, stmt::Stmt};
 use crate::parse::parse_import::parse_import_decl::parse_import_decl;
 use colored::Colorize;
 use inkwell::{
-    builder::Builder, context::Context, module::Module, types::BasicMetadataTypeEnum::{self}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, PointerValue}, AddressSpace, IntPredicate
+    builder::Builder, context::Context, module::Module, types::BasicMetadataTypeEnum::{self}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -85,7 +85,8 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    pub fn lower_expr_to_llvm(&self, expr: &Expr) -> Option<BasicValueEnum<'ctx>> {
+    pub fn lower_expr_to_llvm(&self, expr: &Expr, in_condition: bool) -> Option<BasicValueEnum<'ctx>> {
+        println!("Lowering expr: {:?}", expr);
         match expr {
             Expr::Literal(value) => match value {
                 Value::Int(v) => {
@@ -107,8 +108,8 @@ impl<'ctx> CodeGen<'ctx> {
             }
             Expr::Id(_) => todo!(),
             Expr::Binary { op, left, right } => {
-                let left_val = self.lower_expr_to_llvm(left)?;
-                let right_val = self.lower_expr_to_llvm(right)?;
+                let left_val = self.lower_expr_to_llvm(left, false)?;
+                let right_val = self.lower_expr_to_llvm(right, false)?;
 
                 let predicate = match op {
                     BinOp::Lt => IntPredicate::SLT,
@@ -122,14 +123,32 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                 };
 
-                Some(self.builder.build_int_compare(
+                let cmp_result = self.builder.build_int_compare(
                     predicate,
                     left_val.into_int_value(),
                     right_val.into_int_value(),
                     "cmp"
-                ).unwrap().as_basic_value_enum())
-            },
+                ).unwrap();
+                Some(cmp_result.as_basic_value_enum())
+            }
             Expr::FnCall { name, args } => todo!(),
+        }
+    }
+
+    pub fn to_bool(&self, val: BasicValueEnum<'ctx>) -> IntValue<'ctx> {
+        if val.is_int_value() && val.into_int_value().get_type().get_bit_width() != 1 {
+            // Cast non-bool to i1 (bool)
+            let zero = self.context.i64_type().const_int(0, false);
+            self.builder.build_int_compare(
+                IntPredicate::NE,
+                val.into_int_value(),
+                zero,
+                "to_i1"
+            ).unwrap()
+        } else if val.is_int_value() {
+            val.into_int_value()
+        } else {
+            panic!("tried to convert non-int into bool");
         }
     }
 }

@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+use std::ptr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use inkwell::values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum};
+use inkwell::types::BasicType;
+use inkwell::values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
 use inkwell::types::BasicMetadataTypeEnum::PointerType;
 
@@ -15,37 +18,41 @@ impl<'ctx> CodeGen<'ctx> {
     pub fn printf_format(&self, args: &Vec<TypedArg>, id: usize) -> Vec<BasicValueEnum<'ctx>> {
         let mut compiled_args: Vec<BasicValueEnum> = Vec::new();
 
-        for arg in args {
-            if let Some(expr) = &arg.value {
-                match (arg.typ.to_string().as_str(), expr) {
-                    ("int", Expr::Literal(Value::Int(v))) => {
-                        let int = self.context.i64_type().const_int(*v as u64, true).into();
-                        compiled_args.push(int);
-                    }
-                    ("str", Expr::Literal(Value::Str(s))) => {
-                        // for (i, arg) in args.iter().enumerate() {
-                        //     if let Some(Expr::Literal(Value::Str(s))) = &arg.value {
-                        //         let str_ptr = codegen.builder
-                        //             .build_global_string_ptr(s, &format!("str_{}_{}", id, i))
-                        //             .map_err(|e| format!("Error building global string pointer: {:?}", e))?
-                        //             .as_pointer_value();
-                        //
-                        //         final_args.push(str_ptr.into());
-                        //     }
-                        // }
-
-                        for (i, arg) in args.iter().enumerate() {
-                            if let Some(Expr::Literal(Value::Str(s))) = &arg.value {
-                                let str_global = self.builder
-                                    .build_global_string_ptr(s, &format!("str_{}_{}", id, i))
-                                    .unwrap();
-
-                                compiled_args.push(str_global.as_pointer_value().into());
-                            }
+        for (i, arg) in args.iter().enumerate() {
+            match arg.typ.to_string().as_str() {
+                "int" => {
+                    if let Some(expr) = &arg.value {
+                        if let Expr::Literal(Value::Int(v)) = expr {
+                            let int = self.context.i64_type().const_int(*v as u64, true).into();
+                            compiled_args.push(int);
                         }
                     }
-                    _ => panic!("Unsupported type in printf_format")
                 }
+                "str" => { 
+                    if let Some(expr) = &arg.value {
+                        if let Expr::Literal(Value::Str(s)) = expr {
+                            let str_global = self.builder
+                                .build_global_string_ptr(s, &format!("str_{}_{}", id, i))
+                                .unwrap();
+
+                            compiled_args.push(str_global.as_pointer_value().into());
+                        }
+                    }
+                }
+                "id" => {
+                    if let Some(var) = self.variables.get(&arg.name) {
+                        let ptr_type = var.get_type();
+                        let loaded_val = self.builder
+                            .build_load(ptr_type.as_basic_type_enum(), *var, "load_id");
+                            // .unwrap();
+                        println!("var: {} ptr type: {}", *var, ptr_type);
+
+                        compiled_args.push(loaded_val.unwrap());
+                    } else {
+                        panic!("Unknown variable: {}", arg.name);
+                    }
+                }
+                _ => panic!("Unsupported type in printf_format")
             }
         }
         compiled_args
@@ -55,13 +62,31 @@ impl<'ctx> CodeGen<'ctx> {
 pub fn printf(/* env: &mut IRContext, */args: &Vec<TypedArg>, codegen: &mut CodeGen) -> Result<(), String>{
     let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
-    let format = match args.get(0) {
-        Some(TypedArg { typ, .. }) if typ == "str" => "%s\n",
-        _ => "%d\n"
-    };
+    let mut format = String::new();
+    for arg in args.iter() {
+        match arg.typ.to_string().as_str() {
+            "int" => format.push_str("%d"),
+            "str" => format.push_str("%s"),
+            "id" => {
+                // if let Some(var) = codegen.variables.get(&arg.name) {
+                //     let loaded_val = codegen.builder.build_load(var.get_type(), *var, "load_id").unwrap();
+                //
+                //     match loaded_val.get_type().to_string().as_str() {
+                //         "i64" => format.push_str("%ld"),
+                //         "i32" => format.push_str("%d"),
+                //         "i8*" => format.push_str("%s"),
+                //         // _ => panic!("UNKNOWN IDENTIFIER VAR TYPE FOR PRINTF"),
+                //         _ => format.push_str("%s")
+                //     }
+                // }
+            }
+            _ => panic!("UNSUPPORTED PRINTF ARG TYPE")
+        }
+    }
+    format.push('\n');
 
     let format_str = codegen.builder
-        .build_global_string_ptr(format, &format!("fmt_{}", id))
+        .build_global_string_ptr(&format, &format!("fmt_{}", id))
         .map_err(|e| format!("Error building global string pointer: {:?}", e))?
         .as_pointer_value()
         .as_basic_value_enum();
@@ -81,17 +106,6 @@ pub fn printf(/* env: &mut IRContext, */args: &Vec<TypedArg>, codegen: &mut Code
     }
 
     let module = codegen.module.lock().unwrap();
-
-    // for (i, arg) in args.iter().enumerate() {
-    //     if let Some(Expr::Literal(Value::Str(s))) = &arg.value {
-    //         let str_ptr = codegen.builder
-    //             .build_global_string_ptr(s, &format!("str_{}_{}", id, i))
-    //             .map_err(|e| format!("Error building global string pointer: {:?}", e))?
-    //             .as_pointer_value();
-    //
-    //         final_args.push(str_ptr.into());
-    //     }
-    // }
 
     let printf_fn = module.get_function("printf").expect("printf isnt defined. Did you mean to import printf?");
     codegen.builder.build_call(printf_fn, &final_args, &format!("printf_call_{}", id));   

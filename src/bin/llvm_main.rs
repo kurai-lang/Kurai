@@ -28,12 +28,13 @@ fn main() {
     //     }
     // "#;
     let code = r#"
+        use stdlib::print;
         fn check() {
             let do_i_like_sara = 10;
-            if (do_i_like_sara > 10) {
+            if (do_i_like_sara <= 10) {
                 printf("YES I DO!");
             } else {
-                printf("Nah i dont");
+                printf("idk");
             }
         }
 
@@ -56,6 +57,8 @@ fn main() {
     println!("EXPRESSIONS:\n{:?}", parsed_expr_vec);
     codegen.generate_code(parsed_stmt_vec, parsed_expr_vec.expect("purr!"), &mut discovered_modules);
     let result = codegen.show_result(); //result returns String
+
+    println!("VARIABLES:\n{:?}", codegen.variables);
 
     let mut llvm_ir_code_file = File::create("exec.ll").unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
