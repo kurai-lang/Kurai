@@ -3,7 +3,7 @@ members = [
   "kurai",
   "kurai_core",
   "kurai_codegen",
-  "stdlib"
+  "kurai_stdlib"
 ]
 
 # [dependencies]

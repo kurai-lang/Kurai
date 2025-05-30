@@ -16,46 +16,44 @@ static GLOBAL_STRING_ID: AtomicUsize = AtomicUsize::new(0);
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn printf_format(&self, args: &Vec<TypedArg>, id: usize) -> Vec<BasicValueEnum<'ctx>> {
-        let mut compiled_args: Vec<BasicValueEnum> = Vec::new();
-
-        for (i, arg) in args.iter().enumerate() {
-            match arg.typ.to_string().as_str() {
-                "int" => {
-                    if let Some(expr) = &arg.value {
-                        if let Expr::Literal(Value::Int(v)) = expr {
-                            let int = self.context.i64_type().const_int(*v as u64, true).into();
-                            compiled_args.push(int);
-                        }
-                    }
+        args.iter()
+            .enumerate()
+            .filter_map(|(i, arg)| {
+                match arg.typ.to_string().as_str() {
+                    "int" => self.compile_int(arg),
+                    "str" => self.compile_str(arg, id, i),
+                    "id" => self.compile_id(arg),
+                    _ => None
                 }
-                "str" => { 
-                    if let Some(expr) = &arg.value {
-                        if let Expr::Literal(Value::Str(s)) = expr {
-                            let str_global = self.builder
-                                .build_global_string_ptr(s, &format!("str_{}_{}", id, i))
-                                .unwrap();
+            })
+        .collect()
+    }
 
-                            compiled_args.push(str_global.as_pointer_value().into());
-                        }
-                    }
-                }
-                "id" => {
-                    if let Some(var) = self.variables.get(&arg.name) {
-                        let ptr_type = var.get_type();
-                        let loaded_val = self.builder
-                            .build_load(ptr_type.as_basic_type_enum(), *var, "load_id");
-                            // .unwrap();
-                        println!("var: {} ptr type: {}", *var, ptr_type);
-
-                        compiled_args.push(loaded_val.unwrap());
-                    } else {
-                        panic!("Unknown variable: {}", arg.name);
-                    }
-                }
-                _ => panic!("Unsupported type in printf_format")
-            }
+    pub fn compile_int(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
+        match &arg.value {
+            Some(Expr::Literal(Value::Int(v))) => Some(self.context.i64_type().const_int(*v as u64, true).into()),
+            _ => None
         }
-        compiled_args
+    }
+
+    pub fn compile_str(&self, arg: &TypedArg, id: usize, index: usize) -> Option<BasicValueEnum<'ctx>> {
+        match &arg.value {
+            Some(Expr::Literal(Value::Str(s))) => {
+                let global_str = self.builder.build_global_string_ptr(s, &format!("str_{}_{}", id, index));
+                Some(global_str.unwrap().as_basic_value_enum())
+            }
+            _ => None
+        }
+    }
+
+    pub fn compile_id(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
+        if let Some(var_ptr) = self.variables.get(&arg.name) {
+            let ptr_type = var_ptr.get_type();
+            let loaded_val = self.builder.build_load(ptr_type.as_basic_type_enum(), *var_ptr, "loaded_id");
+            loaded_val.ok()
+        } else {
+            None
+        }
     }
 }
 

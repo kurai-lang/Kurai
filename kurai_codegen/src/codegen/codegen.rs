@@ -1,5 +1,4 @@
-use crate::{parse::{bin_op::BinOp, parse_import::parse_imported_file::parse_imported_file}, stdlib::{self, print::{import_printf, printf}}};
-use crate::token::token::Token;
+use crate::{parse::{bin_op::BinOp, parse_import::parse_imported_file::parse_imported_file}, stdlib::{self, print::{import_printf, printf}}}; use crate::token::token::Token;
 use crate::value::Value;
 use crate::parse::{expr::Expr, stmt::Stmt};
 use crate::parse::parse_import::parse_import_decl::parse_import_decl;
