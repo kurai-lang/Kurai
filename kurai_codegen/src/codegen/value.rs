@@ -5,7 +5,7 @@ use inkwell::{
 };
 use crate::codegen::codegen::CodeGen;
 
-use crate::value::Value;
+use kurai_core::value::Value;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn const_from_value(&self, value: &Value) -> Result<BasicValueEnum<'ctx>, BuilderError> {
