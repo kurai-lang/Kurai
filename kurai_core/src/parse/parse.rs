@@ -3,13 +3,13 @@ use std::fmt::Debug;
 use kurai_codegen::codegen::codegen::CodeGen;
 use crate::eat::eat;
 use crate::token::token::Token;
-use crate::parse::stmt::Stmt;
 use crate::parse::parse_var_decl::parse_var_decl;
-use crate::typedArg::TypedArg;
-use crate::value::Value;
+use kurai_typedArg::typedArg::TypedArg;
+use kurai_types::value::Value;
+use kurai_stmt::stmt::Stmt;
+use kurai_expr::expr::{self, Expr};
+use kurai_binop::bin_op::BinOp;
 
-use super::bin_op::BinOp;
-use super::expr::{self, Expr};
 use super::parse_block::{self, parse_block};
 use super::parse_expr::parse_equal::parse_equal;
 use super::parse_fn_call::parse_fn_call;

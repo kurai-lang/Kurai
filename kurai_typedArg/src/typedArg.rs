@@ -1,4 +1,4 @@
-use crate::parse::expr::Expr;
+use kurai_expr::expr::Expr;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TypedArg {

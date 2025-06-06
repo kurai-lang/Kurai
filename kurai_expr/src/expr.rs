@@ -1,4 +1,5 @@
-use crate::{parse::bin_op::BinOp, value::Value};
+use kurai_binop::bin_op::BinOp;
+use kurai_types::value::Value;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {

@@ -1,7 +1,9 @@
-use crate::{parse::{bin_op::BinOp, parse_import::parse_imported_file::parse_imported_file}, stdlib::{self, print::{import_printf, printf}}}; use crate::token::token::Token;
-use crate::value::Value;
-use crate::parse::{expr::Expr, stmt::Stmt};
-use crate::parse::parse_import::parse_import_decl::parse_import_decl;
+// ERROR: use crate::{parse::{bin_op::BinOp, parse_import::parse_imported_file::parse_imported_file}, stdlib::{self, print::{import_printf, printf}}}; use crate::token::token::Token;
+// ERROR: use crate::parse::parse_import::parse_import_decl::parse_import_decl;
+
+use kurai_types::value::Value;
+use kurai_expr::expr::Expr;
+use kurai_stmt::stmt::Stmt;
 use colored::Colorize;
 use inkwell::{
     builder::Builder, context::Context, module::Module, types::BasicMetadataTypeEnum::{self}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
@@ -62,7 +64,7 @@ impl<'ctx> CodeGen<'ctx> {
             // self.builder.position_at_end(entry_block);
         }
 
-        import_printf(self).expect("Couldnt import printf for unknown reasons");
+        self.import_printf(self).expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules);
         self.execute_every_expr_in_code(exprs).unwrap();

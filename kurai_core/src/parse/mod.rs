@@ -1,5 +1,4 @@
 pub mod parse;
-pub mod stmt;
 pub mod instr;
 pub mod parse_var_decl;
 pub mod parse_var_assign;
@@ -9,5 +8,3 @@ pub mod parse_import;
 pub mod parse_if_else;
 pub mod parse_expr;
 pub mod parse_block;
-pub mod expr;
-pub mod bin_op;

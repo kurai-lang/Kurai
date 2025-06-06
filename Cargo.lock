@@ -69,11 +69,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "kurai_binop"
+version = "0.2.0"
+
+[[package]]
 name = "kurai_codegen"
 version = "0.2.0"
 dependencies = [
  "colored",
  "inkwell",
+ "kurai_binop",
+ "kurai_expr",
+ "kurai_stmt",
+ "kurai_types",
 ]
 
 [[package]]
@@ -81,7 +89,20 @@ name = "kurai_core"
 version = "0.2.0"
 dependencies = [
  "inkwell",
+ "kurai_binop",
  "kurai_codegen",
+ "kurai_expr",
+ "kurai_stmt",
+ "kurai_typedArg",
+ "kurai_types",
+]
+
+[[package]]
+name = "kurai_expr"
+version = "0.2.0"
+dependencies = [
+ "kurai_binop",
+ "kurai_types",
 ]
 
 [[package]]
@@ -91,6 +112,34 @@ dependencies = [
  "inkwell",
  "kurai_codegen",
  "kurai_core",
+ "kurai_expr",
+ "kurai_stmt",
+ "kurai_typedArg",
+]
+
+[[package]]
+name = "kurai_stmt"
+version = "0.2.0"
+dependencies = [
+ "inkwell",
+ "kurai_expr",
+ "kurai_typedArg",
+ "kurai_types",
+]
+
+[[package]]
+name = "kurai_typedArg"
+version = "0.2.0"
+dependencies = [
+ "inkwell",
+ "kurai_expr",
+]
+
+[[package]]
+name = "kurai_types"
+version = "0.2.0"
+dependencies = [
+ "inkwell",
 ]
 
 [[package]]

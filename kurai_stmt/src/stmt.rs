@@ -1,7 +1,8 @@
-use crate::{scope::Scope, typedArg::TypedArg, value::Value};
+// use crate::scope::Scope;
+use kurai_typedArg::typedArg::TypedArg;
+use kurai_expr::expr::Expr;
+use kurai_types::value::Value;
 use std::fmt;
-
-use super::expr::Expr;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
@@ -79,17 +80,17 @@ impl fmt::Display for Stmt {
 // This is literally just interpreter shit
 // pls dont use this
 // NOTE: DISCONTINUED.
-impl Stmt {
-    pub fn execute(&self, scope: &mut Scope) {
-        match self {
-            Stmt::VarDecl { name, typ, value } => {
-                let val = value.clone().unwrap_or(Value::Int(0));
-                scope.declare_var(name.clone(), val);
-            }
-            Stmt::FnCall { name, args } => {
-                println!("FnCall testing");
-            }
-            _ => println!("OK")
-        }
-    }
-}
+// impl Stmt {
+//     pub fn execute(&self, scope: &mut Scope) {
+//         match self {
+//             Stmt::VarDecl { name, typ, value } => {
+//                 let val = value.clone().unwrap_or(Value::Int(0));
+//                 scope.declare_var(name.clone(), val);
+//             }
+//             Stmt::FnCall { name, args } => {
+//                 println!("FnCall testing");
+//             }
+//             _ => println!("OK")
+//         }
+//     }
+// }

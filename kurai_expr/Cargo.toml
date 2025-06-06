@@ -1,0 +1,8 @@
+[package]
+name = "kurai_expr"
+version = "0.2.0"
+edition = "2024"
+
+[dependencies]
+kurai_types = { version = "0.2.0", path = "../kurai_types/" }
+kurai_binop = { version = "0.2.0", path = "../kurai_binop/" }

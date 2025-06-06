@@ -3,9 +3,12 @@ use std::{fmt::format, ops::Deref};
 use colored::Colorize;
 use inkwell::{basic_block::BasicBlock, values::FunctionValue, IntPredicate};
 
-use kurai_core::parse::{bin_op::BinOp, expr::Expr, stmt::Stmt};
+// use kurai_core::parse::{bin_op::BinOp, expr::Expr, stmt::Stmt};
+use kurai_types::value::Value;
+use kurai_stmt::stmt::Stmt;
+use kurai_expr::expr::Expr;
+use kurai_binop::bin_op::BinOp;
 use super::codegen::CodeGen;
-use super::codegen::Value;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn build_conditional_branch(

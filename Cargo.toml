@@ -3,7 +3,11 @@ members = [
   "kurai",
   "kurai_core",
   "kurai_codegen",
-  "kurai_stdlib"
+  "kurai_stdlib",
+  "kurai_types",
+  "kurai_stmt",
+  "kurai_expr",
+  "kurai_typedArg",
 ]
 
 # [dependencies]

@@ -6,5 +6,9 @@ edition = "2024"
 [dependencies]
 colored = "3.0.0"
 inkwell = { version = "0.6.0", features = ["llvm18-1"] }
-kurai_core = { version = "0.2.0", path = "../kurai_core" }
+kurai_types = { version = "0.2.0", path = "../kurai_types/" }
+kurai_stmt = { version = "0.2.0", path = "../kurai_stmt/" }
+kurai_expr = { version = "0.2.0", path = "../kurai_expr/" }
+kurai_binop = { version = "0.2.0", path = "../kurai_binop/" }
+# kurai_core = { version = "0.2.0", path = "../kurai_core" }
 # kurai_stdlib = { version = "0.2.0", path = "../kurai_stdlib" }
