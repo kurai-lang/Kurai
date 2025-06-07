@@ -1,0 +1,4 @@
+[package]
+name = "kurai_parser_import_decl"
+version = "0.2.0"
+edition = "2024"

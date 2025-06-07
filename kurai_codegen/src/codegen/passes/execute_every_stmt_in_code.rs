@@ -1,9 +1,12 @@
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
 
-use crate::{parse::{bin_op::BinOp, expr::Expr, parse_import::parse_imported_file::parse_imported_file, stmt::Stmt}, stdlib, token::token::Token, value::Value};
-
-use super::codegen::CodeGen;
+use crate::codegen::CodeGen;
+use kurai_binop::bin_op::BinOp;
+use kurai_expr::expr::Expr;
+use kurai_parser_import_file::parse_imported_file::parse_imported_file;
+use kurai_token::token::token::Token;
+use kurai_types::value::Value;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>, discovered_modules: &mut Vec<String>) {

@@ -1,8 +1,9 @@
 use inkwell::{values::{BasicValue, BasicValueEnum}, IntPredicate};
 
-use crate::{parse::{bin_op::BinOp, expr::Expr}, value::Value};
-
-use super::codegen::CodeGen;
+use crate::codegen::CodeGen;
+use kurai_expr::expr::Expr;
+use kurai_binop::bin_op::BinOp;
+use kurai_types::value::Value;
 
 impl<'ctx> CodeGen<'ctx> {
     // The reason why this function returns something and execute_every_expr_in_code doesnt

@@ -1,4 +1,7 @@
-use crate::{parse::{bin_op::BinOp, expr::Expr, parse::parse_expr}, token::token::Token};
+use kurai_binop::bin_op::BinOp;
+use kurai_token::token::token::Token;
+use kurai_expr::expr::Expr;
+use crate::parse::parse::parse_expr;
 
 pub fn parse_equal(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
     let mut left = parse_expr(tokens, pos, true)?;

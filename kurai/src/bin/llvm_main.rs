@@ -1,7 +1,7 @@
 // use bahasac::scope::Scope;
 // use bahasac::value::Value;
 use inkwell::context::Context;
-use kurai::codegen::codegen::CodeGen;
+use kurai_codegen::codegen::codegen::CodeGen;
 use kurai_core::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
 use kurai_core::token::token::Token;
 use std::collections::HashMap;

@@ -79,9 +79,20 @@ dependencies = [
  "colored",
  "inkwell",
  "kurai_binop",
+ "kurai_codegen_traits",
  "kurai_expr",
+ "kurai_parser_import_file",
  "kurai_stmt",
+ "kurai_token",
  "kurai_types",
+]
+
+[[package]]
+name = "kurai_codegen_traits"
+version = "0.2.0"
+dependencies = [
+ "inkwell",
+ "kurai_typedArg",
 ]
 
 [[package]]
@@ -106,11 +117,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "kurai_parser"
+version = "0.2.0"
+dependencies = [
+ "kurai_binop",
+ "kurai_codegen",
+ "kurai_expr",
+ "kurai_stmt",
+ "kurai_token",
+ "kurai_typedArg",
+ "kurai_types",
+]
+
+[[package]]
+name = "kurai_parser_import_decl"
+version = "0.2.0"
+
+[[package]]
+name = "kurai_parser_import_file"
+version = "0.2.0"
+dependencies = [
+ "kurai_stmt",
+ "kurai_token",
+]
+
+[[package]]
 name = "kurai_stdlib"
 version = "0.2.0"
 dependencies = [
  "inkwell",
  "kurai_codegen",
+ "kurai_codegen_traits",
  "kurai_core",
  "kurai_expr",
  "kurai_stmt",
@@ -125,6 +162,13 @@ dependencies = [
  "kurai_expr",
  "kurai_typedArg",
  "kurai_types",
+]
+
+[[package]]
+name = "kurai_token"
+version = "0.2.0"
+dependencies = [
+ "kurai_stmt",
 ]
 
 [[package]]

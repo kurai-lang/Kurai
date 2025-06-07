@@ -3,9 +3,8 @@ use inkwell::{
     values::BasicValueEnum,
     values::BasicValue,
 };
-use crate::codegen::codegen::CodeGen;
-
-use kurai_core::value::Value;
+use crate::codegen::CodeGen;
+use kurai_types::value::Value;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn const_from_value(&self, value: &Value) -> Result<BasicValueEnum<'ctx>, BuilderError> {

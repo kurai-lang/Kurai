@@ -1,6 +1,9 @@
-use crate::{eat::eat, token::token::Token, typedArg::TypedArg, value::Value};
-
-use super::{expr::Expr, stmt::Stmt};
+use kurai_expr::expr::Expr;
+use kurai_stmt::stmt::Stmt;
+use kurai_token::eat::eat;
+use kurai_token::token::token::Token;
+use kurai_typedArg::typedArg::TypedArg;
+use kurai_types::value::Value;
 
 pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {
