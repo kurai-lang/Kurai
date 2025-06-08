@@ -1,6 +1,5 @@
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
-use super::parse::parse_stmt;
 use kurai_stmt::stmt::Stmt;
 
 pub fn parse_block(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Vec<Stmt>, String> {

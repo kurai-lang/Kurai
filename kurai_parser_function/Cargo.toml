@@ -1,10 +1,12 @@
 [package]
-name = "kurai_parser_stmt"
+name = "kurai_parser_function"
 version = "0.2.0"
 edition = "2024"
 
 [dependencies]
-kurai_parser_function = { version = "0.2.0", path = "../kurai_parser_function/" }
+kurai_expr = { version = "0.2.0", path = "../kurai_expr" }
+kurai_parser_stmt = { version = "0.2.0", path = "../kurai_parser_stmt" }
 kurai_stmt = { version = "0.2.0", path = "../kurai_stmt" }
 kurai_token = { version = "0.2.0", path = "../kurai_token" }
 kurai_typedArg = { version = "0.2.0", path = "../kurai_typedArg" }
+kurai_types = { version = "0.2.0", path = "../kurai_types" }

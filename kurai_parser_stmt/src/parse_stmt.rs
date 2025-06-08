@@ -1,4 +1,4 @@
-use kurai_parser::parse::parse_fn_decl::parse_fn_decl;
+use kurai_parser_function::parse::parse_fn_decl::parse_fn_decl;
 use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
 use kurai_typedArg::typedArg::TypedArg;

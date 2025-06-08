@@ -129,6 +129,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "kurai_parser_function"
+version = "0.2.0"
+dependencies = [
+ "kurai_expr",
+ "kurai_parser_stmt",
+ "kurai_stmt",
+ "kurai_token",
+ "kurai_typedArg",
+ "kurai_types",
+]
+
+[[package]]
 name = "kurai_parser_import_decl"
 version = "0.2.0"
 dependencies = [
