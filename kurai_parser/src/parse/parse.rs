@@ -1,56 +1,24 @@
-use std::fmt::Debug;
-
-use kurai_codegen::codegen::codegen::CodeGen;
-use crate::eat::eat;
-use crate::token::token::Token;
+// use kurai_codegen::codegen::codegen::CodeGen;
 use crate::parse::parse_var_decl::parse_var_decl;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 use kurai_expr::expr::{self, Expr};
 use kurai_binop::bin_op::BinOp;
+use kurai_token::token::token::Token;
+use kurai_token::eat::eat;
 
 use super::parse_block::{self, parse_block};
 use super::parse_expr::parse_equal::parse_equal;
 use super::parse_fn_call::parse_fn_call;
 use super::parse_fn_decl::parse_fn_decl;
 use super::parse_if_else::parse_if_else;
-use super::parse_import::parse_import_decl::parse_import_decl;
+use kurai_parser_import_decl::parse_import_decl::parse_import_decl;
 use super::parse_var_assign::parse_var_assign;
 
 // this function just wants to return stmt
 // this function practically just runs whatever function here whenever the program encounters
 // one of the tokens
-pub fn parse_stmt(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
-    match tokens.get(*pos) {
-        Some(Token::Function) => parse_fn_decl(tokens, pos, discovered_modules),
-        Some(Token::Let) => parse_var_decl(tokens, pos),
-        Some(Token::Import) => parse_import_decl(tokens, pos, discovered_modules),
-        Some(Token::If) => parse_if_else(tokens, pos, discovered_modules),
-        Some(Token::Id(_)) => {
-            match tokens.get(*pos + 1) {
-                Some(Token::OpenParenthese) => parse_fn_call(tokens, pos),
-                Some(Token::Equal) => parse_var_assign(tokens, pos),
-                _ => Err("Identifier expected, is this supposed to be a function call or variable assignment?".to_string())
-            }
-        }
-        _ => match parse_expr(tokens, pos, false) {
-            Some(Expr::FnCall { name, args }) => {
-                let typed_args = args.into_iter().map(|arg|
-                    TypedArg {
-                        name: name.clone(),
-                        typ: "any".to_string(),
-                        value: Some(arg),
-                    }).collect();
-
-                Ok(Stmt::FnCall { name, args: typed_args })
-            }
-            Some(expr) => Err(format!("Standalone expressions not allowed: {:?}", expr)),
-            None => Err(format!("Invalid statement: {:?}", tokens.get(*pos)))
-        }
-    }
-}
-
 pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Option<Expr> {
     // parse_equal(tokens, pos)
     let mut left = match tokens.get(*pos)? {

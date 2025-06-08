@@ -1,6 +1,8 @@
-use crate::{eat::eat, token::token::Token, value::Value};
-
-use super::{bin_op::BinOp, expr::Expr, parse::{self, parse_expr, parse_stmt}, parse_block::parse_block, stmt::{IfBranch, Stmt}};
+use kurai_token::eat::eat;
+use kurai_token::token::token::Token;
+use super::parse::parse_expr;
+use super::parse_block::parse_block;
+use kurai_stmt::stmt::{ IfBranch, Stmt };
 
 pub fn parse_if_else(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
     if !eat(&Token::If, tokens, pos) {

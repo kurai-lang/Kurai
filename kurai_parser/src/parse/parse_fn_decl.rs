@@ -1,6 +1,7 @@
-use crate::{eat::eat, token::token::Token};
-
-use super::{parse::parse_stmt, stmt::Stmt};
+use kurai_token::eat::eat;
+use kurai_token::token::token::Token;
+use super::parse::parse_stmt;
+use kurai_stmt::stmt::Stmt;
 
 pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {

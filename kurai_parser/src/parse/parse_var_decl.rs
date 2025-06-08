@@ -1,7 +1,7 @@
-use crate::token::token::Token;
-use crate::parse::stmt::Stmt;
-use crate::value::Value;
-use crate::eat::eat;
+use kurai_token::token::token::Token;
+use kurai_token::eat::eat;
+use kurai_types::value::Value;
+use kurai_stmt::stmt::Stmt;
 
 pub fn parse_var_decl(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
     if !eat(&Token::Let, tokens, pos) {

@@ -1,6 +1,7 @@
-use crate::{eat::eat, token::token::Token, value::Value};
-
-use super::stmt::Stmt;
+use kurai_token::eat::eat;
+use kurai_token::token::token::Token;
+use kurai_types::value::Value;
+use kurai_stmt::stmt::Stmt;
 
 pub fn parse_var_assign(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {
