@@ -3,7 +3,21 @@ use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
 use kurai_typedArg::typedArg::TypedArg;
 
-use crate::{parse::{parse::parse_expr, parse_if_else::parse_if_else, parse_var_assign::parse_var_assign, parse_var_decl::parse_var_decl}, FunctionParser, ImportParser};
+use crate::{parse::{parse::parse_expr, parse_if_else::parse_if_else, parse_var_assign::parse_var_assign, parse_var_decl::parse_var_decl}, FunctionParser, ImportParser, StmtParser};
+
+pub struct StmtParserStruct;
+impl StmtParser for StmtParserStruct {
+    fn parse_stmt(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+    ) -> Result<Stmt, String> {
+        parse_stmt(tokens, pos, discovered_modules, fn_parser, import_parser)
+    }
+}
 
 pub fn parse_stmt(
     tokens: &[Token],
@@ -13,7 +27,7 @@ pub fn parse_stmt(
     import_parser: &dyn ImportParser,
 ) -> Result<Stmt, String> {
     match tokens.get(*pos) {
-        Some(Token::Function) => fn_parser.parse_fn_decl(tokens, pos, discovered_modules),
+        Some(Token::Function) => fn_parser.parse_fn_decl(tokens, pos, discovered_modules, fn_parser, import_parser),
         Some(Token::Let) => parse_var_decl(tokens, pos),
         Some(Token::Import) => import_parser.parse_import_decl(tokens, pos, discovered_modules),
         Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, fn_parser, import_parser),

@@ -9,7 +9,7 @@ pub trait ImportParser {
 }
 
 pub trait FunctionParser {
-    fn parse_fn_decl(&self, tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String>;
+    fn parse_fn_decl(&self, tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) -> Result<Stmt, String>;
     fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
 }
 
@@ -19,7 +19,7 @@ pub trait StmtParser {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        // fn_parser: &dyn Any,
-        // parser: &dyn Any,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
     ) -> Result<Stmt, String>;
 }

@@ -48,7 +48,7 @@ fn main() {
     // let code: &str = &args;
     let tokens = Token::tokenize(code);
     let mut discovered_modules: Vec<String> = Vec::new();
-    let parsed_stmt_vec = parse_out_vec_stmt(&tokens, &mut discovered_modules);
+    let parsed_stmt_vec = parse_out_vec_stmt(&tokens, &mut discovered_modules, FunctionParserStmt);
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
     let mut codegen = CodeGen::new(&context);
 
