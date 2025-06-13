@@ -66,6 +66,8 @@ dependencies = [
  "kurai_codegen",
  "kurai_core",
  "kurai_parser",
+ "kurai_parser_function",
+ "kurai_parser_import_decl",
  "kurai_stdlib",
  "kurai_token",
 ]

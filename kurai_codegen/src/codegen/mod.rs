@@ -5,7 +5,7 @@ pub mod passes;
 pub mod value;
 
 use kurai_codegen_traits::codegen_print::CodeGenPrint;
-use kurai_parser::StmtParser;
+use kurai_parser::{FunctionParser, ImportParser, StmtParser};
 use kurai_types::value::Value;
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
@@ -39,11 +39,11 @@ impl<'ctx> CodeGen<'ctx> {
             // context: &'ctx Context
         }
     }
-    pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser /*, context: &'ctx Context, builder: &Builder, module: &mut Arc<Mutex<Module<'ctx>>> */) {
+    pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) {
         // FIXME: yes
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
-        self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser);
+        self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser);
         self.execute_every_expr_in_code(exprs).unwrap();
 
         // self.builder.build_call(

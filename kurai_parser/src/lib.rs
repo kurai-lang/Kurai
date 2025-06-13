@@ -5,7 +5,15 @@ pub mod parse;
 
 pub trait ImportParser {
     fn parse_import_decl(&self, tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String>;
-    fn parse_imported_file(&self, tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser) -> Result<Stmt, String>;
+    fn parse_imported_file(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        stmt_parser: &dyn StmtParser,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+    ) -> Result<kurai_stmt::stmt::Stmt, String>;
 }
 
 pub trait FunctionParser {
