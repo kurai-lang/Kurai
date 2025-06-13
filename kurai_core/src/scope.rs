@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::value::Value;
+use kurai_types::value::Value;
 
 #[derive(Debug)]
 pub struct Scope {

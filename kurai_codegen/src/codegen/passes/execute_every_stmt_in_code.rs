@@ -1,5 +1,6 @@
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
+use kurai_parser::StmtParser;
 
 use crate::codegen::CodeGen;
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
@@ -8,7 +9,7 @@ use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>, discovered_modules: &mut Vec<String>) {
+    pub fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser) {
         for stmt in parsed_stmt {
             match stmt {
                 Stmt::VarDecl { name, typ, value } => {
@@ -124,7 +125,7 @@ impl<'ctx> CodeGen<'ctx> {
                             self.variables.insert(arg.name.clone(), alloca);
                         }
                     }
-                        self.execute_every_stmt_in_code(body, discovered_modules);
+                        self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser);
                         let return_value = self.context.i32_type().const_int(0 as u64, false);
                         self.builder.build_return(Some(&return_value)).unwrap();
                 }
@@ -143,14 +144,14 @@ impl<'ctx> CodeGen<'ctx> {
                     let mut stmts = Vec::new();
 
                     while pos < tokens.len() {
-                        match parse_imported_file(&tokens, &mut pos, discovered_modules) {
+                        match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser) {
                             Ok(stmt) => stmts.push(stmt),
                             Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
                         }
                     }
 
                     self.loaded_modules.insert(key.clone(), stmts.clone());
-                    self.execute_every_stmt_in_code(stmts, discovered_modules);
+                    self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser);
 
                     // NOTE: Later
                     // if let Some(nick) = nickname {
@@ -171,15 +172,18 @@ impl<'ctx> CodeGen<'ctx> {
                             self.builder.position_at_end(block);
                         }
 
-                        let next_block = Some(self.build_conditional_branch(
+                    let next_block = Some(
+                        self.build_conditional_branch(
                             current_function,
                             &branch.condition,
                             &branch.body.clone(),
                             &else_body,
                             discovered_modules,
-                            &i.to_string()));
+                            &i.to_string(),
+                            stmt_parser
+                            )
+                        );
 
-                        // prev_block = next_block.unwrap();
                     }
 
                     // restore builder position if needed

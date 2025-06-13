@@ -3,6 +3,7 @@ use std::{fmt::format, ops::Deref};
 use colored::Colorize;
 use inkwell::{basic_block::BasicBlock, values::FunctionValue, IntPredicate};
 
+use kurai_parser::StmtParser;
 // use kurai_core::parse::{bin_op::BinOp, expr::Expr, stmt::Stmt};
 use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
@@ -19,6 +20,7 @@ impl<'ctx> CodeGen<'ctx> {
         else_body: &Option<Vec<Stmt>>,
         discovered_modules: &mut Vec<String>,
         block_suffix: &str,
+        stmt_parser: &dyn StmtParser,
     ) -> BasicBlock<'ctx> {
         let condition = self.lower_expr_to_llvm(condition_expr, true).unwrap();
 
@@ -65,13 +67,13 @@ impl<'ctx> CodeGen<'ctx> {
 
         // then block
         self.builder.position_at_end(then_block);
-        self.execute_every_stmt_in_code(then_body.to_vec(), discovered_modules);
+        self.execute_every_stmt_in_code(then_body.to_vec(), discovered_modules, stmt_parser);
         self.builder.build_unconditional_branch(merge_block).unwrap();
 
         // generate else block if it exists
         self.builder.position_at_end(else_block);
         if let Some(else_stmts) = else_body.as_ref() {
-            self.execute_every_stmt_in_code(else_stmts.to_vec(), discovered_modules);
+            self.execute_every_stmt_in_code(else_stmts.to_vec(), discovered_modules, stmt_parser);
         }
         self.builder.build_unconditional_branch(merge_block).unwrap();
 

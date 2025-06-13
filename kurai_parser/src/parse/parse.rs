@@ -7,16 +7,8 @@ use kurai_binop::bin_op::BinOp;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 
-pub trait StmtParser {
-    fn parse_stmt(
-        &self,
-        tokens: &[Token],
-        pos: &mut usize,
-        discovered_modules: &mut Vec<String>,
-        // fn_parser: &dyn Any,
-        // parser: &dyn Any,
-    ) -> Result<Stmt, String>;
-}
+use crate::parse::parse_stmt::parse_stmt;
+use crate::{FunctionParser, ImportParser};
 
 // this function just wants to return stmt
 // this function practically just runs whatever function here whenever the program encounters
@@ -125,12 +117,17 @@ pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
     Ok(exprs)
 }
 
-pub fn parse_out_vec_stmt(tokens: &[Token], stmt_parser: &dyn StmtParser, discovered_modules: &mut Vec<String>) -> Vec<Stmt> {
+pub fn parse_out_vec_stmt(
+    tokens: &[Token],
+    discovered_modules: &mut Vec<String>,
+    fn_parser: &dyn FunctionParser,
+    import_parser: &dyn ImportParser,
+) -> Vec<Stmt> {
     let mut pos = 0;
     let mut stmts = Vec::new();
 
     while pos < tokens.len() {
-        match stmt_parser.parse_stmt(tokens, &mut pos, discovered_modules) {
+        match parse_stmt(tokens, &mut pos, discovered_modules, fn_parser, import_parser) {
             Ok(stmt) => stmts.push(stmt),
             Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", tokens.get(pos), e, tokens)
         }

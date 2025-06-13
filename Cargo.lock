@@ -83,6 +83,7 @@ dependencies = [
  "kurai_binop",
  "kurai_codegen_traits",
  "kurai_expr",
+ "kurai_parser",
  "kurai_parser_import_file",
  "kurai_stmt",
  "kurai_token",
@@ -135,7 +136,7 @@ name = "kurai_parser_function"
 version = "0.2.0"
 dependencies = [
  "kurai_expr",
- "kurai_parser_stmt",
+ "kurai_parser",
  "kurai_stmt",
  "kurai_token",
  "kurai_typedArg",
@@ -147,6 +148,7 @@ name = "kurai_parser_import_decl"
 version = "0.2.0"
 dependencies = [
  "kurai_parser",
+ "kurai_parser_import_file",
  "kurai_stmt",
  "kurai_token",
  "kurai_typedArg",
@@ -157,6 +159,7 @@ dependencies = [
 name = "kurai_parser_import_file"
 version = "0.2.0"
 dependencies = [
+ "kurai_parser",
  "kurai_stmt",
  "kurai_token",
 ]

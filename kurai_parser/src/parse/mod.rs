@@ -5,3 +5,4 @@ pub mod parse_var_assign;
 pub mod parse_if_else;
 pub mod parse_expr;
 pub mod parse_block;
+pub mod parse_stmt;
