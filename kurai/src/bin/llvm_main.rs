@@ -1,9 +1,9 @@
 // use bahasac::scope::Scope;
 // use bahasac::value::Value;
 use inkwell::context::Context;
-use kurai_codegen::codegen::codegen::CodeGen;
-use kurai_core::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
-use kurai_core::token::token::Token;
+use kurai_codegen::codegen::CodeGen;
+use kurai_parser::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
+use kurai_token::token::token::Token;
 use std::collections::HashMap;
 // use std::sync::{Arc, Mutex};
 use std::fs::File;

@@ -3,8 +3,7 @@ use inkwell::{values::{BasicValue, BasicValueEnum}, IntPredicate};
 use kurai_binop::bin_op::BinOp;
 use kurai_expr::expr::Expr;
 use kurai_types::value::Value;
-
-use super::codegen::CodeGen;
+use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn lower_expr_to_llvm(&self, expr: &Expr, in_condition: bool) -> Option<BasicValueEnum<'ctx>> {

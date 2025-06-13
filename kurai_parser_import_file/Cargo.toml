@@ -4,8 +4,5 @@ version = "0.2.0"
 edition = "2024"
 
 [dependencies]
-kurai_parser = { version = "0.2.0", path = "../kurai_parser" }
 kurai_stmt = { version = "0.2.0", path = "../kurai_stmt" }
 kurai_token = { version = "0.2.0", path = "../kurai_token" }
-
-

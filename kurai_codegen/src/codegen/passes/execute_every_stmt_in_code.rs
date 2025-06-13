@@ -2,11 +2,10 @@ use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
 
 use crate::codegen::CodeGen;
-use kurai_binop::bin_op::BinOp;
-use kurai_expr::expr::Expr;
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
 use kurai_token::token::token::Token;
 use kurai_types::value::Value;
+use kurai_stmt::stmt::Stmt;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>, discovered_modules: &mut Vec<String>) {
@@ -35,7 +34,8 @@ impl<'ctx> CodeGen<'ctx> {
                 Stmt::FnCall { name, args } => {
                     match name.as_str() {
                         "printf" => {
-                            stdlib::print::printf(&args, self).unwrap();
+                            // FIXME: Yes
+                            // stdlib::print::printf(&args, self).unwrap();
                         }
                         _ => {
                             let module = self.module.lock().unwrap();

@@ -1,20 +1,22 @@
 // use kurai_codegen::codegen::codegen::CodeGen;
-use crate::parse::parse_var_decl::parse_var_decl;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
-use kurai_expr::expr::{self, Expr};
+use kurai_expr::expr::Expr;
 use kurai_binop::bin_op::BinOp;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 
-use super::parse_block::{self, parse_block};
-use super::parse_expr::parse_equal::parse_equal;
-use super::parse_fn_call::parse_fn_call;
-use super::parse_fn_decl::parse_fn_decl;
-use super::parse_if_else::parse_if_else;
-use kurai_parser_import_decl::parse_import_decl::parse_import_decl;
-use super::parse_var_assign::parse_var_assign;
+pub trait StmtParser {
+    fn parse_stmt(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        // fn_parser: &dyn Any,
+        // parser: &dyn Any,
+    ) -> Result<Stmt, String>;
+}
 
 // this function just wants to return stmt
 // this function practically just runs whatever function here whenever the program encounters
@@ -123,12 +125,12 @@ pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
     Ok(exprs)
 }
 
-pub fn parse_out_vec_stmt(tokens: &[Token], discovered_modules: &mut Vec<String>) -> Vec<Stmt> {
+pub fn parse_out_vec_stmt(tokens: &[Token], stmt_parser: &dyn StmtParser, discovered_modules: &mut Vec<String>) -> Vec<Stmt> {
     let mut pos = 0;
     let mut stmts = Vec::new();
 
     while pos < tokens.len() {
-        match parse_stmt(tokens, &mut pos, discovered_modules) {
+        match stmt_parser.parse_stmt(tokens, &mut pos, discovered_modules) {
             Ok(stmt) => stmts.push(stmt),
             Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", tokens.get(pos), e, tokens)
         }

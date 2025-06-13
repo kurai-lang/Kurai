@@ -65,7 +65,9 @@ dependencies = [
  "inkwell",
  "kurai_codegen",
  "kurai_core",
+ "kurai_parser",
  "kurai_stdlib",
+ "kurai_token",
 ]
 
 [[package]]
@@ -155,7 +157,6 @@ dependencies = [
 name = "kurai_parser_import_file"
 version = "0.2.0"
 dependencies = [
- "kurai_parser",
  "kurai_stmt",
  "kurai_token",
 ]
@@ -164,7 +165,7 @@ dependencies = [
 name = "kurai_parser_stmt"
 version = "0.2.0"
 dependencies = [
- "kurai_parser",
+ "kurai_parser_import_decl",
  "kurai_stmt",
  "kurai_token",
  "kurai_typedArg",

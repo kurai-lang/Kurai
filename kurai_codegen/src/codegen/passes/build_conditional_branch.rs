@@ -8,7 +8,7 @@ use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 use kurai_expr::expr::Expr;
 use kurai_binop::bin_op::BinOp;
-use super::codegen::CodeGen;
+use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn build_conditional_branch(
