@@ -4,7 +4,7 @@ pub mod traits;
 pub mod passes;
 pub mod value;
 
-use kurai_codegen_traits::codegen_print::CodeGenPrint;
+use colored::Colorize;
 use kurai_parser::{FunctionParser, ImportParser, StmtParser};
 use kurai_types::value::Value;
 use kurai_expr::expr::Expr;
@@ -14,6 +14,7 @@ use inkwell::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use crate::CodeGenPrint;
 
 #[derive(Debug)]
 pub struct CodeGen<'ctx> {
@@ -41,10 +42,10 @@ impl<'ctx> CodeGen<'ctx> {
     }
     pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) {
         // FIXME: yes
-        // self.import_printf().expect("Couldnt import printf for unknown reasons");
+        self.import_printf(self).expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser);
-        self.execute_every_expr_in_code(exprs).unwrap();
+        self.execute_every_expr_in_code(exprs).unwrap_or_else(|_| panic!("{}: There is no code, the expression list is empty", "error".red()));
 
         // self.builder.build_call(
         //     printf_fn,
@@ -85,8 +86,11 @@ impl<'ctx> CodeGen<'ctx> {
 impl<'ctx> CodeGen<'ctx> {
     pub fn show_result(&self) -> String {
         let module = self.module.lock().unwrap();
-        module.print_to_stderr();
-        println!("{:#?}", *module.get_data_layout());
+        #[cfg(debug_assertions)]
+        {
+            module.print_to_stderr();
+            println!("{:#?}", *module.get_data_layout());
+        }
         return module.print_to_string().to_string();
     }
 }

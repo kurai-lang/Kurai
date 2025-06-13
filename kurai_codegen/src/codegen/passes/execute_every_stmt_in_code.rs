@@ -41,7 +41,9 @@ impl<'ctx> CodeGen<'ctx> {
                         _ => {
                             let module = self.module.lock().unwrap();
 
-                            println!("Module: {:?}", module);
+                            #[cfg(debug_assertions)] {
+                                println!("Module: {:?}", module);
+                            }
                             let function = module.get_function(&name);
 
                             if let Some(function) = function {
@@ -65,7 +67,10 @@ impl<'ctx> CodeGen<'ctx> {
                 Stmt::FnDecl { name, args, body } => {
                     // Map the argument types to LLVM types 
                     // remember, we need to speak LLVM IR language, not rust!
-                    dbg!("converting args to llvm args types");
+                    #[cfg(debug_assertions)]
+                    {
+                        dbg!("converting args to llvm args types");
+                    }
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ.to_string().as_str() {
                             "int" => self.context.i32_type().into(),
@@ -73,9 +78,13 @@ impl<'ctx> CodeGen<'ctx> {
                             "bool" => self.context.bool_type().into(),
                             "str" => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
                             _ => panic!("Unknown type: {:?}", arg.typ),
+                            }
+                        }).collect();
+
+                        #[cfg(debug_assertions)]
+                        {
+                            dbg!("done");
                         }
-                    }).collect();
-                    dbg!("done");
 
                     {
                         let module = self.module.lock().unwrap();
@@ -103,16 +112,23 @@ impl<'ctx> CodeGen<'ctx> {
 
                     {
                         let module = self.module.lock().unwrap();
-                        println!("Module: {:?}", module);
 
-                        dbg!("creating function named: {}", &name);
+                        #[cfg(debug_assertions)]
+                        {
+                            println!("Module: {:?}", module);
+                            dbg!("creating function named: {}", &name);
+                        }
+
                         let fn_type = self.context.i32_type().fn_type(&arg_types, false);
                         let function = module.add_function(&name, fn_type, None);
                         let basic_block = self.context.append_basic_block(function, "entry");
                         self.builder.position_at_end(basic_block);
-                        dbg!("done");
 
-                        dbg!("parsing the function's body");
+                        #[cfg(debug_assertions)]
+                        {
+                            dbg!("done");
+                            dbg!("parsing the function's body");
+                        }
                         for (i, arg) in args.iter().enumerate() {
                             let llvm_arg = function.get_nth_param(i as u32).unwrap().into_pointer_value();
 

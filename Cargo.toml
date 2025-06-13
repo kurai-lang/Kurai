@@ -8,7 +8,6 @@ members = [
   "kurai_stmt",
   "kurai_expr",
   "kurai_typedArg",
-  "kurai_codegen_traits",
   "kurai_parser",
   "kurai_token",
   "kurai_parser_import_file",

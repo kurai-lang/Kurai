@@ -89,6 +89,7 @@ dependencies = [
  "kurai_parser_import_file",
  "kurai_stmt",
  "kurai_token",
+ "kurai_typedArg",
  "kurai_types",
 ]
 
@@ -187,6 +188,7 @@ dependencies = [
  "kurai_expr",
  "kurai_stmt",
  "kurai_typedArg",
+ "kurai_types",
 ]
 
 [[package]]

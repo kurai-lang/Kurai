@@ -11,3 +11,4 @@ kurai_core = { version = "0.2.0", path = "../kurai_core" }
 kurai_expr = { version = "0.2.0", path = "../kurai_expr" }
 kurai_stmt = { version = "0.2.0", path = "../kurai_stmt" }
 kurai_typedArg = { version = "0.2.0", path = "../kurai_typedArg/" }
+kurai_types = { version = "0.2.0", path = "../kurai_types" }

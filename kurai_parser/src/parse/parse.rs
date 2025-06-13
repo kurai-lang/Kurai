@@ -105,12 +105,9 @@ pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
     let mut exprs = Vec::new();
 
     while pos < tokens.len() {
-        println!("{}", pos);
         if let Some(expr) = parse_expr(tokens, &mut pos, false) {
             exprs.push(expr);
             if eat(&Token::Comma, tokens, &mut pos) { continue; }
-        } else {
-            eprintln!("Parse error at expression {:?} {}", exprs.get(pos), pos);
         }
     }
 
@@ -133,6 +130,9 @@ pub fn parse_out_vec_stmt(
         }
     }
 
-    println!("{:?}", tokens);
+    #[cfg(debug_assertions)]
+    {
+        println!("TOKENS: {:?}", tokens);
+    }
     stmts
 }
