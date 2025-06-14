@@ -128,8 +128,10 @@ fn main() {
     let end_time = start_time.elapsed().as_secs_f64();
 
     if status.success() {
-        println!("{} the program in {:.2}s", "Finished".green().bold(), end_time);
-        println!("{} `{}`", "Running".green().bold(), output_path);
+        println!("{:>5}{} the program in {:.2}s", " ", "Finished".green().bold(), end_time);
+        println!("{:>5}{} `{}`", " ", "Running".green().bold(), output_path);
+
+        Command::new(output_path.as_ref()).status().unwrap();
     } else {
         println!("{}: Compilation unsuccessful", "error".red());
     }

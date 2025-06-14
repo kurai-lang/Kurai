@@ -172,7 +172,10 @@ impl<'ctx> CodeGen<'ctx> {
                     .map(|arg| Into::<BasicMetadataValueEnum>::into(arg))
             );
 
-            println!("Compiled args: {:?}", compiled_args.len());
+            #[cfg(debug_assertions)]
+            {
+                println!("Compiled args: {:?}", compiled_args.len());
+            }
         }
 
         let module = self.module.lock().unwrap();
