@@ -45,7 +45,7 @@ impl<'ctx> CodeGen<'ctx> {
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser);
-        self.execute_every_expr_in_code(exprs).unwrap_or_else(|_| panic!("{}: There is no code, the expression list is empty", "error".red()));
+        self.execute_every_expr_in_code(exprs).expect("There is no code, the expression list is empty");
 
         // self.builder.build_call(
         //     printf_fn,

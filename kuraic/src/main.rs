@@ -8,32 +8,60 @@ use kurai_parser::parse::parse_stmt::StmtParserStruct;
 use kurai_parser_function::FunctionParserStruct;
 use kurai_parser_import_decl::ImportParserStruct;
 use kurai_token::token::token::Token;
-use core::time;
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::env;
 // use std::sync::{Arc, Mutex};
 use std::fs::{self, File};
 use std::io::prelude::*;
 use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
-use kurai_codegen::CodeGenPrint;
+
+static PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 fn main() {
+    let mut output_path: Cow<'static, str> = Cow::Owned("target/a".to_owned());
+    let output_path_clone = output_path.clone();
+
+    std::panic::set_hook(Box::new(move |panic_info| {
+        PANIC_COUNT.fetch_add(1, Ordering::SeqCst);
+
+        if let Some(location) = panic_info.location() {
+            eprintln!("{}:{}", location.file(), location.line());
+        }
+
+        if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            eprintln!("{}: {}", "error".red().bold(), s);
+        } else if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            eprintln!("{}: {}", "error".red().bold(), s);
+        } else {
+            eprintln!("{}: could not output a reason why", "warning".yellow().bold());
+        }
+
+        eprintln!("{}: could not compile `{}` due to {} previous error",
+            "error".red().bold(),
+            output_path_clone,
+            PANIC_COUNT.load(Ordering::SeqCst));
+    }));
+
     let context = Context::create();
     let args = env::args().skip(1).collect::<Vec<String>>();
 
-    // let mut code = String::new();
-    let code = "
+    let mut code = String::new();
+
+    #[cfg(debug_assertions)]
+    {
+        let code = "
             fn main() {
                 let x = 0;
             }
         ";
-    let mut output_path: Cow<'static, str> = Cow::Owned("target/a".to_owned());
+    }
 
     if !args.is_empty() {
         let file_path = &args[args.len() - 1];
-        // code = fs::read_to_string(file_path).unwrap();
+
+        if !(cfg!(debug_assertions)) { code = fs::read_to_string(file_path).unwrap(); }
 
         if let Some(output_name_index) = args.iter().position(|x| x == "-o") {
             if let Some(name) = args.get(output_name_index + 1) {
@@ -42,7 +70,7 @@ fn main() {
         }
     }
 
-    let tokens = Token::tokenize(code);
+    let tokens = Token::tokenize(code.as_str());
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parse_out_vec_stmt(&tokens, &mut discovered_modules, &FunctionParserStruct, &ImportParserStruct);
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
