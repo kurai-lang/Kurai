@@ -58,27 +58,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "kurai"
-version = "0.2.0"
-dependencies = [
- "colored",
- "inkwell",
- "kurai_codegen",
- "kurai_core",
- "kurai_parser",
- "kurai_parser_function",
- "kurai_parser_import_decl",
- "kurai_stdlib",
- "kurai_token",
-]
-
-[[package]]
 name = "kurai_binop"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "kurai_codegen"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "colored",
  "inkwell",
@@ -95,7 +80,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_codegen_traits"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "inkwell",
  "kurai_typedArg",
@@ -103,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "inkwell",
  "kurai_binop",
@@ -116,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_expr"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_binop",
  "kurai_types",
@@ -124,7 +109,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_binop",
  "kurai_expr",
@@ -136,7 +121,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_function"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_expr",
  "kurai_parser",
@@ -148,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_import_decl"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_parser",
  "kurai_parser_import_file",
@@ -160,7 +145,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_import_file"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_parser",
  "kurai_stmt",
@@ -169,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_stmt"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_parser_import_decl",
  "kurai_stmt",
@@ -179,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_stdlib"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "inkwell",
  "kurai_codegen",
@@ -193,7 +178,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_stmt"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "inkwell",
  "kurai_expr",
@@ -203,14 +188,14 @@ dependencies = [
 
 [[package]]
 name = "kurai_token"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "kurai_stmt",
 ]
 
 [[package]]
 name = "kurai_typedArg"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "inkwell",
  "kurai_expr",
@@ -218,9 +203,24 @@ dependencies = [
 
 [[package]]
 name = "kurai_types"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "inkwell",
+]
+
+[[package]]
+name = "kuraic"
+version = "0.3.0"
+dependencies = [
+ "colored",
+ "inkwell",
+ "kurai_codegen",
+ "kurai_core",
+ "kurai_parser",
+ "kurai_parser_function",
+ "kurai_parser_import_decl",
+ "kurai_stdlib",
+ "kurai_token",
 ]
 
 [[package]]

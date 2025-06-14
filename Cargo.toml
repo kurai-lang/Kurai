@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "kurai",
+  "kuraic",
   "kurai_core",
   "kurai_codegen",
   "kurai_stdlib",

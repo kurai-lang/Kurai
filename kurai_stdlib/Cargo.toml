@@ -1,14 +1,14 @@
 [package]
 name = "kurai_stdlib"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 
 [dependencies]
 inkwell = { version = "0.6.0", features = ["llvm18-1"] }
-kurai_codegen = { version = "0.2.0", path = "../kurai_codegen" }
-kurai_codegen_traits = { version = "0.2.0", path = "../kurai_codegen_traits" }
-kurai_core = { version = "0.2.0", path = "../kurai_core" }
-kurai_expr = { version = "0.2.0", path = "../kurai_expr" }
-kurai_stmt = { version = "0.2.0", path = "../kurai_stmt" }
-kurai_typedArg = { version = "0.2.0", path = "../kurai_typedArg/" }
-kurai_types = { version = "0.2.0", path = "../kurai_types" }
+kurai_codegen = { version = "0.3.0", path = "../kurai_codegen" }
+kurai_codegen_traits = { version = "0.3.0", path = "../kurai_codegen_traits" }
+kurai_core = { version = "0.3.0", path = "../kurai_core" }
+kurai_expr = { version = "0.3.0", path = "../kurai_expr" }
+kurai_stmt = { version = "0.3.0", path = "../kurai_stmt" }
+kurai_typedArg = { version = "0.3.0", path = "../kurai_typedArg/" }
+kurai_types = { version = "0.3.0", path = "../kurai_types" }
