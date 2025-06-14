@@ -21,7 +21,45 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
         return Err(format!("Expected an opening paranthese `(` after `{}`", name));
     }
 
-    // TODO: Add arguments passing here later
+    // NOTE: arguments parsing time
+    let mut args = Vec::new();
+    if let Some(&Token::CloseParenthese) = tokens.get(*pos) {
+        // *pos += 1;
+    } else {
+        while *pos < tokens.len() {
+            match tokens.get(*pos) {
+                Some(Token::CloseParenthese) => {
+                    *pos += 1;
+                    break;
+                }
+                Some(Token::Id(arg_name)) => {
+                    let name = arg_name.clone();
+                    *pos += 1;
+
+                    if !eat(&Token::Colon, tokens, pos) {
+                        return Err(format!("Expected `:` after argument name {}", name));
+                    }
+
+                    let ty = match tokens.get(*pos) {
+                        Some(Token::Id(type_name)) => {
+                            *pos += 1;
+                            type_name.clone()
+                        }
+                        _ => return Err(format!("Expected a type name after `:` in argument {}", name))
+                    };
+
+                    // name: type
+                    args.push((name, ty));
+
+                    if let Some(Token::Comma) = tokens.get(*pos) {
+                        *pos += 1;
+                    }
+                }
+                _ => return Err("Invalid argument syntax inside function declaration".to_string())
+                // _ => None
+            }
+        }
+    }
 
     if !eat(&Token::CloseParenthese, tokens, pos) {
         return Err("Expected a closing paranthese `)` after passing in arguments".to_string());

@@ -27,7 +27,7 @@ impl<'ctx> CodeGen<'ctx> {
                 Stmt::Assign { name, value } => {
                     if let Some(var_ptr) = self.variables.get(&name) {
                         let llvm_value = self.lower_value_to_llvm(&value).unwrap();
-                        self.builder.build_store(*var_ptr, llvm_value);
+                        self.builder.build_store(*var_ptr, llvm_value).unwrap();
                     } else {
                         println!("Variable {} could not be found!", name);
                     }
@@ -36,7 +36,7 @@ impl<'ctx> CodeGen<'ctx> {
                     match name.as_str() {
                         "printf" => {
                             // FIXME: Yes
-                            // stdlib::print::printf(&args, self).unwrap();
+                            self.printf(&args).unwrap();
                         }
                         _ => {
                             let module = self.module.lock().unwrap();
