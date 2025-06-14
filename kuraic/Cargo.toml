@@ -4,6 +4,7 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.32", features = ["derive"] }
 colored = "3.0.0"
 inkwell = { version = "0.6.0", features = ["llvm18-1"]}
 kurai_codegen = { version = "0.3.0", path = "../kurai_codegen" }

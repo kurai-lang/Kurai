@@ -181,7 +181,7 @@ impl<'ctx> CodeGen<'ctx> {
         let module = self.module.lock().unwrap();
 
         let printf_fn = module.get_function("printf").expect("printf isnt defined. Did you mean to import printf?");
-        self.builder.build_call(printf_fn, &final_args, &format!("printf_call_{}", id));
+        self.builder.build_call(printf_fn, &final_args, &format!("printf_call_{}", id)).unwrap();
 
         Ok(())
     }

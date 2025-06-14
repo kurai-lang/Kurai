@@ -1,3 +1,4 @@
+use clap::Parser;
 use colored::Colorize;
 // use bahasac::scope::Scope;
 // use bahasac::value::Value;
@@ -19,9 +20,21 @@ use std::time::Instant;
 
 static PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
 
+#[derive(Debug, Parser)]
+struct Cli {
+    pub input: String,
+
+    #[arg(long, default_value="a", short='o')]
+    pub output_name: String,
+
+    #[arg(long, default_value="2", short='O', value_parser=clap::value_parser!(u8))]
+    pub opt_level: u8,
+}
+
 fn main() {
-    let mut output_path: Cow<'static, str> = Cow::Owned("target/a".to_owned());
-    let output_path_clone = output_path.clone();
+    let cli = Cli::parse();
+    let output_name = format!("target/{}", cli.output_name);
+    let output_name_clone = output_name.clone();
 
     std::panic::set_hook(Box::new(move |panic_info| {
         PANIC_COUNT.fetch_add(1, Ordering::SeqCst);
@@ -40,12 +53,11 @@ fn main() {
 
         eprintln!("{}: could not compile `{}` due to {} previous error",
             "error".red().bold(),
-            output_path_clone,
+            output_name_clone,
             PANIC_COUNT.load(Ordering::SeqCst));
     }));
 
     let context = Context::create();
-    let args = env::args().skip(1).collect::<Vec<String>>();
 
     let mut code = String::new();
 
@@ -58,16 +70,10 @@ fn main() {
         ";
     }
 
-    if !args.is_empty() {
-        let file_path = &args[args.len() - 1];
+    let file_path = cli.input;
 
-        if !(cfg!(debug_assertions)) { code = fs::read_to_string(file_path).unwrap(); }
-
-        if let Some(output_name_index) = args.iter().position(|x| x == "-o") {
-            if let Some(name) = args.get(output_name_index + 1) {
-                output_path = Cow::Owned(format!("target/{}", name));
-            }
-        }
+    if !(cfg!(debug_assertions)) { 
+        code = fs::read_to_string(file_path).unwrap(); 
     }
 
     let tokens = Token::tokenize(code.as_str());
@@ -88,11 +94,11 @@ fn main() {
     codegen.generate_code(parsed_stmt_vec, parsed_expr_vec.expect("purr!"), &mut discovered_modules, &StmtParserStruct, &FunctionParserStruct, &ImportParserStruct);
     let result = codegen.show_result(); //result returns String
 
-    let output_path_ll = format!("{}.ll", output_path);
-    let output_path_bc = format!("{}.bc", output_path);
-    let output_path_opt_bc = format!("{}_opt.bc", output_path);
-    let output_path_s = format!("{}.s", output_path);
-    let output_path_o = format!("{}.o", output_path);
+    let output_path_ll = format!("{}.ll", output_name);
+    let output_path_bc = format!("{}.bc", output_name);
+    let output_path_opt_bc = format!("{}_opt.bc", output_name);
+    let output_path_s = format!("{}.s", output_name);
+    let output_path_o = format!("{}.o", output_name);
 
     let mut llvm_ir_code_file = File::create(&output_path_ll).unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
@@ -105,7 +111,7 @@ fn main() {
         .status()
         .unwrap();
     Command::new("opt")
-        .arg("-O2")
+        .arg(format!("-O{}", cli.opt_level.to_string()))
         .arg(&output_path_bc)
         .arg("-o")
         .arg(&output_path_opt_bc)
@@ -121,7 +127,7 @@ fn main() {
     let status = Command::new("clang")
         .arg(&output_path_s)
         .arg("-o")
-        .arg(output_path.as_ref())
+        .arg(&output_name)
         .status()
         .unwrap();
 
@@ -129,9 +135,9 @@ fn main() {
 
     if status.success() {
         println!("{:>5}{} the program in {:.2}s", " ", "Finished".green().bold(), end_time);
-        println!("{:>5}{} `{}`", " ", "Running".green().bold(), output_path);
+        println!("{:>5}{} `{}`", " ", "Running".green().bold(), &output_name);
 
-        Command::new(output_path.as_ref()).status().unwrap();
+        Command::new(output_name).status().unwrap();
     } else {
         println!("{}: Compilation unsuccessful", "error".red());
     }

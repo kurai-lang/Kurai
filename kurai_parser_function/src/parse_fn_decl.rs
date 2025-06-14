@@ -3,6 +3,7 @@ use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
 use kurai_parser::parse::parse_stmt::parse_stmt;
 use kurai_stmt::stmt::Stmt;
+use kurai_typedArg::typedArg::TypedArg;
 
 pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {
@@ -24,7 +25,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
     // NOTE: arguments parsing time
     let mut args = Vec::new();
     if let Some(&Token::CloseParenthese) = tokens.get(*pos) {
-        // *pos += 1;
+        *pos += 1;
     } else {
         while *pos < tokens.len() {
             match tokens.get(*pos) {
@@ -40,7 +41,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
                         return Err(format!("Expected `:` after argument name {}", name));
                     }
 
-                    let ty = match tokens.get(*pos) {
+                    let typ = match tokens.get(*pos) {
                         Some(Token::Id(type_name)) => {
                             *pos += 1;
                             type_name.clone()
@@ -49,7 +50,11 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
                     };
 
                     // name: type
-                    args.push((name, ty));
+                    args.push(TypedArg {
+                        name,
+                        typ,
+                        value: None,
+                    });
 
                     if let Some(Token::Comma) = tokens.get(*pos) {
                         *pos += 1;
@@ -59,10 +64,6 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
                 // _ => None
             }
         }
-    }
-
-    if !eat(&Token::CloseParenthese, tokens, pos) {
-        return Err("Expected a closing paranthese `)` after passing in arguments".to_string());
     }
 
     let mut body = Vec::new();
@@ -84,7 +85,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
 
     Ok(Stmt::FnDecl { 
         name,
-        args: vec![], // bro got skipped 💀
+        args, // bro got skipped 💀
         body,
     })
 }
