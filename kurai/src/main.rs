@@ -47,7 +47,7 @@ fn main() {
     let parsed_stmt_vec = parse_out_vec_stmt(&tokens, &mut discovered_modules, &FunctionParserStruct, &ImportParserStruct);
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
     let mut codegen = CodeGen::new(&context);
-    codegen.printf("hi");
+    // codegen.printf("hi");
 
     // pub fn generate_code(&self, parsed_stmt: Vec<Stmt>, context: &'ctx Context, builder: &Builder, module: &mut Module<'ctx>)
     #[cfg(debug_assertions)]
@@ -61,21 +61,46 @@ fn main() {
     let result = codegen.show_result(); //result returns String
 
     let output_path_ll = format!("{}.ll", output_path);
+    let output_path_bc = format!("{}.bc", output_path);
+    let output_path_opt_bc = format!("{}_opt.bc", output_path);
+    let output_path_s = format!("{}.s", output_path);
+    let output_path_o = format!("{}.o", output_path);
+
     let mut llvm_ir_code_file = File::create(&output_path_ll).unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
 
     let start_time = Instant::now();
-    let status = Command::new("clang")
-        .arg("-Wno-override-module")
+    Command::new("llvm-as")
         .arg(&output_path_ll)
+        .arg("-o")
+        .arg(&output_path_bc)
+        .status()
+        .unwrap();
+    Command::new("opt")
+        .arg("-O2")
+        .arg(&output_path_bc)
+        .arg("-o")
+        .arg(&output_path_opt_bc)
+        .status()
+        .unwrap();
+    Command::new("llc")
+        .arg(&output_path_opt_bc)
+        .arg("-o")
+        .arg(&output_path_s)
+        .status()
+        .unwrap();
+
+    let status = Command::new("clang")
+        .arg(&output_path_s)
         .arg("-o")
         .arg(output_path.as_ref())
         .status()
         .unwrap();
+
     let end_time = start_time.elapsed().as_secs_f64();
 
     if status.success() {
-        println!("{} the program in {:.2}", "Finished".green().bold(), end_time);
+        println!("{} the program in {:.2}s", "Finished".green().bold(), end_time);
         println!("{} `{}`", "Running".green().bold(), output_path);
     } else {
         println!("{}: Compilation unsuccessful", "error".red());

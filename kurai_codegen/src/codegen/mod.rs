@@ -42,7 +42,7 @@ impl<'ctx> CodeGen<'ctx> {
     }
     pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) {
         // FIXME: yes
-        self.import_printf(self).expect("Couldnt import printf for unknown reasons");
+        // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser);
         self.execute_every_expr_in_code(exprs).unwrap_or_else(|_| panic!("{}: There is no code, the expression list is empty", "error".red()));
