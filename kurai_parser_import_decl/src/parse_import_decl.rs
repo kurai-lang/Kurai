@@ -2,12 +2,15 @@ use kurai_token::eat::eat;
 use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
 
+
 pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
     if !eat(&Token::Import, tokens, pos) {
         return Err("Expected keyword `use` or `gunakan`".to_string());
     }
 
     let mut path = Vec::new();
+
+    let mut is_glob = false;
 
     loop {
         match tokens.get(*pos) {
@@ -21,11 +24,22 @@ pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: 
 
         // Detects `::`? then continue scanning and pushing to `path` vector variable
         if eat(&Token::Colon, tokens, pos) && eat(&Token::Colon, tokens, pos) {
-            if let Some(Token::Id(name)) = tokens.get(*pos) {
-                path.push(name.clone());
-                *pos += 1;
-            } else {
-                panic!("Expected identifier after `::`");
+            if eat(&Token::Star, tokens, pos) {
+                is_glob = true;
+                break;
+            }
+            // if let Some(Token::Id(name)) = tokens.get(*pos) {
+            //     path.push(name.clone());
+            //     *pos += 1;
+            // } else {
+            //     panic!("Expected identifier after `::`");
+            // }
+            match tokens.get(*pos) {
+                Some(Token::Id(name)) => {
+                    path.push(name.clone());
+                    *pos += 1;
+                }
+                _ => return Err("Expected identifier after `::`".to_string()),
             }
         } else {
             break;
@@ -51,5 +65,6 @@ pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: 
     Ok(Stmt::Import {
         path,
         nickname,
+        is_glob,
     })
 }

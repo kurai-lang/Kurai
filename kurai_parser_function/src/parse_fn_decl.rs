@@ -85,7 +85,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
 
     Ok(Stmt::FnDecl { 
         name,
-        args, // bro got skipped 💀
+        args,
         body,
     })
 }

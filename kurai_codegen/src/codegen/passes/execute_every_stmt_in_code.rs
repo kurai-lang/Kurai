@@ -39,12 +39,52 @@ impl<'ctx> CodeGen<'ctx> {
                             self.printf(&args).unwrap();
                         }
                         _ => {
-                            let module = self.module.lock().unwrap();
+                            // let module = self.module.lock().unwrap();
 
-                            #[cfg(debug_assertions)] {
-                                println!("Module: {:?}", module);
-                            }
-                            let function = module.get_function(&name);
+                            // #[cfg(debug_assertions)] {
+                            //     println!("Module: {:?}", module);
+                            // }
+                            // let function = module.get_function(&name);
+                            let function = if name.contains("::") {
+                                let mut parts = name.split("::");
+                                let modname = parts.next().unwrap();
+                                let funcname = parts.next().unwrap();
+
+                                if let Some(mod_stmts) = self.loaded_modules.get(modname) {
+                                    let already_compiled = self.module.lock().unwrap().get_function(funcname);
+                                    if already_compiled.is_some() {
+                                        already_compiled
+                                    } else {
+                                        for stmt in mod_stmts {
+                                            if let Stmt::FnDecl { name: fname, .. } = stmt {
+                                                if fname == funcname {
+                                                    #[cfg(debug_assertions)]
+                                                    {
+                                                        println!("{} `{}` from `{}` is now being compiled", "Compiling function".green(), funcname, modname);
+                                                    }
+
+                                                    self.generate_code(
+                                                        vec![stmt.clone()],
+                                                        vec![],
+                                                        discovered_modules,
+                                                        stmt_parser,
+                                                        fn_parser,
+                                                        import_parser
+                                                    );
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        // try again after compiling
+                                        self.module.lock().unwrap().get_function(funcname)
+                                    }
+                                } else {
+                                    println!("{}: Module not found: `{}`", "error".red().bold(), modname);
+                                    None
+                                }
+                            } else {
+                                self.module.lock().unwrap().get_function(&name)
+                            };
 
                             if let Some(function) = function {
                                 let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
@@ -145,7 +185,7 @@ impl<'ctx> CodeGen<'ctx> {
                         let return_value = self.context.i32_type().const_int(0 as u64, false);
                         self.builder.build_return(Some(&return_value)).unwrap();
                 }
-                Stmt::Import { path, nickname } => {
+                Stmt::Import { path, nickname, is_glob} => {
                     let key = path.join("/");
                     // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
                     let modname = path[0].clone();
@@ -157,8 +197,8 @@ impl<'ctx> CodeGen<'ctx> {
 
                     let path_str = format!("{}.kurai", path[0]);
                     let code = std::fs::read_to_string(&path_str).expect(&format!("Failed to load module {}", path_str));
-
                     let tokens = Token::tokenize(&code);
+
                     let mut pos = 0;
                     let mut stmts = Vec::new();
 
@@ -171,7 +211,13 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.loaded_modules.insert(modname.clone(), stmts.clone());
 
-                    self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser);
+                    if is_glob {
+                        self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser);
+                    } else {
+                        println!("{}: Not global import. Just a testing", "testing".cyan().bold());
+
+                        self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser);
+                    }
 
                     // NOTE: Later
                     // if let Some(nick) = nickname {

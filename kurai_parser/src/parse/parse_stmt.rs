@@ -32,6 +32,13 @@ pub fn parse_stmt(
         Some(Token::Import) => import_parser.parse_import_decl(tokens, pos, discovered_modules),
         Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, fn_parser, import_parser),
         Some(Token::Id(_)) => {
+                // For functions from modules. like foo::bar()
+                if let (Some(Token::Colon), Some(Token::Colon)) =
+                    (tokens.get(*pos + 1), tokens.get(*pos + 2))
+                {
+                    return fn_parser.parse_fn_call(tokens, pos);
+                }
+
             match tokens.get(*pos + 1) {
                 Some(Token::OpenParenthese) => fn_parser.parse_fn_call(tokens, pos),
                 Some(Token::Equal) => parse_var_assign(tokens, pos),

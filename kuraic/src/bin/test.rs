@@ -9,7 +9,7 @@ fn main() {
     let code = r#"
         use print;
         fn main() {
-            printf("hey");
+            print::ok();
         }
         "#.to_string();
 

@@ -28,6 +28,7 @@ pub enum Stmt {
         path: Vec<String>, // Originally String lol, its turned into vector to support "directory
                            // joining" stuff
         nickname: Option<String>,
+        is_glob: bool,
     },
     If {
         branches: Vec<IfBranch>,
@@ -63,7 +64,7 @@ impl fmt::Display for Stmt {
             Stmt::FnDecl { name, args, body } => {
                     write!(f, "FnDecl(name: {}, args: {:?}, body: {:?})", name, args, body)
             }
-            Stmt::Import { path, nickname } => {
+            Stmt::Import { path, nickname, is_glob } => {
                 if let Some(nickname) = nickname {
                     write!(f, "Import(name: {:?}, nickname: {})", path, nickname)
                 } else {

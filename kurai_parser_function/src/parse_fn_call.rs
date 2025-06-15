@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
 use kurai_token::eat::eat;
@@ -6,69 +8,139 @@ use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::value::Value;
 
 pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
-    if let Some(Token::Id(id)) = tokens.get(*pos) {
-        *pos += 1;
+    let mut path = Vec::new();
 
-        if !eat(&Token::OpenParenthese, tokens, pos) {
-            return Err(format!("Expected an opening paranthese `(` after `{}`", id));
+    // step 1: parse full path, like foo::bar()
+    loop {
+        match tokens.get(*pos) {
+            Some(Token::Id(name)) => {
+                path.push(name.clone());
+                *pos += 1;
+            }
+            _ => break
         }
 
-        let mut args: Vec<TypedArg> = Vec::new();
+        if eat(&Token::Colon, tokens, pos)
+        && eat(&Token::Colon, tokens, pos) {
+            continue;
+        } else {
+            break;
+        }
+    }
 
-        // Check for function calls args
-        // for example, printf(1) would check for Token::Number(n)
-        while let Some(token) = tokens.get(*pos) {
-            match token {
-                Token::Number(v) => {
-                    args.push(TypedArg {
-                        name: id.to_string(),
-                        typ: "int".to_string(),
-                        value: Some(Expr::Literal(Value::Int(*v)))
-                    });
-                    *pos += 1;
-                }
-                Token::StringLiteral(s) => {
-                    args.push(TypedArg {
-                        name: "_".to_string(), // Using `_` as a placeholder fr
-                        typ: "str".to_string(),
-                        value: Some(Expr::Literal(Value::Str(s.clone()))),
-                    });
-                    *pos += 1; // now it skips the string and moves on to the next thing in
-                                // token
-                }
-                Token::Id(id) => {
-                    args.push(TypedArg {
-                        name: id.to_string(),
-                        typ: "id".to_string(),
-                        value: None,
-                    });
-                    *pos += 1;
-                }
-                Token::Comma => {
-                    *pos += 1;  // skips comma by moving the cursor (pos) hehe
-                    continue;
-                }
+    if path.is_empty() {
+        return Err("Expected function name".to_string());
+    }
 
-                // This marks the end of args
-                Token::CloseParenthese => break,
-                // _ => panic!("Unexpected token in function call args: {:?}", token)
-                _ => eprintln!("Unexpected token at pos: {}, {:?} \n {:?}", *pos, tokens.get(*pos),tokens)
+    // if !eat(&Token::OpenParenthese, tokens, pos) {
+    //     return Err("Expected `(` after function name".to_string());
+    // }
+
+    let args = parse_args(tokens, pos)?;
+
+    if !eat(&Token::Semicolon, tokens, pos) {
+        return Err("Expected `;` after function call".to_string());
+    }
+
+    Ok(Stmt::FnCall {
+        name: path.join("::"),
+        args,
+    })
+}
+
+fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String> {
+    let mut args = Vec::new();
+
+    if !eat(&Token::OpenParenthese, tokens, pos) {
+        return Err("Expected `(` in function call".to_string());
+    }
+
+    loop {
+        match tokens.get(*pos) {
+            Some(Token::Number(v)) => {
+                args.push(TypedArg {
+                    name: "_".to_string(),
+                    typ: "int".to_string(),
+                    value: Some(Expr::Literal(Value::Int(*v))),
+                });
+                *pos += 1;
+            }
+            Some(Token::StringLiteral(s)) => {
+                args.push(TypedArg {
+                    name: "_".to_string(),
+                    typ: "str".to_string(),
+                    value: Some(Expr::Literal(Value::Str(s.clone()))),
+                });
+                *pos += 1;
+            }
+            Some(Token::Id(id)) => {
+                args.push(TypedArg {
+                    name: "_".to_string(),
+                    typ: "str".to_string(),
+                    value: Some(Expr::Var(id.clone())),
+                });
+                *pos += 1;
+            }
+            Some(Token::Comma) => {
+                *pos += 1; // skip commas
+                continue;
+            }
+            Some(Token::CloseParenthese) => {
+                *pos += 1; // consume `)`
+                break;
+            }
+            Some(unexpected) => {
+                return Err(format!("Unexpected token in args: {:?}", unexpected));
+            }
+            None => {
+                return Err("Unexpected end of tokens while parsing args".to_string());
             }
         }
-
-        if !eat(&Token::CloseParenthese, tokens, pos) {
-            return Err("Expected a closing paranthese `)` after passing in arguments".to_string());
-        }
-
-        if !eat(&Token::Semicolon, tokens, pos) {
-            return Err(format!("Expected semicolon after attempting to call function `{}`", id));
-        }
-
-        Ok(Stmt::FnCall {
-            name: id.to_string(),
-            args,
-        })
-    } else {
-        Err("Expected an identifier name".to_string())
     }
+
+    Ok(args)
 }
+
+// Reference:
+/*
+   ```
+   while let Some(token) = tokens.get(*pos) {
+       match token {
+           Token::Number(v) => {
+               args.push(TypedArg {
+                   name: id.to_string(),
+                   typ: "int".to_string(),
+                   value: Some(Expr::Literal(Value::Int(*v)))
+               });
+               *pos += 1;
+           }
+           Token::StringLiteral(s) => {
+               args.push(TypedArg {
+                   name: "_".to_string(), // Using `_` as a placeholder fr
+                   typ: "str".to_string(),
+                   value: Some(Expr::Literal(Value::Str(s.clone()))),
+               });
+               *pos += 1; // now it skips the string and moves on to the next thing in
+                           // token
+           }
+           Token::Id(id) => {
+               args.push(TypedArg {
+                   name: id.to_string(),
+                   typ: "id".to_string(),
+                   value: None,
+               });
+               *pos += 1;
+           }
+           Token::Comma => {
+               *pos += 1;  // skips comma by moving the cursor (pos) hehe
+               continue;
+           }
+
+           // This marks the end of args
+           Token::CloseParenthese => break,
+           // _ => panic!("Unexpected token in function call args: {:?}", token)
+           _ => eprintln!("Unexpected token at pos: {}, {:?} \n {:?}", *pos, tokens.get(*pos),tokens)
+       }
+   }
+   ```
+*/
