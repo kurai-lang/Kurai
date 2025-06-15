@@ -6,9 +6,6 @@ pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: 
     if !eat(&Token::Import, tokens, pos) {
         return Err("Expected keyword `use` or `gunakan`".to_string());
     }
-    println!("\n[DEBUG] parse_import called at pos={}", pos);
-    println!("Current token: {:?}", tokens.get(*pos));
-    println!("Next few tokens: {:?}", tokens.iter().skip(*pos).take(5).collect::<Vec<_>>());
 
     let mut path = Vec::new();
 
@@ -23,7 +20,14 @@ pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: 
         };
 
         // Detects `::`? then continue scanning and pushing to `path` vector variable
-        if !(eat(&Token::Colon, tokens, pos) && eat(&Token::Colon, tokens, pos)) {
+        if eat(&Token::Colon, tokens, pos) && eat(&Token::Colon, tokens, pos) {
+            if let Some(Token::Id(name)) = tokens.get(*pos) {
+                path.push(name.clone());
+                *pos += 1;
+            } else {
+                panic!("Expected identifier after `::`");
+            }
+        } else {
             break;
         }
     }

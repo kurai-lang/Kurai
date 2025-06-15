@@ -13,7 +13,6 @@ members = [
   "kurai_parser_import_file",
   "kurai_parser_import_decl",
   "kurai_parser_function",
-  "kurai_parser_stmt",
 ]
 
 # [dependencies]

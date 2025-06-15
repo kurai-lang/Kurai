@@ -261,16 +261,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kurai_parser_stmt"
-version = "0.3.0"
-dependencies = [
- "kurai_parser_import_decl",
- "kurai_stmt",
- "kurai_token",
- "kurai_typedArg",
-]
-
-[[package]]
 name = "kurai_stdlib"
 version = "0.3.0"
 dependencies = [

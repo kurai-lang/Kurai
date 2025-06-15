@@ -147,12 +147,15 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::Import { path, nickname } => {
                     let key = path.join("/");
-                    if self.loaded_modules.contains_key(&key) {
-                        eprintln!("Module `{}` already loaded", key);
+                    // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
+                    let modname = path[0].clone();
+
+                    if self.loaded_modules.contains_key(&modname) {
+                        eprintln!("Module `{}` already loaded", modname);
                         return;
                     }
 
-                    let path_str = format!("{}.kurai", path.join("/"));
+                    let path_str = format!("{}.kurai", path[0]);
                     let code = std::fs::read_to_string(&path_str).expect(&format!("Failed to load module {}", path_str));
 
                     let tokens = Token::tokenize(&code);
@@ -166,7 +169,8 @@ impl<'ctx> CodeGen<'ctx> {
                         }
                     }
 
-                    self.loaded_modules.insert(key.clone(), stmts.clone());
+                    self.loaded_modules.insert(modname.clone(), stmts.clone());
+
                     self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser);
 
                     // NOTE: Later
