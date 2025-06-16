@@ -74,12 +74,14 @@ impl<'ctx> CodeGen<'ctx> {
                                                     }
 
                                                     self.generate_code(
-                                                        vec![stmt.clone()],
+                                                        vec![stmt.clone()], 
                                                         vec![],
                                                         discovered_modules,
                                                         stmt_parser,
                                                         fn_parser,
-                                                        import_parser
+                                                        import_parser,
+                                                        block_parser,
+                                                        loop_parser
                                                     );
                                                     break;
                                                 }
@@ -229,7 +231,7 @@ impl<'ctx> CodeGen<'ctx> {
                             println!("{}: Not global import. Just a testing", "testing".cyan().bold());
                         }
 
-                        self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser);
+                        self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
                     }
 
                     // NOTE: Later
@@ -261,10 +263,11 @@ impl<'ctx> CodeGen<'ctx> {
                             &i.to_string(),
                             stmt_parser,
                             fn_parser,
-                            import_parser
+                            import_parser,
+                            block_parser,
+                            loop_parser,
                             )
                         );
-
                     }
 
                     // restore builder position if needed

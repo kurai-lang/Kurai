@@ -2,6 +2,22 @@ use kurai_parser::{parse::parse_block, BlockParser, FunctionParser, ImportParser
 use kurai_stmt::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
 
+pub struct LoopParserStruct;
+impl LoopParser for LoopParserStruct {
+    fn parse_loop(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        block_parser: &dyn BlockParser,
+        discovered_modules: &mut Vec<String>,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser,
+    ) -> Result<Stmt, String> {
+        parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser)
+    }
+}
+
 pub fn parse_loop(
     tokens: &[Token],
     pos: &mut usize,

@@ -13,6 +13,8 @@ pub trait ImportParser {
         stmt_parser: &dyn StmtParser,
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
+        block_parser: &dyn BlockParser,
+        loop_parser: &dyn LoopParser,
     ) -> Result<kurai_stmt::stmt::Stmt, String>;
 }
 
@@ -51,6 +53,7 @@ pub trait LoopParser {
         discovered_modules: &mut Vec<String>,
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser,
     ) -> Result<Stmt, String>;
 }
 

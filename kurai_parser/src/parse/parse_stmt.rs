@@ -32,7 +32,7 @@ pub fn parse_stmt(
 ) -> Result<Stmt, String> {
     match tokens.get(*pos) {
         Some(Token::Function) => fn_parser.parse_fn_decl(tokens, pos, discovered_modules, fn_parser, import_parser, block_parser, loop_parser),
-        Some(Token::Loop) => loop_parser.parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser),
+        Some(Token::Loop) => loop_parser.parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser),
         Some(Token::Let) => parse_var_decl(tokens, pos),
         Some(Token::Import) => import_parser.parse_import_decl(tokens, pos, discovered_modules),
         Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser),

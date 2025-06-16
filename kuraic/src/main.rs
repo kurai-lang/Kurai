@@ -8,6 +8,8 @@ use kurai_parser::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
 use kurai_parser::parse::parse_stmt::StmtParserStruct;
 use kurai_parser_function::FunctionParserStruct;
 use kurai_parser_import_decl::ImportParserStruct;
+use kurai_parser_loop::parse_loop::LoopParserStruct;
+use kurai_parser_loop::BlockParserStruct;
 use kurai_token::token::token::Token;
 use std::borrow::Cow;
 use std::env;
@@ -78,7 +80,14 @@ fn main() {
 
     let tokens = Token::tokenize(code.as_str());
     let mut discovered_modules: Vec<String> = Vec::new();
-    let parsed_stmt_vec = parse_out_vec_stmt(&tokens, &mut discovered_modules, &FunctionParserStruct, &ImportParserStruct);
+    let parsed_stmt_vec = parse_out_vec_stmt(
+        &tokens,
+        &mut discovered_modules,
+        &BlockParserStruct, 
+        &FunctionParserStruct,
+        &ImportParserStruct,
+        &LoopParserStruct,
+        );
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
     let mut codegen = CodeGen::new(&context);
     // codegen.printf("hi");
@@ -91,7 +100,16 @@ fn main() {
         println!("VARIABLES:\n{:?}", codegen.variables);
     }
 
-    codegen.generate_code(parsed_stmt_vec, parsed_expr_vec.expect("purr!"), &mut discovered_modules, &StmtParserStruct, &FunctionParserStruct, &ImportParserStruct);
+    codegen.generate_code(
+        parsed_stmt_vec,
+        parsed_expr_vec.unwrap(), 
+        &mut discovered_modules,
+        &StmtParserStruct,
+        &FunctionParserStruct,
+        &ImportParserStruct,
+        &BlockParserStruct,
+        &LoopParserStruct
+        );
     let result = codegen.show_result(); //result returns String
 
     let output_path_ll = format!("{}.ll", output_name);
