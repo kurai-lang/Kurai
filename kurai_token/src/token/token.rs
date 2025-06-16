@@ -38,6 +38,11 @@ pub enum Token {
     BangEqual,
     EqualEqual,
     Bang,
+    Range,
+    For,
+    While,
+    In,
+    Loop,
 }
 
 impl Token {
@@ -143,6 +148,11 @@ impl Token {
                         "else" | "lain" => tokens.push(Token::Else),
                         "true" | "benar" => tokens.push(Token::Bool(true)),
                         "false" | "palsu" => tokens.push(Token::Bool(false)),
+                        "for" => tokens.push(Token::For),
+                        "loop" => tokens.push(Token::Loop),
+                        "while" => tokens.push(Token::While),
+                        "in" => tokens.push(Token::In),
+                        ".." => tokens.push(Token::Range),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
                     current.clear();

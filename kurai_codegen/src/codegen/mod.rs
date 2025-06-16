@@ -5,7 +5,7 @@ pub mod passes;
 pub mod value;
 
 use colored::Colorize;
-use kurai_parser::{FunctionParser, ImportParser, StmtParser};
+use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::value::Value;
 use kurai_expr::expr::Expr;
@@ -26,6 +26,7 @@ pub struct CodeGen<'ctx> {
     pub variables: HashMap<String, PointerValue<'ctx>>,
     pub loaded_modules: HashMap<String, Vec<Stmt>>,
     pub string_counter: usize,
+    pub loop_counter: usize,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -41,14 +42,25 @@ impl<'ctx> CodeGen<'ctx> {
             variables,
             loaded_modules,
             string_counter: 0,
+            loop_counter: 0,
             // context: &'ctx Context
         }
     }
-    pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) {
+    pub fn generate_code(
+        &mut self,
+        parsed_stmt: Vec<Stmt>,
+        exprs: Vec<Expr>, 
+        discovered_modules: &mut Vec<String>, 
+        stmt_parser: &dyn StmtParser, 
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        block_parser: &dyn BlockParser,
+        loop_parser: &dyn LoopParser
+    ) {
         // WARNING: nothing lol ,just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
-        self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser);
+        self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
 
         if !exprs.is_empty() {
             #[cfg(debug_assertions)]

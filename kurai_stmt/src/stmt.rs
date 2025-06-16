@@ -33,6 +33,9 @@ pub enum Stmt {
     If {
         branches: Vec<IfBranch>,
         else_body: Option<Vec<Stmt>>,
+    },
+    Loop {
+        body: Vec<Stmt>,
     }
 }
 
@@ -73,6 +76,9 @@ impl fmt::Display for Stmt {
             }
             Stmt::If { branches, else_body } => {
                 write!(f, "If(branches: {:?}, else_body: {:?}", branches, else_body)
+            }
+            Stmt::Loop { body } => {
+                write!(f, "Loop(body: {:?})", body)
             }
         }
     }

@@ -1,6 +1,6 @@
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
-use crate::{FunctionParser, ImportParser};
+use crate::{BlockParser, FunctionParser, ImportParser, LoopParser};
 
 use super::parse::parse_expr;
 use super::parse_block::parse_block;
@@ -10,8 +10,10 @@ pub fn parse_if_else(
     tokens: &[Token],
     pos: &mut usize,
     discovered_modules: &mut Vec<String>,
+    block_parser: &dyn BlockParser,
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
+    loop_parser: &dyn LoopParser
 ) -> Result<Stmt, String> {
     if !eat(&Token::If, tokens, pos) {
         return Err("Expected keyword `if`".to_string());
@@ -27,10 +29,10 @@ pub fn parse_if_else(
         return Err("Expected a closing paranthesis `)` after condition".to_string());
     }
 
-    let then_branch = parse_block(tokens, pos, discovered_modules, fn_parser, import_parser);
+    let then_branch = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser);
 
     let else_branch = if eat(&Token::Else, tokens, pos) {
-        Some(parse_block(tokens, pos, discovered_modules, fn_parser, import_parser).unwrap())
+        Some(parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser).unwrap())
     } else {
         None 
     };

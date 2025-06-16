@@ -1,11 +1,19 @@
-use kurai_parser::{FunctionParser, ImportParser};
+use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser};
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
 use kurai_parser::parse::parse_stmt::parse_stmt;
 use kurai_stmt::stmt::Stmt;
 use kurai_typedArg::typedArg::TypedArg;
 
-pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) -> Result<Stmt, String> {
+pub fn parse_fn_decl(
+    tokens: &[Token],
+    pos: &mut usize,
+    discovered_modules: &mut Vec<String>,
+    block_parser: &dyn BlockParser,
+    fn_parser: &dyn FunctionParser,
+    import_parser: &dyn ImportParser,
+    loop_parser: &dyn LoopParser,
+) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {
         return Err("Expected keyword `fn`".to_string());
     }
@@ -74,7 +82,7 @@ pub fn parse_fn_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut
                 break;
             }
 
-            match parse_stmt(tokens, pos, discovered_modules, fn_parser, import_parser) {
+            match parse_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser) {
                 Ok(stmt) => body.push(stmt),
                 Err(e) => return Err(format!("Couldnt work on the body\nREASON: {}", e))
             }

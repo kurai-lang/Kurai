@@ -16,18 +16,54 @@ pub trait ImportParser {
     ) -> Result<kurai_stmt::stmt::Stmt, String>;
 }
 
-pub trait FunctionParser {
-    fn parse_fn_decl(&self, tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) -> Result<Stmt, String>;
-    fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
-}
-
 pub trait StmtParser {
     fn parse_stmt(
         &self,
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
+        block_parser: &dyn BlockParser,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser
+    ) -> Result<Stmt, String>;
+}
+
+pub trait BlockParser {
+    fn parse_block(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        block_parser: &dyn BlockParser,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser
+    ) -> Result<Vec<Stmt>, String>;
+}
+
+pub trait LoopParser {
+    fn parse_loop(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        block_parser: &dyn BlockParser,
+        discovered_modules: &mut Vec<String>,
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
     ) -> Result<Stmt, String>;
+}
+
+pub trait FunctionParser {
+    fn parse_fn_decl(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        block_parser: &dyn BlockParser,
+        loop_parser: &dyn LoopParser,
+    ) -> Result<Stmt, String>;
+    fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
 }

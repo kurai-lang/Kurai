@@ -10,7 +10,9 @@ fn main() {
     let code = r#"
         use print;
         fn main() {
-            print::print("hi");
+            loop {
+                print::print("hi");
+            }
         }
         "#.to_string();
 

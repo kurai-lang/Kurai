@@ -1,6 +1,6 @@
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
-use kurai_parser::{FunctionParser, ImportParser, StmtParser};
+use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 
 use crate::codegen::CodeGen;
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
@@ -9,7 +9,16 @@ use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn execute_every_stmt_in_code(&mut self, parsed_stmt: Vec<Stmt>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) {
+    pub fn execute_every_stmt_in_code(
+        &mut self,
+        parsed_stmt: Vec<Stmt>, 
+        discovered_modules: &mut Vec<String>, 
+        stmt_parser: &dyn StmtParser, 
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        block_parser: &dyn BlockParser,
+        loop_parser: &dyn LoopParser,
+    ) {
         for stmt in parsed_stmt {
             match stmt {
                 Stmt::VarDecl { name, typ, value } => {
@@ -182,7 +191,7 @@ impl<'ctx> CodeGen<'ctx> {
                             self.variables.insert(arg.name.clone(), alloca);
                         }
                     }
-                        self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser);
+                        self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
                         let return_value = self.context.i32_type().const_int(0 as u64, false);
                         self.builder.build_return(Some(&return_value)).unwrap();
                 }
@@ -204,7 +213,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let mut stmts = Vec::new();
 
                     while pos < tokens.len() {
-                        match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser, fn_parser, import_parser) {
+                        match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser) {
                             Ok(stmt) => stmts.push(stmt),
                             Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
                         }
@@ -213,7 +222,7 @@ impl<'ctx> CodeGen<'ctx> {
                     self.loaded_modules.insert(modname.clone(), stmts.clone());
 
                     if is_glob {
-                        self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser);
+                        self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
                     } else {
                         #[cfg(debug_assertions)]
                         {
@@ -265,6 +274,25 @@ impl<'ctx> CodeGen<'ctx> {
                     // } else {
                     //     self.builder.position_at_end(prev_block);
                     // }
+                }
+                Stmt::Loop { body } => {
+                    let function = self.builder.get_insert_block()
+                        .expect("Not inside a block")
+                        .get_parent()
+                        .expect("Block has no parent function");
+
+                    let loop_bb = self.context.append_basic_block(function, format!("loop_{}", self.loop_counter).as_str());
+                    let after_bb = self.context.append_basic_block(function, format!("after_loop_{}", self.loop_counter).as_str());
+                    self.loop_counter += 1;
+
+                    self.builder.build_unconditional_branch(loop_bb);
+                    self.builder.position_at_end(loop_bb);
+
+                    self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
+
+                    self.builder.build_unconditional_branch(loop_bb);
+
+                    self.builder.position_at_end(after_bb);
                 }
             }
         }

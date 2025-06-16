@@ -1,0 +1,9 @@
+[package]
+name = "kurai_parser_loop"
+version = "0.3.0"
+edition = "2024"
+
+[dependencies]
+kurai_parser = { version = "0.3.0", path = "../kurai_parser" }
+kurai_stmt = { version = "0.3.0", path = "../kurai_stmt" }
+kurai_token = { version = "0.3.0", path = "../kurai_token" }
