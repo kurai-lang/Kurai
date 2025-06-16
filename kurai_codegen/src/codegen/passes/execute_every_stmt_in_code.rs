@@ -36,6 +36,7 @@ impl<'ctx> CodeGen<'ctx> {
                     match name.as_str() {
                         "printf" => {
                             // FIXME: Yes
+                            self.import_printf().unwrap();
                             self.printf(&args).unwrap();
                         }
                         _ => {
@@ -195,7 +196,7 @@ impl<'ctx> CodeGen<'ctx> {
                         return;
                     }
 
-                    let path_str = format!("{}.kurai", path[0]);
+                    let path_str = format!("{}.kurai", key);
                     let code = std::fs::read_to_string(&path_str).expect(&format!("Failed to load module {}", path_str));
                     let tokens = Token::tokenize(&code);
 
@@ -214,7 +215,10 @@ impl<'ctx> CodeGen<'ctx> {
                     if is_glob {
                         self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser);
                     } else {
-                        println!("{}: Not global import. Just a testing", "testing".cyan().bold());
+                        #[cfg(debug_assertions)]
+                        {
+                            println!("{}: Not global import. Just a testing", "testing".cyan().bold());
+                        }
 
                         self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser);
                     }

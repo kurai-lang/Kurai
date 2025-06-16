@@ -4,6 +4,7 @@ pub mod traits;
 pub mod passes;
 pub mod value;
 
+use colored::Colorize;
 use kurai_parser::{FunctionParser, ImportParser, StmtParser};
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::value::Value;
@@ -23,7 +24,8 @@ pub struct CodeGen<'ctx> {
     pub builder: Builder<'ctx>,
     pub module: Arc<Mutex<Module<'ctx>>>,
     pub variables: HashMap<String, PointerValue<'ctx>>,
-    pub loaded_modules: HashMap<String, Vec<Stmt>>
+    pub loaded_modules: HashMap<String, Vec<Stmt>>,
+    pub string_counter: usize,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -38,12 +40,13 @@ impl<'ctx> CodeGen<'ctx> {
             module,
             variables,
             loaded_modules,
+            string_counter: 0,
             // context: &'ctx Context
         }
     }
     pub fn generate_code(&mut self, parsed_stmt: Vec<Stmt>, exprs: Vec<Expr>, discovered_modules: &mut Vec<String>, stmt_parser: &dyn StmtParser, fn_parser: &dyn FunctionParser, import_parser: &dyn ImportParser) {
-        // FIXME: yes
-        self.import_printf().expect("Couldnt import printf for unknown reasons");
+        // WARNING: nothing lol ,just for fun
+        // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser);
 
@@ -84,19 +87,21 @@ impl<'ctx> CodeGen<'ctx> {
         } else if val.is_int_value() {
             val.into_int_value()
         } else {
-            panic!("tried to convert non-int into bool");
+            panic!("{}: tried to convert non-int into bool", "error".red().bold());
         }
     }
 
-    fn printf_format(&self, args: &Vec<TypedArg>, id: usize) -> Vec<BasicValueEnum<'ctx>> {
+    fn printf_format(&mut self, args: &Vec<TypedArg>) -> Vec<BasicValueEnum<'ctx>> {
         args.iter()
-            .enumerate()
-            .filter_map(|(i, arg)| {
-                match arg.typ.to_string().as_str() {
+            .filter_map(|arg| {
+                match arg.typ.as_str() {
                     "int" => self.compile_int(arg),
-                    "str" => self.compile_str(arg, id, i),
+                    "str" => self.compile_str(arg),
                     "id" => self.compile_id(arg),
-                    _ => None
+                    _ => {
+                        panic!("{}: Unknown typ: {:?}", "error".red().bold(), arg.typ.as_str());
+                        None
+                    }
                 }
             })
         .collect()
@@ -109,21 +114,39 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn compile_str(&self, arg: &TypedArg, id: usize, index: usize) -> Option<BasicValueEnum<'ctx>> {
+    fn compile_str(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
         match &arg.value {
             Some(Expr::Literal(Value::Str(s))) => {
-                let global_str = self.builder.build_global_string_ptr(s, &format!("str_{}_{}", id, index));
+                let global_str = self
+                    .builder.build_global_string_ptr(s, &format!("str_{}", self.string_counter));
+
+                self.string_counter += 1;
                 Some(global_str.unwrap().as_basic_value_enum())
             }
-            _ => None
+            _ => {
+                None
+            }
         }
     }
 
-    fn compile_id(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
+    fn compile_id(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
         if let Some(var_ptr) = self.variables.get(&arg.name) {
             let ptr_type = var_ptr.get_type();
-            let loaded_val = self.builder.build_load(ptr_type.as_basic_type_enum(), *var_ptr, "loaded_id");
-            loaded_val.ok()
+            let loaded_val = self.builder.build_load(
+                ptr_type.as_basic_type_enum(),
+                *var_ptr,
+                "loaded_id").unwrap();
+
+            // let gep = unsafe {
+            //     self.builder.build_gep(
+            //         ptr_type.as_basic_type_enum(),
+            //         *var_ptr,
+            //         &[self.context.i32_type().const_zero()],
+            //         format!("str_{}_gep", self.string_counter).as_str(),
+            //     ).unwrap()
+            // };
+            
+            Some(loaded_val.as_basic_value_enum())
         } else {
             None
         }
@@ -138,17 +161,17 @@ impl<'ctx> CodeGen<'ctx> {
                 "int" => format.push_str("%d"),
                 "str" => format.push_str("%s"),
                 "id" => {
-                    // if let Some(var) = codegen.variables.get(&arg.name) {
-                    //     let loaded_val = codegen.builder.build_load(var.get_type(), *var, "load_id").unwrap();
-                    //
-                    //     match loaded_val.get_type().to_string().as_str() {
-                    //         "i64" => format.push_str("%ld"),
-                    //         "i32" => format.push_str("%d"),
-                    //         "i8*" => format.push_str("%s"),
-                    //         // _ => panic!("UNKNOWN IDENTIFIER VAR TYPE FOR PRINTF"),
-                    //         _ => format.push_str("%s")
-                    //     }
-                    // }
+                    if let Some(var) = self.variables.get(&arg.name) {
+                        let loaded_val = self.builder.build_load(var.get_type(), *var, "load_id").unwrap();
+
+                        match loaded_val.get_type().to_string().as_str() {
+                            "i64" => format.push_str("%ld"),
+                            "i32" => format.push_str("%d"),
+                            "i8*" => format.push_str("%s"),
+                            // _ => panic!("UNKNOWN IDENTIFIER VAR TYPE FOR PRINTF"),
+                            _ => format.push_str("%s")
+                        }
+                    }
                 }
                 _ => panic!("UNSUPPORTED PRINTF ARG TYPE")
             }
@@ -164,7 +187,7 @@ impl<'ctx> CodeGen<'ctx> {
         // let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
         let mut final_args: Vec<BasicMetadataValueEnum> = vec![format_str.into()];
         {
-            let compiled_args = self.printf_format(&args, id);
+            let compiled_args = self.printf_format(&args);
             final_args.extend(
                 compiled_args
                     .clone()
@@ -181,7 +204,8 @@ impl<'ctx> CodeGen<'ctx> {
         let module = self.module.lock().unwrap();
 
         let printf_fn = module.get_function("printf").expect("printf isnt defined. Did you mean to import printf?");
-        self.builder.build_call(printf_fn, &final_args, &format!("printf_call_{}", id)).unwrap();
+        self.builder.build_call(printf_fn,
+            &final_args, &format!("printf_call_{}", id)).unwrap();
 
         Ok(())
     }

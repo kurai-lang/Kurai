@@ -1,3 +1,4 @@
+use colored::Colorize;
 use inkwell::context::Context;
 use kurai_codegen::codegen::CodeGen;
 use kurai_parser::parse::{parse::{parse_out_vec_expr, parse_out_vec_stmt}, parse_stmt::StmtParserStruct};
@@ -9,7 +10,7 @@ fn main() {
     let code = r#"
         use print;
         fn main() {
-            print::ok();
+            print::print("hi");
         }
         "#.to_string();
 
@@ -24,5 +25,6 @@ fn main() {
 
     codegen.generate_code(parsed_stmt_vec, parsed_expr_vec.unwrap(), &mut discovered_modules, &StmtParserStruct, &FunctionParserStruct, &ImportParserStruct);
 
+    println!("{}", codegen.module.lock().unwrap().print_to_string().to_string().red());
     println!("{}", codegen.show_result());
 }

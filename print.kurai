@@ -1,7 +1,3 @@
-fn ok() {
-  printf("ok");
-}
-
-fn yea() {
-    printf("yea");
+fn print(msg: str) {
+  printf(msg);
 }
