@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 // use kurai_codegen::codegen::codegen::CodeGen;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::value::Value;
@@ -7,12 +8,10 @@ use kurai_binop::bin_op::BinOp;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 
+use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::parse_stmt::parse_stmt;
 use crate::{BlockParser, FunctionParser, ImportParser, LoopParser};
 
-// this function just wants to return stmt
-// this function practically just runs whatever function here whenever the program encounters
-// one of the tokens
 pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Option<Expr> {
     // parse_equal(tokens, pos)
     let mut left = match tokens.get(*pos)? {
@@ -36,7 +35,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
             if eat(&Token::OpenParenthese, tokens, pos) {
                 let mut args = Vec::new();
                 while !eat(&Token::CloseParenthese, tokens, pos) {
-                    if let Some(arg) = parse_expr(tokens, pos, false) {
+                    if let Some(arg) = parse_arithmetic(tokens, pos, 0) {
                         args.push(arg);
                         eat(&Token::Comma, tokens, pos);
                     } else {
@@ -53,7 +52,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
         }
         Token::OpenParenthese => {
             *pos += 1;
-            let expr = parse_expr(tokens, pos, false)?;
+            let expr = parse_arithmetic(tokens, pos, 0)?;
             eat(&Token::CloseParenthese, tokens, pos);
             Some(expr)
         }
@@ -81,6 +80,10 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
                 Token::EqualEqual => BinOp::Eq,
                 Token::Greater => BinOp::Gt,
                 Token::GreaterEqual => BinOp::Ge,
+                Token::Plus => BinOp::Add,
+                Token::Dash => BinOp::Sub,
+                Token::Star => BinOp::Mul,
+                Token::Slash => BinOp::Div,
                 _ => break,
             };
 
@@ -117,16 +120,16 @@ pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
 pub fn parse_out_vec_stmt(
     tokens: &[Token],
     discovered_modules: &mut Vec<String>,
-    block_parser: &dyn BlockParser,
-    fn_parser: &dyn FunctionParser,
+    block_parser: &dyn BlockParser, fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
     loop_parser: &dyn LoopParser,
+    scope: &Scope,
 ) -> Vec<Stmt> {
     let mut pos = 0;
     let mut stmts = Vec::new();
 
     while pos < tokens.len() {
-        match parse_stmt(tokens, &mut pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser) {
+        match parse_stmt(tokens, &mut pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope) {
             Ok(stmt) => stmts.push(stmt),
             Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", tokens.get(pos), e, tokens)
         }

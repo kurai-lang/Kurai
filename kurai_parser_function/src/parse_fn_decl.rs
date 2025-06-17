@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser};
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
@@ -13,6 +14,7 @@ pub fn parse_fn_decl(
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
     loop_parser: &dyn LoopParser,
+    scope: &Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {
         return Err("Expected keyword `fn`".to_string());
@@ -82,7 +84,7 @@ pub fn parse_fn_decl(
                 break;
             }
 
-            match parse_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser) {
+            match parse_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope) {
                 Ok(stmt) => body.push(stmt),
                 Err(e) => return Err(format!("Couldnt work on the body\nREASON: {}", e))
             }

@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 use kurai_token::token::token::Token;
 use kurai_stmt::stmt::Stmt;
@@ -11,7 +12,8 @@ pub fn parse_imported_file(
     import_parser: &dyn ImportParser,
     block_parser: &dyn BlockParser,
     loop_parser: &dyn LoopParser,
+    scope: &Scope,
 ) -> Result<Stmt, String> {
-    stmt_parser.parse_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser)
+    stmt_parser.parse_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
         .map_err(|_| "Failed to parse imported file content".to_string())
 }

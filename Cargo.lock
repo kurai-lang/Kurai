@@ -177,6 +177,7 @@ dependencies = [
  "inkwell",
  "kurai_binop",
  "kurai_codegen_traits",
+ "kurai_core",
  "kurai_expr",
  "kurai_parser",
  "kurai_parser_import_file",
@@ -198,12 +199,6 @@ dependencies = [
 name = "kurai_core"
 version = "0.3.0"
 dependencies = [
- "inkwell",
- "kurai_binop",
- "kurai_codegen",
- "kurai_expr",
- "kurai_stmt",
- "kurai_typedArg",
  "kurai_types",
 ]
 
@@ -220,6 +215,7 @@ name = "kurai_parser"
 version = "0.3.0"
 dependencies = [
  "kurai_binop",
+ "kurai_core",
  "kurai_expr",
  "kurai_stmt",
  "kurai_token",
@@ -231,6 +227,7 @@ dependencies = [
 name = "kurai_parser_function"
 version = "0.3.0"
 dependencies = [
+ "kurai_core",
  "kurai_expr",
  "kurai_parser",
  "kurai_stmt",
@@ -243,6 +240,7 @@ dependencies = [
 name = "kurai_parser_import_decl"
 version = "0.3.0"
 dependencies = [
+ "kurai_core",
  "kurai_parser",
  "kurai_parser_import_file",
  "kurai_stmt",
@@ -255,6 +253,7 @@ dependencies = [
 name = "kurai_parser_import_file"
 version = "0.3.0"
 dependencies = [
+ "kurai_core",
  "kurai_parser",
  "kurai_stmt",
  "kurai_token",
@@ -264,6 +263,7 @@ dependencies = [
 name = "kurai_parser_loop"
 version = "0.3.0"
 dependencies = [
+ "kurai_core",
  "kurai_parser",
  "kurai_stmt",
  "kurai_token",

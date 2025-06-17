@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
 use crate::{BlockParser, FunctionParser, ImportParser, LoopParser};
@@ -13,7 +14,8 @@ pub fn parse_if_else(
     block_parser: &dyn BlockParser,
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser
+    loop_parser: &dyn LoopParser,
+    scope: &Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::If, tokens, pos) {
         return Err("Expected keyword `if`".to_string());
@@ -29,10 +31,10 @@ pub fn parse_if_else(
         return Err("Expected a closing paranthesis `)` after condition".to_string());
     }
 
-    let then_branch = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser);
+    let then_branch = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope);
 
     let else_branch = if eat(&Token::Else, tokens, pos) {
-        Some(parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser).unwrap())
+        Some(parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope).unwrap())
     } else {
         None 
     };

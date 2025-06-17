@@ -2,19 +2,15 @@ use std::collections::HashMap;
 use kurai_types::value::Value;
 
 #[derive(Debug)]
-pub struct Scope {
-    a: HashMap<String, Value>
-}
+pub struct Scope(pub HashMap<String, Value>);
 
 impl Scope {
     pub fn new() -> Self {
-        Self {
-            a: HashMap::new()
-        }
+        Self(HashMap::new())
     }
 
     pub fn declare_var(&mut self, name: String, value: Value) {
-        self.a.insert(name, value);
+        self.0.insert(name, value);
     }
 }
 

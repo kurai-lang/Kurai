@@ -1,3 +1,4 @@
+pub mod utils;
 pub mod parse;
 pub mod instr;
 pub mod parse_var_decl;

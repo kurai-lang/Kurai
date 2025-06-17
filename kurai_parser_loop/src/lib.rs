@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_parser::{parse::parse_block::parse_block, BlockParser, LoopParser};
 
 pub mod parse_loop;
@@ -13,7 +14,8 @@ impl BlockParser for BlockParserStruct {
         fn_parser: &dyn kurai_parser::FunctionParser,
         import_parser: &dyn kurai_parser::ImportParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Vec<kurai_stmt::stmt::Stmt>, String> {
-        parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser)
+        parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
     }
 }

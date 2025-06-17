@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
 use kurai_stmt::stmt::Stmt;
@@ -24,7 +25,8 @@ impl ImportParser for ImportParserStruct {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Stmt, String> {
-        parse_imported_file(tokens, pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser)
+        parse_imported_file(tokens, pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope)
     }
 }

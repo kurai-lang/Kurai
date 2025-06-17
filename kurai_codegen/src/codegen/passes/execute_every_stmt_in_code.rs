@@ -1,5 +1,6 @@
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
+use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 
 use crate::codegen::CodeGen;
@@ -18,6 +19,7 @@ impl<'ctx> CodeGen<'ctx> {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) {
         for stmt in parsed_stmt {
             match stmt {
@@ -81,7 +83,8 @@ impl<'ctx> CodeGen<'ctx> {
                                                                     fn_parser,
                                                                     import_parser,
                                                                     block_parser,
-                                                                    loop_parser
+                                                                    loop_parser,
+                                                                    scope
                                                                 );
                                                                 break;
                                                             }
@@ -193,7 +196,7 @@ impl<'ctx> CodeGen<'ctx> {
                                         self.variables.insert(arg.name.clone(), alloca);
                                     }
                                 }
-                                    self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
+                                    self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
                                     let return_value = self.context.i32_type().const_int(0 as u64, false);
                                     self.builder.build_return(Some(&return_value)).unwrap();
                             }
@@ -215,7 +218,7 @@ impl<'ctx> CodeGen<'ctx> {
                                 let mut stmts = Vec::new();
 
                                 while pos < tokens.len() {
-                                    match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser) {
+                                    match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope) {
                                         Ok(stmt) => stmts.push(stmt),
                                         Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
                                     }
@@ -224,14 +227,14 @@ impl<'ctx> CodeGen<'ctx> {
                                 self.loaded_modules.insert(modname.clone(), stmts.clone());
 
                                 if is_glob {
-                                    self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
+                                    self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
                                 } else {
                                     #[cfg(debug_assertions)]
                                     {
                                         println!("{}: Not global import. Just a testing", "testing".cyan().bold());
                                     }
 
-                                    self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
+                                    self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
                                 }
 
                                 // NOTE: Later
@@ -266,6 +269,7 @@ impl<'ctx> CodeGen<'ctx> {
                                         import_parser,
                                         block_parser,
                                         loop_parser,
+                                        scope
                                         )
                                     );
                                 }
@@ -302,7 +306,8 @@ impl<'ctx> CodeGen<'ctx> {
                         fn_parser,
                         import_parser,
                         block_parser,
-                        loop_parser
+                        loop_parser,
+                        scope
                     );
 
                     self.builder.build_unconditional_branch(loop_bb).unwrap();

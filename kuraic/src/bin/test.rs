@@ -9,12 +9,11 @@ use kurai_token::token::token::Token;
 
 fn main() {
     let code = r#"
-        use print;
-
         fn main() {
-            loop {
-                print::print("hi");
-                break;
+            let x = 1/1;
+            x = 100+x;
+            if (x==3) {
+                printf("1+1 is 2");
             }
         }
         "#.to_string();

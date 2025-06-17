@@ -73,25 +73,68 @@ impl<'ctx> CodeGen<'ctx> {
                 let left_val = self.lower_expr_to_llvm(left, false)?;
                 let right_val = self.lower_expr_to_llvm(right, false)?;
 
-                let predicate = match op {
-                    BinOp::Lt => IntPredicate::SLT,
-                    BinOp::Le => IntPredicate::SLE,
-                    BinOp::Eq => IntPredicate::EQ,
-                    BinOp::Ge => IntPredicate::SGE,
-                    BinOp::Gt => IntPredicate::SGT,
-                    _ => {
-                        panic!("Operator {:?} not supported", op);
-                        return None;
-                    }
-                };
+                match op {
+                    BinOp::Lt | BinOp::Le | BinOp::Eq | BinOp::Ge | BinOp::Gt | BinOp::Ne => {
+                        let predicate = match op {
+                            BinOp::Lt => IntPredicate::SLT,
+                            BinOp::Le => IntPredicate::SLE,
+                            BinOp::Eq => IntPredicate::EQ,
+                            BinOp::Ge => IntPredicate::SGE,
+                            BinOp::Gt => IntPredicate::SGT,
+                            BinOp::Ne => IntPredicate::NE,
+                            _ => {
+                                panic!("Operator {:?} not supported", op);
+                                // return None;
+                            }
+                        };
 
-                let cmp_result = self.builder.build_int_compare(
-                    predicate,
-                    left_val.into_int_value(),
-                    right_val.into_int_value(),
-                    "cmp"
-                ).unwrap();
-                Some(cmp_result.as_basic_value_enum())
+                        Some(self.builder.build_int_compare(
+                            predicate,
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "cmp"
+                        ).unwrap().as_basic_value_enum())
+                    }
+                    
+                    // Arithmetic'ing time
+                    BinOp::Add => {
+                        let sum = self.builder.build_int_add(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "addtmp",
+                        ).unwrap();
+
+                        Some(sum.as_basic_value_enum())
+                    }
+                    BinOp::Sub => {
+                        let diff = self.builder.build_int_sub(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "subtmp",
+                        ).unwrap();
+
+                        Some(diff.as_basic_value_enum())
+                    }
+                    BinOp::Mul => {
+                        let product = self.builder.build_int_mul(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "multmp",
+                        ).unwrap();
+
+                        Some(product.as_basic_value_enum())
+                    }
+                    BinOp::Div => {
+                        let div = self.builder.build_int_signed_div(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "divtmp",
+                        ).unwrap();
+
+                        Some(div.as_basic_value_enum())
+                    }
+                    _ => panic!("Operator {:?} not supported yet", op),
+                }
             }
             Expr::FnCall { name, args } => todo!(),
         }

@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
 
@@ -15,6 +16,7 @@ pub trait ImportParser {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<kurai_stmt::stmt::Stmt, String>;
 }
 
@@ -27,7 +29,8 @@ pub trait StmtParser {
         block_parser: &dyn BlockParser,
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser
+        loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Stmt, String>;
 }
 
@@ -40,7 +43,8 @@ pub trait BlockParser {
         block_parser: &dyn BlockParser,
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser
+        loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Vec<Stmt>, String>;
 }
 
@@ -54,6 +58,7 @@ pub trait LoopParser {
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Stmt, String>;
 }
 
@@ -67,6 +72,7 @@ pub trait FunctionParser {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Stmt, String>;
     fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
 }

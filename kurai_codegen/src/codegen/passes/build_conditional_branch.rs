@@ -3,6 +3,7 @@ use std::{fmt::format, ops::Deref};
 use colored::Colorize;
 use inkwell::{basic_block::BasicBlock, values::FunctionValue, IntPredicate};
 
+use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 // use kurai_core::parse::{bin_op::BinOp, expr::Expr, stmt::Stmt};
 use kurai_types::value::Value;
@@ -25,6 +26,7 @@ impl<'ctx> CodeGen<'ctx> {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> BasicBlock<'ctx> {
         let condition = self.lower_expr_to_llvm(condition_expr, true).unwrap();
 
@@ -41,18 +43,19 @@ impl<'ctx> CodeGen<'ctx> {
             // For other expressions, convert to boolean if integer
             _ => {
                 println!("Other operations not found");
-                if condition.is_int_value() {
-                    println!("Condition is int value");
-                    let zero = self.context.bool_type().const_int(0, false);
-                    self.builder.build_int_compare(
-                        IntPredicate::NE,
-                        condition.into_int_value(),
-                        zero,
-                        "bool_cond"
-                    ).unwrap()
-                } else {
-                    condition.into_int_value() // Already boolean
-                }
+                condition.into_int_value()
+                // if condition.is_int_value() {
+                //     println!("Condition is int value");
+                //     let zero = self.context.bool_type().const_int(0, false);
+                //     self.builder.build_int_compare(
+                //         IntPredicate::NE,
+                //         condition.into_int_value(),
+                //         zero,
+                //         "bool_cond"
+                //     ).unwrap()
+                // } else {
+                //     condition.into_int_value() // Already boolean
+                // }
             }
         };
 
@@ -71,13 +74,13 @@ impl<'ctx> CodeGen<'ctx> {
 
         // then block
         self.builder.position_at_end(then_block);
-        self.execute_every_stmt_in_code(then_body.to_vec(), discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
+        self.execute_every_stmt_in_code(then_body.to_vec(), discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser,scope);
         self.builder.build_unconditional_branch(merge_block).unwrap();
 
         // generate else block if it exists
         self.builder.position_at_end(else_block);
         if let Some(else_stmts) = else_body.as_ref() {
-            self.execute_every_stmt_in_code(else_stmts.to_vec(), discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser);
+            self.execute_every_stmt_in_code(else_stmts.to_vec(), discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
         }
         self.builder.build_unconditional_branch(merge_block).unwrap();
 

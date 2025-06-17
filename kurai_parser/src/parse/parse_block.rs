@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 use kurai_stmt::stmt::Stmt;
@@ -14,9 +15,10 @@ impl BlockParser for BlockParserStruct {
         block_parser: &dyn BlockParser,
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser
+        loop_parser: &dyn LoopParser,
+        scope: &Scope,
     ) -> Result<Vec<Stmt>, String> {
-        parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser)
+        parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
     }
 }
 
@@ -27,7 +29,8 @@ pub fn parse_block(
     block_parser: &dyn BlockParser,
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser
+    loop_parser: &dyn LoopParser,
+    scope: &Scope,
 ) -> Result<Vec<Stmt>, String> {
     if !eat(&Token::OpenBracket, tokens, pos) {
         return Err("Expected `{` at start of block".to_string());
@@ -48,7 +51,8 @@ pub fn parse_block(
                         block_parser,
                         fn_parser,
                         import_parser,
-                        loop_parser
+                        loop_parser,
+                        scope,
                     )
                     .expect(&format!("Failed to parse statement at token {}", *pos));
                 stmts.push(stmt)
