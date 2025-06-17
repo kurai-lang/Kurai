@@ -11,7 +11,7 @@ use kurai_types::value::Value;
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
 use inkwell::{
-    builder::Builder, context::Context, module::Module, types::BasicType, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
+    basic_block::BasicBlock, builder::Builder, context::Context, module::Module, types::BasicType, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
 use std::{collections::HashMap, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
@@ -27,6 +27,7 @@ pub struct CodeGen<'ctx> {
     pub loaded_modules: HashMap<String, Vec<Stmt>>,
     pub string_counter: usize,
     pub loop_counter: usize,
+    pub loop_exit_stack: Vec<BasicBlock<'ctx>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -43,6 +44,7 @@ impl<'ctx> CodeGen<'ctx> {
             loaded_modules,
             string_counter: 0,
             loop_counter: 0,
+            loop_exit_stack: vec![]
             // context: &'ctx Context
         }
     }

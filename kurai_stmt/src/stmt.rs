@@ -36,7 +36,8 @@ pub enum Stmt {
     },
     Loop {
         body: Vec<Stmt>,
-    }
+    },
+    Break,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -79,6 +80,9 @@ impl fmt::Display for Stmt {
             }
             Stmt::Loop { body } => {
                 write!(f, "Loop(body: {:?})", body)
+            }
+            Stmt::Break => {
+                write!(f, "Break")
             }
         }
     }

@@ -10,9 +10,11 @@ use kurai_token::token::token::Token;
 fn main() {
     let code = r#"
         use print;
+
         fn main() {
             loop {
                 print::print("hi");
+                break;
             }
         }
         "#.to_string();

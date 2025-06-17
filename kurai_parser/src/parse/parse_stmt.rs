@@ -1,6 +1,6 @@
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
-use kurai_token::token::token::Token;
+use kurai_token::{eat::eat, token::token::Token};
 use kurai_typedArg::typedArg::TypedArg;
 
 use crate::{parse::{parse::parse_expr, parse_if_else::parse_if_else, parse_var_assign::parse_var_assign, parse_var_decl::parse_var_decl}, BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
@@ -33,6 +33,15 @@ pub fn parse_stmt(
     match tokens.get(*pos) {
         Some(Token::Function) => fn_parser.parse_fn_decl(tokens, pos, discovered_modules, fn_parser, import_parser, block_parser, loop_parser),
         Some(Token::Loop) => loop_parser.parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser),
+        Some(Token::Break) => {
+            *pos += 1;
+            if !eat(&Token::Semicolon, tokens, pos) {
+                return Err("Expected ';' after `break`".to_string());
+            }
+
+            *pos += 1;
+            Ok(Stmt::Break)
+        }
         Some(Token::Let) => parse_var_decl(tokens, pos),
         Some(Token::Import) => import_parser.parse_import_decl(tokens, pos, discovered_modules),
         Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser),

@@ -43,6 +43,7 @@ pub enum Token {
     While,
     In,
     Loop,
+    Break,
 }
 
 impl Token {
@@ -152,6 +153,7 @@ impl Token {
                         "loop" => tokens.push(Token::Loop),
                         "while" => tokens.push(Token::While),
                         "in" => tokens.push(Token::In),
+                        "break" => tokens.push(Token::Break),
                         ".." => tokens.push(Token::Range),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
