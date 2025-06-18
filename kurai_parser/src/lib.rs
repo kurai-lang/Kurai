@@ -16,7 +16,7 @@ pub trait ImportParser {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<kurai_stmt::stmt::Stmt, String>;
 }
 
@@ -30,7 +30,7 @@ pub trait StmtParser {
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<Stmt, String>;
 }
 
@@ -44,8 +44,20 @@ pub trait BlockParser {
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<Vec<Stmt>, String>;
+
+    fn parse_block_stmt(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        block_parser: &dyn BlockParser,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser,
+        scope: &mut Scope,
+    ) -> Result<Stmt, String>;
 }
 
 pub trait LoopParser {
@@ -58,7 +70,7 @@ pub trait LoopParser {
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<Stmt, String>;
 }
 
@@ -72,7 +84,7 @@ pub trait FunctionParser {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<Stmt, String>;
     fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
 }

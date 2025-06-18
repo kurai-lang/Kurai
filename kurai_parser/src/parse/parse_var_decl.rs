@@ -9,7 +9,7 @@ use kurai_stmt::stmt::Stmt;
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::utils::expr_to_value::expr_to_value;
 
-pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &Scope) -> Result<Stmt, String> {
+pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
     if !eat(&Token::Let, tokens, pos) {
         return Err("Expected keyword `let`".to_string());
     }
@@ -49,6 +49,7 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &Scope) -> Resul
 
     let expr = parse_arithmetic(tokens, pos, 0);
     let value = expr_to_value(&expr.unwrap(), scope);
+    scope.0.insert(name.clone(), value.clone().unwrap());
     // *pos += 1;
 
     // No semicolon, no ending

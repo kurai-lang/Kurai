@@ -214,6 +214,7 @@ dependencies = [
 name = "kurai_parser"
 version = "0.3.0"
 dependencies = [
+ "colored",
  "kurai_binop",
  "kurai_core",
  "kurai_expr",
@@ -306,6 +307,7 @@ version = "0.3.0"
 dependencies = [
  "inkwell",
  "kurai_expr",
+ "kurai_types",
 ]
 
 [[package]]

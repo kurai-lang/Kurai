@@ -26,9 +26,9 @@ impl<'ctx> CodeGen<'ctx> {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> BasicBlock<'ctx> {
-        let condition = self.lower_expr_to_llvm(condition_expr, true).unwrap();
+        let condition = self.lower_expr_to_llvm(condition_expr).unwrap();
 
         // convert condition to boolean if needed
         let bool_cond = match condition_expr { // If it's already a comparison operation, use it as-is

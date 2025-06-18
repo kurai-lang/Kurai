@@ -38,6 +38,8 @@ pub enum Stmt {
         body: Vec<Stmt>,
     },
     Break,
+    Expr(Expr),
+    Block(Vec<Stmt>),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -51,39 +53,45 @@ impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Stmt::VarDecl { name, typ, value } => {
-                // converts value to string datatype
-                let value_str = match value {
-                    Some(v) => format!("{:?}", v),
-                    None => "None".to_string(),
-                };
-                write!(f, "VarDecl(name: {}, type: {}, value: {})", name, typ, value_str)
-            }
+                        // converts value to string datatype
+                        let value_str = match value {
+                            Some(v) => format!("{:?}", v),
+                            None => "None".to_string(),
+                        };
+                        write!(f, "VarDecl(name: {}, type: {}, value: {})", name, typ, value_str)
+                    }
             Stmt::Assign { name, value } => {
-                let value_str = format!("{:?}", value);
-                write!(f, "Assign(name: {}, value: {})", name, value_str)
-            }
+                        let value_str = format!("{:?}", value);
+                        write!(f, "Assign(name: {}, value: {})", name, value_str)
+                    }
             Stmt::FnCall { name, args } => {
-                write!(f, "FnCall(name: {}, args: {:?})", name, args)
-            }
+                        write!(f, "FnCall(name: {}, args: {:?})", name, args)
+                    }
             Stmt::FnDecl { name, args, body } => {
-                    write!(f, "FnDecl(name: {}, args: {:?}, body: {:?})", name, args, body)
-            }
+                            write!(f, "FnDecl(name: {}, args: {:?}, body: {:?})", name, args, body)
+                    }
             Stmt::Import { path, nickname, is_glob } => {
-                if let Some(nickname) = nickname {
-                    write!(f, "Import(name: {:?}, nickname: {})", path, nickname)
-                } else {
-                    write!(f, "Import(name: {:?}, nickname: {:?})", path, nickname)
-                }
-            }
+                        if let Some(nickname) = nickname {
+                            write!(f, "Import(name: {:?}, nickname: {})", path, nickname)
+                        } else {
+                            write!(f, "Import(name: {:?}, nickname: {:?})", path, nickname)
+                        }
+                    }
             Stmt::If { branches, else_body } => {
-                write!(f, "If(branches: {:?}, else_body: {:?}", branches, else_body)
-            }
+                        write!(f, "If(branches: {:?}, else_body: {:?}", branches, else_body)
+                    }
             Stmt::Loop { body } => {
-                write!(f, "Loop(body: {:?})", body)
-            }
+                        write!(f, "Loop(body: {:?})", body)
+                    }
             Stmt::Break => {
-                write!(f, "Break")
-            }
+                        write!(f, "Break")
+                    }
+            Stmt::Expr(expr) => {
+                        write!(f, "Expr(Expr: {:?})", expr)
+                    }
+            Stmt::Block(stmts) => {
+                write!(f, "Block(stmts: {:?}", stmts)
+            },
         }
     }
 }

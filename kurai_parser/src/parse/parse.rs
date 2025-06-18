@@ -51,13 +51,33 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
             }
         }
         Token::OpenParenthese => {
+            println!("yay");
             *pos += 1;
-            let expr = parse_arithmetic(tokens, pos, 0)?;
+            let expr = match parse_arithmetic(tokens, pos, 0) {
+                Some(e) => e,
+                None => {
+                    panic!("Failed to parse expression inside parentheses at pos {pos}");
+                }
+            };
             eat(&Token::CloseParenthese, tokens, pos);
             Some(expr)
         }
+        // Token::OpenBracket => {
+        //     // A standalone block is a valid statement in some languages, or maybe error here
+        //     println!("Unexpected `{{` without a control structure");
+        //     None
+        // }
         _ => {
             *pos += 1;
+            for i in (*pos).saturating_sub(3)..(*pos+4).min(tokens.len()) {
+                println!(
+                    "token[{}] = {:?}{}",
+                    i,
+                    tokens.get(i),
+                    if i == *pos { "   <== current" } else { "" }
+                );
+            }
+            // println!("{:?}", tokens.get(*pos));
             None
         }
     }?;
@@ -80,15 +100,15 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
                 Token::EqualEqual => BinOp::Eq,
                 Token::Greater => BinOp::Gt,
                 Token::GreaterEqual => BinOp::Ge,
-                Token::Plus => BinOp::Add,
-                Token::Dash => BinOp::Sub,
-                Token::Star => BinOp::Mul,
-                Token::Slash => BinOp::Div,
+                // Token::Plus => BinOp::Add,
+                // Token::Dash => BinOp::Sub,
+                // Token::Star => BinOp::Mul,
+                // Token::Slash => BinOp::Div,
                 _ => break,
             };
 
             *pos += 1;
-            let right = parse_expr(tokens, pos, in_condition)?;
+            let right = parse_arithmetic(tokens, pos, 0)?;
             left = Expr::Binary {
                 op,
                 left: Box::new(left),
@@ -123,7 +143,7 @@ pub fn parse_out_vec_stmt(
     block_parser: &dyn BlockParser, fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
     loop_parser: &dyn LoopParser,
-    scope: &Scope,
+    scope: &mut Scope,
 ) -> Vec<Stmt> {
     let mut pos = 0;
     let mut stmts = Vec::new();

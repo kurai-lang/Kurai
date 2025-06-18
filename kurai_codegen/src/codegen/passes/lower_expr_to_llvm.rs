@@ -1,3 +1,4 @@
+use colored::Colorize;
 use inkwell::{module::Linkage, values::{BasicValue, BasicValueEnum}, IntPredicate};
 
 use kurai_binop::bin_op::BinOp;
@@ -6,7 +7,7 @@ use kurai_types::value::Value;
 use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn lower_expr_to_llvm(&mut self, expr: &Expr, in_condition: bool) -> Option<BasicValueEnum<'ctx>> {
+    pub fn lower_expr_to_llvm(&mut self, expr: &Expr) -> Option<BasicValueEnum<'ctx>> {
         #[cfg(debug_assertions)]
         {
             println!("Lowering expr: {:?}", expr);
@@ -61,7 +62,11 @@ impl<'ctx> CodeGen<'ctx> {
             },
             Expr::Var(name) => {
                 if let Some(ptr) = self.variables.get(name) {
-                    let loaded = self.builder.build_load(self.context.i64_type(), *ptr, &format!("load_{}", name));
+                    let loaded = self.builder.build_load(
+                        self.context.i64_type(),
+                        ptr.ptr_value,
+                        &format!("load_{}", name)
+                    );
                     Some(loaded.unwrap())
                 } else {
                     println!("Variable {} not found!", name);
@@ -70,8 +75,10 @@ impl<'ctx> CodeGen<'ctx> {
             }
             Expr::Id(_) => todo!(),
             Expr::Binary { op, left, right } => {
-                let left_val = self.lower_expr_to_llvm(left, false)?;
-                let right_val = self.lower_expr_to_llvm(right, false)?;
+                println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold());
+                let left_val = self.lower_expr_to_llvm(left)?;
+                let right_val = self.lower_expr_to_llvm(right)?;
+                println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val);
 
                 match op {
                     BinOp::Lt | BinOp::Le | BinOp::Eq | BinOp::Ge | BinOp::Gt | BinOp::Ne => {
@@ -95,7 +102,7 @@ impl<'ctx> CodeGen<'ctx> {
                             "cmp"
                         ).unwrap().as_basic_value_enum())
                     }
-                    
+
                     // Arithmetic'ing time
                     BinOp::Add => {
                         let sum = self.builder.build_int_add(

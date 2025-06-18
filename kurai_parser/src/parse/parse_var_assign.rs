@@ -7,7 +7,9 @@ use kurai_stmt::stmt::Stmt;
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::utils::expr_to_value::expr_to_value;
 
-pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &Scope) -> Result<Stmt, String> {
+pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
+    println!("parse_var_assign: x = ... at token[{}]", pos);
+
     if let Some(Token::Id(id)) = tokens.get(*pos) {
         *pos += 1;
 

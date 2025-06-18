@@ -11,5 +11,6 @@ kurai_stmt = { version = "0.3.0", path = "../kurai_stmt/" }
 kurai_types = { version = "0.3.0", path = "../kurai_types/" }
 kurai_typedArg = { version = "0.3.0", path = "../kurai_typedArg/" }
 kurai_core = { version = "0.3.0", path = "../kurai_core" }
+colored = "3.0.0"
 # kurai_parser_stmt = { version = "0.3.0", path = "../kurai_parser_stmt" }
 # kurai_codegen = { version = "0.3.0", path = "../kurai_codegen/" }

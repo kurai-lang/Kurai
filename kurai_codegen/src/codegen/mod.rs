@@ -8,7 +8,7 @@ use colored::Colorize;
 use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 use kurai_typedArg::typedArg::TypedArg;
-use kurai_types::value::Value;
+use kurai_types::{typ::Type, value::Value};
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
 use inkwell::{
@@ -20,11 +20,17 @@ use std::sync::{Arc, Mutex};
 static GLOBAL_STRING_ID: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug)]
+pub struct VariableInfo<'ctx> {
+    pub ptr_value: PointerValue<'ctx>,
+    pub var_type: Type,
+}
+
+#[derive(Debug)]
 pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
     pub builder: Builder<'ctx>,
     pub module: Arc<Mutex<Module<'ctx>>>,
-    pub variables: HashMap<String, PointerValue<'ctx>>,
+    pub variables: HashMap<String, VariableInfo<'ctx>>,
     pub loaded_modules: HashMap<String, Vec<Stmt>>,
     pub string_counter: usize,
     pub loop_counter: usize,
@@ -59,19 +65,12 @@ impl<'ctx> CodeGen<'ctx> {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) {
         // WARNING: nothing lol ,just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
-
-        if !exprs.is_empty() {
-            #[cfg(debug_assertions)]
-            if let Err(e) = self.execute_every_expr_in_code(exprs) {
-                eprintln!("Expression evaluation failed: {}", e);
-            }
-        }
 
         // self.builder.build_call(
         //     printf_fn,
@@ -110,13 +109,12 @@ impl<'ctx> CodeGen<'ctx> {
     fn printf_format(&mut self, args: &Vec<TypedArg>) -> Vec<BasicValueEnum<'ctx>> {
         args.iter()
             .filter_map(|arg| {
-                match arg.typ.as_str() {
-                    "int" => self.compile_int(arg),
-                    "str" => self.compile_str(arg),
-                    "id" => self.compile_id(arg),
+                match arg.typ {
+                    Type::Int => self.compile_int(arg),
+                    Type::Str => self.compile_str(arg),
+                    Type::Var => self.compile_id(arg),
                     _ => {
-                        panic!("{}: Unknown typ: {:?}", "error".red().bold(), arg.typ.as_str());
-                        None
+                        panic!("{}: Unknown typ: {:?}", "error".red().bold(), arg.typ);
                     }
                 }
             })
@@ -146,12 +144,22 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     fn compile_id(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-        if let Some(var_ptr) = self.variables.get(&arg.name) {
-            let ptr_type = var_ptr.get_type();
+        if let Some(var_info) = self.variables.get(&arg.name) {
+            let ptr_type = match var_info.var_type.to_llvm_type(self.context) {
+                Some(ty) => ty,
+                None => {
+                    eprintln!("Type of variable `{}` is unknown at compile time.", arg.name);
+                    return None;
+                }
+            };
             let loaded_val = self.builder.build_load(
-                ptr_type.as_basic_type_enum(),
-                *var_ptr,
-                "loaded_id").unwrap();
+                ptr_type,
+                var_info.ptr_value,
+                "loaded_id"
+            ).unwrap();
+
+            println!("{:?}", loaded_val.get_type());
+
 
             // let gep = unsafe {
             //     self.builder.build_gep(
@@ -173,12 +181,16 @@ impl<'ctx> CodeGen<'ctx> {
 
         let mut format = String::new();
         for arg in args.iter() {
-            match arg.typ.to_string().as_str() {
-                "int" => format.push_str("%d"),
-                "str" => format.push_str("%s"),
-                "id" => {
+            match arg.typ {
+                Type::Int => format.push_str("%d"),
+                Type::Str => format.push_str("%s"),
+                Type::Var => {
                     if let Some(var) = self.variables.get(&arg.name) {
-                        let loaded_val = self.builder.build_load(var.get_type(), *var, "load_id").unwrap();
+                        let loaded_val = self.builder.build_load(
+                            var.var_type.to_llvm_type(self.context).unwrap(),
+                            var.ptr_value,
+                            "load_id").unwrap();
+                        println!("{:?}", loaded_val);
 
                         match loaded_val.get_type().to_string().as_str() {
                             "i64" => format.push_str("%ld"),

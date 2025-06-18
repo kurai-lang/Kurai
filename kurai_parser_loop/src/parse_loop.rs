@@ -14,7 +14,7 @@ impl LoopParser for LoopParserStruct {
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<Stmt, String> {
         parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope)
     }
@@ -28,7 +28,7 @@ pub fn parse_loop(
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
     loop_parser: &dyn LoopParser,
-    scope: &Scope,
+    scope: &mut Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::Loop, tokens, pos) {
         return Err("Expected `loop`".to_string());
@@ -38,7 +38,7 @@ pub fn parse_loop(
     //     return Err("Expected `{` after `loop`".to_string());
     // }
 
-    let body = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope).unwrap();
+    let body = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)?;
     // *pos += 1;
 
     // if !eat(&Token::CloseBracket, tokens, pos) {

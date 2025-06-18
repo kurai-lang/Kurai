@@ -5,6 +5,7 @@ use kurai_stmt::stmt::Stmt;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
 use kurai_typedArg::typedArg::TypedArg;
+use kurai_types::typ::Type;
 use kurai_types::value::Value;
 
 pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
@@ -60,7 +61,7 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
             Some(Token::Number(v)) => {
                 args.push(TypedArg {
                     name: "_".to_string(),
-                    typ: "int".to_string(),
+                    typ: Type::Int,
                     value: Some(Expr::Literal(Value::Int(*v))),
                 });
                 *pos += 1;
@@ -68,7 +69,7 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
             Some(Token::StringLiteral(s)) => {
                 args.push(TypedArg {
                     name: "_".to_string(),
-                    typ: "str".to_string(),
+                    typ: Type::Str,
                     value: Some(Expr::Literal(Value::Str(s.clone()))),
                 });
                 *pos += 1;
@@ -76,7 +77,7 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
             Some(Token::Id(id)) => {
                 args.push(TypedArg {
                     name: id.to_string(),
-                    typ: "id".to_string(),
+                    typ: Type::Var,
                     value: Some(Expr::Var(id.clone())),
                 });
                 *pos += 1;

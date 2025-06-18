@@ -11,9 +11,7 @@ use kurai_parser_import_decl::ImportParserStruct;
 use kurai_parser_loop::parse_loop::LoopParserStruct;
 use kurai_parser_loop::BlockParserStruct;
 use kurai_token::token::token::Token;
-use std::borrow::Cow;
-use std::env;
-// use std::sync::{Arc, Mutex};
+use kurai_core::scope::Scope;
 use std::fs::{self, File};
 use std::io::prelude::*;
 use std::process::Command;
@@ -78,6 +76,8 @@ fn main() {
         code = fs::read_to_string(file_path).unwrap(); 
     }
 
+    let mut scope = Scope::new();
+
     let tokens = Token::tokenize(code.as_str());
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parse_out_vec_stmt(
@@ -87,7 +87,8 @@ fn main() {
         &FunctionParserStruct,
         &ImportParserStruct,
         &LoopParserStruct,
-        );
+        &mut scope,
+    );
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
     let mut codegen = CodeGen::new(&context);
     // codegen.printf("hi");
@@ -108,8 +109,9 @@ fn main() {
         &FunctionParserStruct,
         &ImportParserStruct,
         &BlockParserStruct,
-        &LoopParserStruct
-        );
+        &LoopParserStruct,
+        &mut scope,
+    );
     let result = codegen.show_result(); //result returns String
 
     let output_path_ll = format!("{}.ll", output_name);

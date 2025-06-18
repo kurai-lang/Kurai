@@ -3,10 +3,10 @@ use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, Int
 use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 
-use crate::codegen::CodeGen;
+use crate::codegen::{passes::lower_expr_to_llvm, CodeGen, VariableInfo};
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
 use kurai_token::token::token::Token;
-use kurai_types::value::Value;
+use kurai_types::{typ::Type, value::Value};
 use kurai_stmt::stmt::Stmt;
 
 impl<'ctx> CodeGen<'ctx> {
@@ -19,7 +19,7 @@ impl<'ctx> CodeGen<'ctx> {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) {
         for stmt in parsed_stmt {
             match stmt {
@@ -31,14 +31,19 @@ impl<'ctx> CodeGen<'ctx> {
                         let init_val = i64_type.const_int(v as u64, true);
                         self.builder.build_store(alloca, init_val).unwrap();
                         let v_pointer_val = alloca;
+                        let var_info = VariableInfo {
+                            ptr_value: v_pointer_val,
+                            var_type: Type::Int,
+                        };
 
-                        self.variables.insert(name.to_string(), v_pointer_val);
+                        self.variables.insert(name.to_string(), var_info);
                     }
                 }
                 Stmt::Assign { name, value } => {
+                    println!("Assign value AST: {:?}", value);
                     if let Some(var_ptr) = self.variables.get(&name) {
                         let llvm_value = self.lower_value_to_llvm(&value).unwrap();
-                        self.builder.build_store(*var_ptr, llvm_value).unwrap();
+                        self.builder.build_store(var_ptr.ptr_value, llvm_value).unwrap();
                     } else {
                         println!("Variable {} could not be found!", name);
                     }
@@ -105,7 +110,7 @@ impl<'ctx> CodeGen<'ctx> {
                                             let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
                                             for arg in &args {
                                                 if let Some(value) = &arg.value {
-                                                    if let Some(llvm_value) = self.lower_expr_to_llvm(&value, false) {
+                                                    if let Some(llvm_value) = self.lower_expr_to_llvm(value) {
                                                         compiled_args.push(llvm_value.into());
                                                     }
                                                 } else {
@@ -127,11 +132,11 @@ impl<'ctx> CodeGen<'ctx> {
                                     dbg!("converting args to llvm args types");
                                 }
                                 let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
-                                    match arg.typ.to_string().as_str() {
-                                        "int" => self.context.i32_type().into(),
-                                        "float" => self.context.f32_type().into(),
-                                        "bool" => self.context.bool_type().into(),
-                                        "str" => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
+                                    match arg.typ {
+                                        Type::Int => self.context.i32_type().into(),
+                                        Type::Float => self.context.f32_type().into(),
+                                        Type::Bool => self.context.bool_type().into(),
+                                        Type::Str => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
                                         _ => panic!("Unknown type: {:?}", arg.typ),
                                         }
                                     }).collect();
@@ -159,8 +164,13 @@ impl<'ctx> CodeGen<'ctx> {
                                                 &arg.name,
                                             ).unwrap();
 
+                                            let variable_info = VariableInfo {
+                                                ptr_value: alloca,
+                                                var_type: arg.typ.clone(),
+                                            };
+
                                             self.builder.build_store(alloca, llvm_arg).unwrap();
-                                            self.variables.insert(arg.name.clone(), alloca);
+                                            self.variables.insert(arg.name.clone(), variable_info);
                                         }
                                     }
                                 }
@@ -185,7 +195,13 @@ impl<'ctx> CodeGen<'ctx> {
                                         dbg!("parsing the function's body");
                                     }
                                     for (i, arg) in args.iter().enumerate() {
-                                        let llvm_arg = function.get_nth_param(i as u32).unwrap().into_pointer_value();
+                                        let llvm_arg = function.get_nth_param(i as u32).unwrap();//.into_pointer_value();
+                                        let pointee_type = llvm_arg.get_type();
+                                        let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
+
+                                        println!("{:?}", pointee_type);
+                                        println!("{:?}", var_type);
+                                        println!("{:?}", llvm_arg.get_type());
 
                                         let alloca = self.builder.build_alloca(
                                             llvm_arg.get_type(),
@@ -193,7 +209,12 @@ impl<'ctx> CodeGen<'ctx> {
                                         ).unwrap();
 
                                         self.builder.build_store(alloca, llvm_arg).unwrap();
-                                        self.variables.insert(arg.name.clone(), alloca);
+
+                                        let var_info = VariableInfo {
+                                            ptr_value: alloca,
+                                            var_type,
+                                        };
+                                        self.variables.insert(arg.name.clone(), var_info);
                                     }
                                 }
                                     self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
@@ -322,7 +343,22 @@ impl<'ctx> CodeGen<'ctx> {
                     // safety net: prevent building more instructions in the same block
                     // let unreachable_block = self.context.append_basic_block(function, "unreachable");
                     // self.builder.position_at_end(unreachable_block);
-                },
+                }
+                Stmt::Expr(expr) => {
+                    self.lower_expr_to_llvm(&expr);
+                }
+                Stmt::Block(stmts) => {
+                    self.execute_every_stmt_in_code(
+                        stmts,
+                        discovered_modules, 
+                        stmt_parser,
+                        fn_parser,
+                        import_parser,
+                        block_parser,
+                        loop_parser,
+                        scope
+                    );
+                }
             }
         }
     }

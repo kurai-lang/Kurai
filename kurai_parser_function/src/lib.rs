@@ -17,7 +17,7 @@ impl FunctionParser for FunctionParserStruct {
         import_parser: &dyn ImportParser,
         block_parser: &dyn BlockParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<kurai_stmt::stmt::Stmt, String> {
         parse_fn_decl(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
     }

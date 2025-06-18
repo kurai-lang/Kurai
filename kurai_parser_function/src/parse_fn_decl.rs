@@ -5,6 +5,7 @@ use kurai_token::token::token::Token;
 use kurai_parser::parse::parse_stmt::parse_stmt;
 use kurai_stmt::stmt::Stmt;
 use kurai_typedArg::typedArg::TypedArg;
+use kurai_types::typ::Type;
 
 pub fn parse_fn_decl(
     tokens: &[Token],
@@ -14,7 +15,7 @@ pub fn parse_fn_decl(
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
     loop_parser: &dyn LoopParser,
-    scope: &Scope,
+    scope: &mut Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {
         return Err("Expected keyword `fn`".to_string());
@@ -62,7 +63,7 @@ pub fn parse_fn_decl(
                     // name: type
                     args.push(TypedArg {
                         name,
-                        typ,
+                        typ: Type::from_str(&typ).unwrap(),
                         value: None,
                     });
 

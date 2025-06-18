@@ -16,9 +16,23 @@ impl BlockParser for BlockParserStruct {
         fn_parser: &dyn FunctionParser,
         import_parser: &dyn ImportParser,
         loop_parser: &dyn LoopParser,
-        scope: &Scope,
+        scope: &mut Scope,
     ) -> Result<Vec<Stmt>, String> {
         parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+    }
+
+    fn parse_block_stmt(
+        &self,
+        tokens: &[Token],
+        pos: &mut usize,
+        discovered_modules: &mut Vec<String>,
+        block_parser: &dyn BlockParser,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser,
+        scope: &mut Scope,
+    ) -> Result<Stmt, String> {
+        parse_block_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
     }
 }
 
@@ -30,35 +44,60 @@ pub fn parse_block(
     fn_parser: &dyn FunctionParser,
     import_parser: &dyn ImportParser,
     loop_parser: &dyn LoopParser,
-    scope: &Scope,
+    scope: &mut Scope,
 ) -> Result<Vec<Stmt>, String> {
     if !eat(&Token::OpenBracket, tokens, pos) {
-        return Err("Expected `{` at start of block".to_string());
+        return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(*pos)));
     }
 
     let mut stmts = Vec::new();
     while *pos < tokens.len() {
-        match tokens[*pos] {
-            Token::CloseBracket => {
+        match tokens.get(*pos) {
+            Some(Token::CloseBracket) => {
                 *pos += 1;
                 return Ok(stmts);
             }
-            _ => {
-                let stmt = parse_stmt(
-                        tokens,
-                        pos,
-                        discovered_modules,
-                        block_parser,
-                        fn_parser,
-                        import_parser,
-                        loop_parser,
-                        scope,
-                    )
-                    .expect(&format!("Failed to parse statement at token {}", *pos));
-                stmts.push(stmt)
+            Some(Token::Else) => {
+                // Don't parse 'else' inside a block, let parse_if_else handle it
+                break;
             }
+            Some(_) => {
+                println!(">> calling parse_stmt at pos {}: {:?}", *pos, tokens.get(*pos));
+
+                let stmt = parse_stmt(
+                    tokens,
+                    pos,
+                    discovered_modules,
+                    block_parser,
+                    fn_parser,
+                    import_parser,
+                    loop_parser,
+                    scope,
+                )?;
+
+                stmts.push(stmt);
+            }
+            None => return Err("Unexpected end of token stream while parsing block.".to_string()),
         }
     }
 
-    Err("Expected `}`".to_string())
+    // if !eat(&Token::CloseBracket, tokens, pos) {
+    //     return Err("Expected `}` at end of block.".to_string());
+    // }
+
+    Ok(stmts)
+}
+
+pub fn parse_block_stmt(
+    tokens: &[Token],
+    pos: &mut usize,
+    discovered_modules: &mut Vec<String>,
+    block_parser: &dyn BlockParser,
+    fn_parser: &dyn FunctionParser,
+    import_parser: &dyn ImportParser,
+    loop_parser: &dyn LoopParser,
+    scope: &mut Scope,
+) -> Result<Stmt, String> {
+    parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+        .map(Stmt::Block)
 }
