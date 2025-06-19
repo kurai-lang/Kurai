@@ -3,6 +3,8 @@ use kurai_parser::{parse::parse_block, BlockParser, FunctionParser, ImportParser
 use kurai_stmt::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
 
+use crate::parse_for_loop::parse_for_loop;
+
 pub struct LoopParserStruct;
 impl LoopParser for LoopParserStruct {
     fn parse_loop(
@@ -17,6 +19,20 @@ impl LoopParser for LoopParserStruct {
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
         parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope)
+    }
+
+    fn parse_for_loop(
+        &self,
+        tokens: &[kurai_token::token::token::Token],
+        pos: &mut usize,
+        block_parser: &dyn BlockParser,
+        discovered_modules: &mut Vec<String>,
+        fn_parser: &dyn kurai_parser::FunctionParser,
+        import_parser: &dyn kurai_parser::ImportParser,
+        loop_parser: &dyn LoopParser,
+        scope: &mut Scope,
+    ) -> Result<Stmt, String> {
+        parse_for_loop(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
     }
 }
 

@@ -44,6 +44,7 @@ pub enum Token {
     In,
     Loop,
     Break,
+    Dot,
 }
 
 impl Token {
@@ -114,6 +115,14 @@ impl Token {
                         tokens.push(Token::Greater);
                     }
                 }
+                '.' => {
+                    if let Some('.') = iter.peek() {
+                        iter.next();
+                        tokens.push(Token::Range);
+                    } else {
+                        tokens.push(Token::Dot);
+                    }
+                }
                 '0'..='9' => {
                     current.push(ch);
                     while let Some(&next_ch) = iter.peek() {
@@ -143,18 +152,17 @@ impl Token {
                         "int" => tokens.push(Token::Int),
                         "let" => tokens.push(Token::Let),
                         "fn" => tokens.push(Token::Function),
-                        "use" | "gunakan" => tokens.push(Token::Import),
-                        "as" | "sebagai" => tokens.push(Token::As),
-                        "if" | "jika" => tokens.push(Token::If),
-                        "else" | "lain" => tokens.push(Token::Else),
-                        "true" | "benar" => tokens.push(Token::Bool(true)),
-                        "false" | "palsu" => tokens.push(Token::Bool(false)),
+                        "use" => tokens.push(Token::Import),
+                        "as" => tokens.push(Token::As),
+                        "if" => tokens.push(Token::If),
+                        "else" => tokens.push(Token::Else),
+                        "true" => tokens.push(Token::Bool(true)),
+                        "false" => tokens.push(Token::Bool(false)),
                         "for" => tokens.push(Token::For),
                         "loop" => tokens.push(Token::Loop),
                         "while" => tokens.push(Token::While),
                         "in" => tokens.push(Token::In),
                         "break" => tokens.push(Token::Break),
-                        ".." => tokens.push(Token::Range),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
                     current.clear();

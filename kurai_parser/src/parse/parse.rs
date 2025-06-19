@@ -59,7 +59,11 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
                     panic!("Failed to parse expression inside parentheses at pos {pos}");
                 }
             };
-            eat(&Token::CloseParenthese, tokens, pos);
+
+            if !eat(&Token::CloseParenthese, tokens, pos) {
+                return None;
+            }
+
             Some(expr)
         }
         // Token::OpenBracket => {
@@ -67,10 +71,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
         //     println!("Unexpected `{{` without a control structure");
         //     None
         // }
-        _ => {
-            *pos += 1;
-            None
-        }
+        _ => None,
     }?;
 
     if in_condition {
@@ -89,7 +90,13 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
             };
 
             *pos += 1;
+
+            let right_start = *pos;
             let right = parse_arithmetic(tokens, pos, 0)?;
+            if *pos == right_start {
+                return None;
+            }
+
             left = Expr::Binary {
                 op,
                 left: Box::new(left),

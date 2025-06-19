@@ -34,6 +34,8 @@ pub fn parse_stmt(
     loop_parser: &dyn LoopParser,
     scope: &mut Scope,
 ) -> Result<Stmt, String> {
+    println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
+
     match tokens.get(*pos) {
         Some(Token::Function) => fn_parser.parse_fn_decl(tokens, pos, discovered_modules, fn_parser, import_parser, block_parser, loop_parser, scope),
         Some(Token::Loop) => loop_parser.parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope),
@@ -49,6 +51,7 @@ pub fn parse_stmt(
         Some(Token::Let) => parse_var_decl(tokens, pos, scope),
         Some(Token::Import) => import_parser.parse_import_decl(tokens, pos, discovered_modules),
         Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope),
+        Some(Token::For) => loop_parser.parse_for_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope),
         Some(Token::Id(_)) => {
                 // For functions from modules. like foo::bar()
                 if let (Some(Token::Colon), Some(Token::Colon)) =
@@ -68,19 +71,28 @@ pub fn parse_stmt(
             let stmts = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)?;
             Ok(Stmt::Block(stmts))
         }
-        _ => match parse_arithmetic(tokens, pos, 0) {
-            Some(Expr::FnCall { name, args }) => {
-                let typed_args = args.into_iter().map(|arg|
-                    TypedArg {
-                        name: name.clone(),
-                        typ: Type::Unknown,
-                        value: Some(arg),
-                    }).collect();
+        _ => {
+            let start_pos = *pos;
+            match parse_arithmetic(tokens, pos, 0) {
+                Some(Expr::FnCall { name, args }) if *pos > start_pos => {
+                    let typed_args = args
+                        .into_iter()
+                        .map(|arg| TypedArg {
+                            name: name.clone(),
+                            typ: Type::Unknown,
+                            value: Some(arg),
+                        })
+                        .collect();
 
-                Ok(Stmt::FnCall { name, args: typed_args })
+                    Ok(Stmt::FnCall { name, args: typed_args })
+                }
+                Some(expr) if *pos > start_pos => Ok(Stmt::Expr(expr)),
+                _ => Err(format!(
+                    "Invalid statement or no progress at pos {}: {:?}",
+                    pos,
+                    tokens.get(*pos)
+                )),
             }
-            Some(expr) => Ok(Stmt::Expr(expr)),
-            None => Err(format!("Invalid statement: {:?}", tokens.get(*pos)))
         }
     }
 }

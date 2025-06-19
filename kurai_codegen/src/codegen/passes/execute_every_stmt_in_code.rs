@@ -336,7 +336,12 @@ impl<'ctx> CodeGen<'ctx> {
                         scope
                     );
 
-                    self.builder.build_unconditional_branch(loop_bb).unwrap();
+                    if self.builder.get_insert_block()
+                        .map(|bb| bb.get_terminator().is_none())
+                        .unwrap_or(true)
+                    {
+                        self.builder.build_unconditional_branch(loop_bb).unwrap();
+                    }
                     self.loop_exit_stack.pop();
 
                     self.builder.position_at_end(after_bb);
