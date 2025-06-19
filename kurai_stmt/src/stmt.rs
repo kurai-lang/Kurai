@@ -9,11 +9,11 @@ pub enum Stmt {
     VarDecl { 
         name: String,
         typ: String,
-        value: Option<Value>,
+        value: Option<Expr>,
     },
     Assign {
         name: String,
-        value: Value,
+        value: Expr,
     },
     FnCall {
         name: String,

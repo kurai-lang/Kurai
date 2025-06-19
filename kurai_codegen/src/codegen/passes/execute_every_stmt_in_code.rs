@@ -1,6 +1,7 @@
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
 use kurai_core::scope::Scope;
+use kurai_expr::expr::Expr;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 
 use crate::codegen::{passes::lower_expr_to_llvm, CodeGen, VariableInfo};
@@ -27,7 +28,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let i64_type = self.context.i64_type();
                     let alloca = self.builder.build_alloca(i64_type, &name).unwrap();
 
-                    if let Some(Value::Int(v)) = value {
+                    if let Some(Expr::Literal(Value::Int(v))) = value {
                         let init_val = i64_type.const_int(v as u64, true);
                         self.builder.build_store(alloca, init_val).unwrap();
                         let v_pointer_val = alloca;
@@ -39,14 +40,18 @@ impl<'ctx> CodeGen<'ctx> {
                         self.variables.insert(name.to_string(), var_info);
                     }
                 }
-                Stmt::Assign { name, value } => {
+                Stmt::Assign { name, ref value } => {
                     println!("Assign value AST: {:?}", value);
-                    if let Some(var_ptr) = self.variables.get(&name) {
-                        let llvm_value = self.lower_value_to_llvm(&value).unwrap();
-                        self.builder.build_store(var_ptr.ptr_value, llvm_value).unwrap();
-                    } else {
-                        println!("Variable {} could not be found!", name);
-                    }
+                    let var_ptr = match self.variables.get(&name) {
+                        Some(ptr) => ptr.ptr_value,
+                        None => {
+                            panic!("{} Variable {} not found", "[ERROR]".red().bold(), name);
+                        }
+                    };
+
+                    // now do mutable stuff after immutable borrow is over
+                    let llvm_value = self.lower_expr_to_llvm(value).unwrap();
+                    self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
                                 match name.as_str() {

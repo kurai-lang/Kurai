@@ -69,29 +69,10 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
         // }
         _ => {
             *pos += 1;
-            for i in (*pos).saturating_sub(3)..(*pos+4).min(tokens.len()) {
-                println!(
-                    "token[{}] = {:?}{}",
-                    i,
-                    tokens.get(i),
-                    if i == *pos { "   <== current" } else { "" }
-                );
-            }
-            // println!("{:?}", tokens.get(*pos));
             None
         }
     }?;
 
-    // while let Some(Token::EqualEqual) = tokens.get(*pos) {
-    //     *pos += 1;
-    //     let right = parse_expr(tokens, pos, false).unwrap();
-    //
-    //     left = Expr::Binary { 
-    //         op: BinOp::Eq,
-    //         left: Box::new(left),
-    //         right: Box::new(right)
-    //     };
-    // }
     if in_condition {
         while let Some(token) = tokens.get(*pos) {
             let op = match token {

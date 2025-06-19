@@ -9,21 +9,28 @@ use kurai_parser_loop::parse_loop::LoopParserStruct;
 use kurai_token::token::token::Token;
 
 fn main() {
+    // let code = r#"
+    //     fn main() {
+    //         let x = 1;
+    //
+    //         loop {
+    //             printf("yes");
+    //
+    //             if (x >= 10) {
+    //                 break;
+    //             } else {
+    //                 x = x + 1;
+    //             }
+    //         }
+    //     }
+    //     "#.to_string();
+
     let code = r#"
         fn main() {
             let x = 1;
-
-            loop {
-                printf("yes");
-
-                if (x >= 10) {
-                    break;
-                } else {
-                    x = x + 1;
-                }
-            }
+            x = x + 3;
         }
-        "#.to_string();
+    "#.to_string();
 
     let mut scope = Scope::new();
     let context = Context::create();

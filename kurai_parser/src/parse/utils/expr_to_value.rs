@@ -5,8 +5,8 @@ use kurai_binop::bin_op::BinOp;
 
 pub fn expr_to_value(expr: &Expr, scope: &mut Scope) -> Option<Value> {
     match expr {
-        Expr::Literal(val) => Some(val.clone()),
-        Expr::Var(name) => scope.0.get(name).cloned(),
+        // Expr::Literal(val) => Some(val.clone()),
+        // Expr::Var(name) => scope.0.get(name).cloned(),
         Expr::Binary { op, left, right } => {
             let l = expr_to_value(left, scope)?;
             let r = expr_to_value(right, scope)?;

@@ -75,6 +75,7 @@ impl<'ctx> CodeGen<'ctx> {
             }
             Expr::Id(_) => todo!(),
             Expr::Binary { op, left, right } => {
+                println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold());
                 let left_val = self.lower_expr_to_llvm(left)?;
                 let right_val = self.lower_expr_to_llvm(right)?;

@@ -48,15 +48,14 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> R
     // };
 
     let expr = parse_arithmetic(tokens, pos, 0);
-    let value = expr_to_value(&expr.unwrap(), scope);
-    scope.0.insert(name.clone(), value.clone().unwrap());
+    scope.0.insert(name.clone(), expr.clone().unwrap());
     // *pos += 1;
 
     // No semicolon, no ending
     // no ending, no food
     // no food, ded
     if !eat(&Token::Semicolon, tokens, pos) {
-        return Err("Expected a semicolon after value".to_string());
+        return Err("Expected a semicolon after expr".to_string());
     }
 
     // stands for... i forgot
@@ -64,6 +63,6 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> R
     Ok(Stmt::VarDecl {
         name,
         typ: "int".to_string(), 
-        value,
+        value: expr,
     })
 }

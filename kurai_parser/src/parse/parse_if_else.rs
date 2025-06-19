@@ -36,8 +36,6 @@ pub fn parse_if_else(
     //     return Err("Expected `{` at start of block".to_string());
     // }
 
-    println!("Before {{");
-
     let then_branch = block_parser.parse_block(
         tokens,
         pos,
@@ -49,8 +47,6 @@ pub fn parse_if_else(
         scope,
     )?;
 
-    println!("After }}");
-
     // if !eat(&Token::CloseBracket, tokens, pos) {
     //     return Err("Expected `}` at start of block".to_string());
     // }
@@ -59,11 +55,8 @@ pub fn parse_if_else(
     //     return Err("Expected `{` at start of block".to_string());
     // }
 
-    println!("works");
     let mut else_body: Option<Vec<Stmt>> = None;
     if eat(&Token::Else, tokens, pos) {
-        println!("[before parse_block()] token[{}] = {:?}", *pos, tokens.get(*pos));
-
         else_body = Some(block_parser.parse_block(
             tokens,
             pos,

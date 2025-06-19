@@ -4,4 +4,5 @@ version = "0.3.0"
 edition = "2024"
 
 [dependencies]
+kurai_expr = { version = "0.3.0", path = "../kurai_expr" }
 kurai_types = { version = "0.3.0", path = "../kurai_types" }
