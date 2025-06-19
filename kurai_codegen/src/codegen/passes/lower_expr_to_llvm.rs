@@ -73,7 +73,10 @@ impl<'ctx> CodeGen<'ctx> {
                     None
                 }
             }
-            Expr::Id(_) => todo!(),
+            Expr::Id(name) => {
+                println!("{}: codegen for Expr::Id({}) not implemented", "warning".yellow().bold(), name);
+                Some(self.context.i32_type().const_int(0, false).as_basic_value_enum())
+            }
             Expr::Binary { op, left, right } => {
                 println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold());

@@ -71,7 +71,10 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
         //     println!("Unexpected `{{` without a control structure");
         //     None
         // }
-        _ => None,
+        _ => {
+            *pos += 1;
+            None
+        }
     }?;
 
     if in_condition {
