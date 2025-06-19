@@ -1,17 +1,17 @@
 [package]
 name = "kuraic"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
 colored = "3.0.0"
 inkwell = { version = "0.6.0", features = ["llvm18-1"]}
-kurai_codegen = { version = "0.3.4", path = "../kurai_codegen" }
-kurai_core = { version = "0.3.4", path = "../kurai_core" }
-kurai_parser = { version = "0.3.4", path = "../kurai_parser" }
-kurai_parser_function = { version = "0.3.4", path = "../kurai_parser_function" }
-kurai_parser_import_decl = { version = "0.3.4", path = "../kurai_parser_import_decl" }
-kurai_parser_loop = { version = "0.3.4", path = "../kurai_parser_loop" }
-kurai_stdlib = { version = "0.3.4", path = "../kurai_stdlib" }
-kurai_token = { version = "0.3.4", path = "../kurai_token" }
+kurai_codegen = { version = "0.4.0", path = "../kurai_codegen" }
+kurai_core = { version = "0.4.0", path = "../kurai_core" }
+kurai_parser = { version = "0.4.0", path = "../kurai_parser" }
+kurai_parser_function = { version = "0.4.0", path = "../kurai_parser_function" }
+kurai_parser_import_decl = { version = "0.4.0", path = "../kurai_parser_import_decl" }
+kurai_parser_loop = { version = "0.4.0", path = "../kurai_parser_loop" }
+kurai_stdlib = { version = "0.4.0", path = "../kurai_stdlib" }
+kurai_token = { version = "0.4.0", path = "../kurai_token" }
