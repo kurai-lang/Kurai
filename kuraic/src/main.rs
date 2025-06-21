@@ -8,7 +8,7 @@ use kurai_parser::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
 use kurai_parser::parse::parse_stmt::StmtParserStruct;
 use kurai_parser_function::FunctionParserStruct;
 use kurai_parser_import_decl::ImportParserStruct;
-use kurai_parser_loop::parse_loop::LoopParserStruct;
+use kurai_parser_loop::LoopParserStruct;
 use kurai_parser_loop::BlockParserStruct;
 use kurai_token::token::token::Token;
 use kurai_core::scope::Scope;
@@ -65,7 +65,9 @@ fn main() {
     {
         let code = "
             fn main() {
-                let x = 0;
+                for i in 0..4 {
+                    printf(\"yes?\");
+                }
             }
         ";
     }
@@ -145,9 +147,10 @@ fn main() {
         .unwrap();
 
     let status = Command::new("clang")
-        .arg(&output_path_s)
+        .arg(&output_path_ll)
         .arg("-o")
         .arg(&output_name)
+        .arg("-g")
         .status()
         .unwrap();
 

@@ -84,6 +84,18 @@ pub trait LoopParser {
         loop_parser: &dyn LoopParser,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
+
+    fn parse_while_loop(
+        &self,
+        tokens: &[kurai_token::token::token::Token],
+        pos: &mut usize,
+        block_parser: &dyn BlockParser,
+        discovered_modules: &mut Vec<String>,
+        fn_parser: &dyn FunctionParser,
+        import_parser: &dyn ImportParser,
+        loop_parser: &dyn LoopParser,
+        scope: &mut Scope,
+    ) -> Result<Stmt, String>;
 }
 
 pub trait FunctionParser {

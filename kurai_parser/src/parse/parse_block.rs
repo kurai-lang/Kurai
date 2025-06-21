@@ -62,7 +62,8 @@ pub fn parse_block(
                 break;
             }
             Some(_) => {
-                println!(">> calling parse_stmt at pos {}: {:?}", *pos, tokens.get(*pos));
+                #[cfg(debug_assertions)]
+                { println!(">> calling parse_stmt at pos {}: {:?}", *pos, tokens.get(*pos)); }
 
                 let stmt = parse_stmt(
                     tokens,

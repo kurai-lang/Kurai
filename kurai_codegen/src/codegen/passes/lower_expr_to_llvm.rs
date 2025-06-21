@@ -74,15 +74,19 @@ impl<'ctx> CodeGen<'ctx> {
                 }
             }
             Expr::Id(name) => {
-                println!("{}: codegen for Expr::Id({}) not implemented", "warning".yellow().bold(), name);
+                #[cfg(debug_assertions)]
+                { println!("{}: codegen for Expr::Id({}) not implemented", "warning".yellow().bold(), name); }
                 Some(self.context.i32_type().const_int(0, false).as_basic_value_enum())
             }
             Expr::Binary { op, left, right } => {
-                println!("{:?}", op);
-                println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold());
+                #[cfg(debug_assertions)]
+                { println!("{:?}", op);
+                println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
                 let left_val = self.lower_expr_to_llvm(left)?;
                 let right_val = self.lower_expr_to_llvm(right)?;
-                println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val);
+
+                #[cfg(debug_assertions)]
+                { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
 
                 match op {
                     BinOp::Lt | BinOp::Le | BinOp::Eq | BinOp::Ge | BinOp::Gt | BinOp::Ne => {

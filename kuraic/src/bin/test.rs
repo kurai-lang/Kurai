@@ -5,33 +5,34 @@ use kurai_core::scope::Scope;
 use kurai_parser::parse::{parse::{parse_out_vec_expr, parse_out_vec_stmt}, parse_block::BlockParserStruct, parse_stmt::StmtParserStruct};
 use kurai_parser_function::FunctionParserStruct;
 use kurai_parser_import_decl::ImportParserStruct;
-use kurai_parser_loop::parse_loop::LoopParserStruct;
+use kurai_parser_loop::LoopParserStruct;
 use kurai_token::token::token::Token;
 
 fn main() {
-    let code = r#"
-        fn main() {
-            let x = 5;
-
-            loop {
-                printf("yes");
-
-                if (x >= 10) {
-                    break;
-                } else {
-                    x = x + 1;
-                }
-            }
-        }
-        "#.to_string();
-
     // let code = r#"
     //     fn main() {
-    //         for i in 5..10 {
-    //             printf("PURR..");
+    //         let x = 5;
+    //
+    //         loop {
+    //             printf("yes");
+    //
+    //             if (x >= 10) {
+    //                 break;
+    //             } else {
+    //                 x = x + 1;
+    //             }
     //         }
     //     }
-    // "#.to_string();
+    //     "#.to_string();
+
+    let code = r#"
+        fn main() {
+            let x = 0;
+            while x < 5 {
+                printf("PURR..");
+            }
+        }
+    "#.to_string();
 
     let mut scope = Scope::new();
     let context = Context::create();

@@ -65,7 +65,7 @@ pub fn parse_for_loop(
                                 branches: vec![IfBranch {
                                     condition: Expr::Binary {
                                         op: BinOp::Ge,
-                                        left: Box::new(Expr::Id(id.clone())),
+                                        left: Box::new(Expr::Var(id.clone())),
                                         right: Box::new(Expr::Literal(Value::Int(*ending_num))),
                                     },
                                     body: vec![Stmt::Break],
@@ -79,7 +79,7 @@ pub fn parse_for_loop(
                                 name: id.clone(),
                                 value: Expr::Binary {
                                     op: BinOp::Add,
-                                    left: Box::new(Expr::Id(id.clone())),
+                                    left: Box::new(Expr::Var(id.clone())),
                                     right: Box::new(Expr::Literal(Value::Int(1))),
                                 },
                             },

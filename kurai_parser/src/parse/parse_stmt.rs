@@ -34,11 +34,12 @@ pub fn parse_stmt(
     loop_parser: &dyn LoopParser,
     scope: &mut Scope,
 ) -> Result<Stmt, String> {
-    println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
+    // println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
 
     match tokens.get(*pos) {
         Some(Token::Function) => fn_parser.parse_fn_decl(tokens, pos, discovered_modules, fn_parser, import_parser, block_parser, loop_parser, scope),
-        Some(Token::Loop) => loop_parser.parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope),
+        Some(Token::Loop) => loop_parser.parse_for_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope),
+        Some(Token::While) => loop_parser.parse_while_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope),
         Some(Token::Break) => {
             *pos += 1;
             if !eat(&Token::Semicolon, tokens, pos) {
@@ -67,7 +68,8 @@ pub fn parse_stmt(
             }
         }
         Some(Token::OpenBracket) => {
-            println!("Some(Token::OpenBracket)");
+            #[cfg(debug_assertions)]
+            { println!("Some(Token::OpenBracket)"); }
             let stmts = block_parser.parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)?;
             Ok(Stmt::Block(stmts))
         }

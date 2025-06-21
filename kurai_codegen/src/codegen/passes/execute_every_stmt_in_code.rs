@@ -41,7 +41,8 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                 }
                 Stmt::Assign { name, ref value } => {
-                    println!("Assign value AST: {:?}", value);
+                    #[cfg(debug_assertions)]
+                    { println!("Assign value AST: {:?}", value); }
                     let var_ptr = match self.variables.get(&name) {
                         Some(ptr) => ptr.ptr_value,
                         None => {

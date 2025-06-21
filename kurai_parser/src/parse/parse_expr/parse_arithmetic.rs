@@ -7,8 +7,8 @@ use crate::parse::parse::parse_expr;
 
 pub fn parse_arithmetic(tokens: &[Token], pos: &mut usize, min_prec: u8) -> Option<Expr> {
     if let Some(mut left) = parse_expr(tokens, pos, false) {
-
-        println!("{}: {:?}", "[parse_arithmetic()]".green().bold(), left);
+        #[cfg(debug_assertions)]
+        { println!("{}: {:?}", "[parse_arithmetic()]".green().bold(), left); }
 
         loop {
             // Format of op: (Operation, precedence)

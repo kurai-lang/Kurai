@@ -36,7 +36,8 @@ pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope) ->
         let expr = parse_arithmetic(tokens, pos, 0);
         let value = &expr.unwrap();
 
-        println!("{} name = {}, value = {:?}", "[parse_var_assign()]".green().bold(), id.clone(), value);
+        #[cfg(debug_assertions)]
+        { println!("{} name = {}, value = {:?}", "[parse_var_assign()]".green().bold(), id.clone(), value); }
 
         if !eat(&Token::Semicolon, tokens, pos) {
             return Err(format!("Expected a semicolon `;` after `{:?}`", value));
