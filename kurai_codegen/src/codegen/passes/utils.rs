@@ -57,45 +57,40 @@ impl<'ctx> CodeGen<'ctx> {
         loop_parser: &dyn LoopParser,
         scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
-        if let Some(mod_stmts) = self.loaded_modules.get(modname) {
-            let already_compiled: Option<FunctionValue<'ctx>> = self.module.lock().unwrap().get_function(funcname);
+        let mod_stmts = self.loaded_modules.get(modname)?;
+        let already_compiled: Option<FunctionValue<'ctx>> = self.module.lock().unwrap().get_function(funcname);
 
-            if already_compiled.is_some() {
-                already_compiled
-            } else {
-                for stmt in mod_stmts {
-                    if let Stmt::FnDecl { name: fname, .. } = stmt {
-                        if fname == funcname {
-                            #[cfg(debug_assertions)]
-                            {
-                                use colored::Colorize;
-
-                                println!("
-                                    {} `{}` from `{}` is now being compiled", "Compiling function".green(),
-                                    funcname, modname);
-                            }
-
-                            self.generate_code(
-                                vec![stmt.clone()], 
-                                vec![],
-                                discovered_modules,
-                                stmt_parser,
-                                fn_parser,
-                                import_parser,
-                                block_parser,
-                                loop_parser,
-                                scope
-                            );
-                            break;
-                        }
-                    }
-                }
-                // try again after compiling
-                self.module.lock().unwrap().get_function(funcname)
-            }
-        } else {
-            println!("{}: Module not found: `{}`", "error".red().bold(), modname);
-            None
+        if let Some(func) = already_compiled {
+            return Some(func);
         }
-    }
+
+        let maybe_stmt = mod_stmts.iter().find(|stmt| {
+            matches!(stmt, Stmt::FnDecl { name, .. } if name == funcname)
+        });
+
+        if let Some(stmt) = maybe_stmt {
+            #[cfg(debug_assertions)]
+            {
+                use colored::Colorize;
+
+                println!("
+                    {} `{}` from `{}` is now being compiled", "Compiling function".green(),
+                    funcname, modname);
+            }
+
+            self.generate_code(
+                vec![stmt.clone()], 
+                vec![],
+                discovered_modules,
+                stmt_parser,
+                fn_parser,
+                import_parser,
+                block_parser,
+                loop_parser,
+                scope
+            );
+        }
+        // try again after compiling
+        self.module.lock().unwrap().get_function(funcname)
+    } 
 }
