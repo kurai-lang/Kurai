@@ -1,10 +1,10 @@
 use colored::Colorize;
-use inkwell::{types::BasicMetadataTypeEnum, values::{BasicMetadataValueEnum, IntValue}, AddressSpace, IntPredicate};
+use inkwell::{types::BasicMetadataTypeEnum, values::BasicMetadataValueEnum, AddressSpace};
 use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
 
-use crate::codegen::{passes::lower_expr_to_llvm, CodeGen, VariableInfo};
+use crate::codegen::{CodeGen, VariableInfo};
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
 use kurai_token::token::token::Token;
 use kurai_types::{typ::Type, value::Value};
@@ -188,91 +188,67 @@ impl<'ctx> CodeGen<'ctx> {
                         }
                     }
                     self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
-                    let return_value = self.context.i32_type().const_int(0 as u64, false);
+                    let return_value = self.context.i32_type().const_int(0_u64, false);
                     self.builder.build_return(Some(&return_value)).unwrap();
                 }
                 Stmt::Import { path, nickname, is_glob} => {
-                                let key = path.join("/");
-                                // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
-                                let modname = path[0].clone();
+                    let key = path.join("/");
+                    // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
+                    let modname = path[0].clone();
 
-                                if self.loaded_modules.contains_key(&modname) {
-                                    eprintln!("Module `{}` already loaded", modname);
-                                    return;
-                                }
+                    if self.loaded_modules.contains_key(&modname) {
+                        eprintln!("Module `{}` already loaded", modname);
+                        return;
+                    }
 
-                                let path_str = format!("{}.kurai", key);
-                                let code = std::fs::read_to_string(&path_str).expect(&format!("Failed to load module {}", path_str));
-                                let tokens = Token::tokenize(&code);
+                    let path_str = format!("{}.kurai", key);
+                    let code = std::fs::read_to_string(&path_str)
+                        .unwrap_or_else(|_| panic!("Failed to load module {}", path_str));
+                    let tokens = Token::tokenize(&code);
 
-                                let mut pos = 0;
-                                let mut stmts = Vec::new();
+                    let mut pos = 0;
+                    let mut stmts = Vec::new();
 
-                                while pos < tokens.len() {
-                                    match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope) {
-                                        Ok(stmt) => stmts.push(stmt),
-                                        Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
-                                    }
-                                }
+                    while pos < tokens.len() {
+                        match parse_imported_file(&tokens, &mut pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope) {
+                            Ok(stmt) => stmts.push(stmt),
+                            Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
+                        }
+                    }
 
-                                self.loaded_modules.insert(modname.clone(), stmts.clone());
+                    self.loaded_modules.insert(modname.clone(), stmts.clone());
 
-                                if is_glob {
-                                    self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
-                                } else {
-                                    #[cfg(debug_assertions)]
-                                    {
-                                        println!("{}: Not global import. Just a testing", "testing".cyan().bold());
-                                    }
+                    if is_glob {
+                        self.execute_every_stmt_in_code(stmts, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
+                    } else {
+                        #[cfg(debug_assertions)]
+                        {
+                            println!("{}: Not global import. Just a testing", "testing".cyan().bold());
+                        }
 
-                                    self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
-                                }
+                        self.generate_code(stmts, vec![], discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
+                    }
 
-                                // NOTE: Later
-                                // if let Some(nick) = nickname {
-                                //     self.imports.insert(nick.clone(), name.clone()); // Make sure `imports` is in your struct
-                                // } else {
-                                //     self.imports.insert(name.clone(), name.clone());
-                                // }
-                            }
+                    // NOTE: Later
+                    // if let Some(nick) = nickname {
+                    //     self.imports.insert(nick.clone(), name.clone()); // Make sure `imports` is in your struct
+                    // } else {
+                    //     self.imports.insert(name.clone(), name.clone());
+                    // }
+                }
                 Stmt::If { branches, else_body } => {
-                                let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-                                // let merge_block = self.context.append_basic_block(current_function, "merge");
+                    let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+                    // let merge_block = self.context.append_basic_block(current_function, "merge");
 
-                                let mut prev_block = self.builder.get_insert_block().unwrap();
+                    let mut prev_block = self.builder.get_insert_block().unwrap();
 
-                                // process each branch hehe
-                                for (i, branch) in branches.iter().enumerate() {
-                                    if let Some(block) = Some(prev_block) {
-                                        self.builder.position_at_end(block);
-                                    }
-
-                                let next_block = Some(
-                                    self.build_conditional_branch(
-                                        current_function,
-                                        &branch.condition,
-                                        &branch.body.clone(),
-                                        &else_body,
-                                        discovered_modules,
-                                        &i.to_string(),
-                                        stmt_parser,
-                                        fn_parser,
-                                        import_parser,
-                                        block_parser,
-                                        loop_parser,
-                                        scope
-                                        )
-                                    );
-                                }
-
-                                // restore builder position if needed
-                                // or move to merge block 
-                                // if self.builder.get_insert_block().is_some() {
-                                //     self.builder.position_at_end(merge_block);
-                                // } else {
-                                //     self.builder.position_at_end(prev_block);
-                                // }
-                            }
+                    // process each branch hehe
+                    for (i, branch) in branches.iter().enumerate() {
+                        if let Some(block) = Some(prev_block) {
+                            self.builder.position_at_end(block);
+                        }
+                    }
+                }
                 Stmt::Loop { body } => {
                     let function = self.builder.get_insert_block()
                         .expect("Not inside a block")
@@ -313,7 +289,7 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::Break => {
                     let target = self.loop_exit_stack.last().ok_or("Break outside of loop").unwrap();
-                    self.builder.build_unconditional_branch(*target);
+                    self.builder.build_unconditional_branch(*target).unwrap();
 
                     // safety net: prevent building more instructions in the same block
                     // let unreachable_block = self.context.append_basic_block(function, "unreachable");
