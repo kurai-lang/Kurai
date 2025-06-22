@@ -1,11 +1,7 @@
-use std::{fmt::format, ops::Deref};
-
-use colored::Colorize;
-use inkwell::{basic_block::BasicBlock, values::FunctionValue, IntPredicate};
+use inkwell::{basic_block::BasicBlock, values::FunctionValue};
 
 use kurai_core::scope::Scope;
 use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
-// use kurai_core::parse::{bin_op::BinOp, expr::Expr, stmt::Stmt};
 use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 use kurai_expr::expr::Expr;
@@ -32,7 +28,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         // convert condition to boolean if needed
         let bool_cond = match condition_expr { // If it's already a comparison operation, use it as-is
-            Expr::Binary { op: BinOp::Gt | BinOp::Lt | BinOp::Ge | BinOp::Le, left, right } => {
+            Expr::Binary { op: BinOp::Gt | BinOp::Lt | BinOp::Ge | BinOp::Le, .. } => {
                 // Already returns i1 boolean
                 condition.into_int_value()
             }
@@ -60,9 +56,6 @@ impl<'ctx> CodeGen<'ctx> {
         };
 
         let then_block = self.context.append_basic_block(current_function, &format!("then_{}", block_suffix));
-        // let else_block = else_body.as_ref().map(|_| {
-        //     self.context.append_basic_block(current_function, &format!("else_{}", block_suffix))
-        // });
         let else_block = self.context.append_basic_block(current_function, &format!("else_{}", block_suffix));
         let merge_block = self.context.append_basic_block(current_function, &format!("merge_{}", block_suffix));
 

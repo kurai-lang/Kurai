@@ -55,178 +55,142 @@ impl<'ctx> CodeGen<'ctx> {
                     self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
-                                match name.as_str() {
-                                    "printf" => {
-                                        // FIXME: Yes
-                                        self.import_printf().unwrap();
-                                        self.printf(&args).unwrap();
-                                    }
-                                    _ => {
-                                        // let module = self.module.lock().unwrap();
+                    match name.as_str() {
+                        "printf" => {
+                            self.import_printf().unwrap();
+                            self.printf(&args).unwrap();
+                        }
+                        _ => {
+                            let function = if name.contains("::") {
+                                self.get_or_compile_function(
+                                    name.as_str(),
+                                    discovered_modules,
+                                    stmt_parser,
+                                    fn_parser,
+                                    import_parser,
+                                    block_parser,
+                                    loop_parser,
+                                    scope
+                                )
+                            } else {
+                                self.module.lock().unwrap().get_function(&name)
+                            };
 
-                                        // #[cfg(debug_assertions)] {
-                                        //     println!("Module: {:?}", module);
-                                        // }
-                                        // let function = module.get_function(&name);
-                                        let function = if name.contains("::") {
-                                            let mut parts = name.split("::");
-                                            let modname = parts.next().unwrap();
-                                            let funcname = parts.next().unwrap();
+                            if let Some(function) = function {
+                                let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
+                                for arg in &args {
+                                    let value = arg.value.as_ref().unwrap_or_else(||
+                                        panic!("{}: Failed to compile arguments for function {}",
+                                            "error".red().bold(),
+                                            name.bold()));
 
-                                            if let Some(mod_stmts) = self.loaded_modules.get(modname) {
-                                                let already_compiled = self.module.lock().unwrap().get_function(funcname);
-                                                if already_compiled.is_some() {
-                                                    already_compiled
-                                                } else {
-                                                    for stmt in mod_stmts {
-                                                        if let Stmt::FnDecl { name: fname, .. } = stmt {
-                                                            if fname == funcname {
-                                                                #[cfg(debug_assertions)]
-                                                                {
-                                                                    println!("{} `{}` from `{}` is now being compiled", "Compiling function".green(), funcname, modname);
-                                                                }
-
-                                                                self.generate_code(
-                                                                    vec![stmt.clone()], 
-                                                                    vec![],
-                                                                    discovered_modules,
-                                                                    stmt_parser,
-                                                                    fn_parser,
-                                                                    import_parser,
-                                                                    block_parser,
-                                                                    loop_parser,
-                                                                    scope
-                                                                );
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                    // try again after compiling
-                                                    self.module.lock().unwrap().get_function(funcname)
-                                                }
-                                            } else {
-                                                println!("{}: Module not found: `{}`", "error".red().bold(), modname);
-                                                None
-                                            }
-                                        } else {
-                                            self.module.lock().unwrap().get_function(&name)
-                                        };
-
-                                        if let Some(function) = function {
-                                            let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
-                                            for arg in &args {
-                                                if let Some(value) = &arg.value {
-                                                    if let Some(llvm_value) = self.lower_expr_to_llvm(value) {
-                                                        compiled_args.push(llvm_value.into());
-                                                    }
-                                                } else {
-                                                    println!("{} {}", "Failed to compile arguments for function".red(), name.red());
-                                                }
-                                            }
-                                            self.builder.build_call(function, &compiled_args, &name).unwrap();
-                                        } else {
-                                            println!("{} {}", "Couldnt find function named:".red(), name.red());
-                                        }
-                                    }
+                                    self.lower_expr_to_llvm(value)
+                                        .map(|expr| compiled_args.push(expr.into()));
                                 }
+                                self.builder.build_call(function, &compiled_args, &name).unwrap();
+                            } else {
+                                println!("{} {}", "Couldnt find function named:".red(), name.red());
                             }
+                        }
+                    }
+                }
                 Stmt::FnDecl { name, args, body } => {
-                                // Map the argument types to LLVM types 
-                                // remember, we need to speak LLVM IR language, not rust!
-                                #[cfg(debug_assertions)]
-                                {
-                                    dbg!("converting args to llvm args types");
-                                }
-                                let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
-                                    match arg.typ {
-                                        Type::Int => self.context.i32_type().into(),
-                                        Type::Float => self.context.f32_type().into(),
-                                        Type::Bool => self.context.bool_type().into(),
-                                        Type::Str => self.context.i8_type().ptr_type(AddressSpace::default()).into(),
-                                        _ => panic!("Unknown type: {:?}", arg.typ),
-                                        }
-                                    }).collect();
-
-                                    #[cfg(debug_assertions)]
-                                    {
-                                        dbg!("done");
-                                    }
-
-                                {
-                                    let module = self.module.lock().unwrap();
-
-                                    if name == "main" && module.get_function("main").is_some() {
-                                        let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-                                        let function = module.add_function(&name, fn_type, None);
-                                        let basic_block = self.context.append_basic_block(function, "entry");
-                                        self.builder.position_at_end(basic_block);
-
-
-                                        for (i, arg) in args.iter().enumerate() {
-                                            let llvm_arg = function.get_nth_param(i as u32).unwrap().into_pointer_value();
-
-                                            let alloca = self.builder.build_alloca(
-                                                llvm_arg.get_type(),
-                                                &arg.name,
-                                            ).unwrap();
-
-                                            let variable_info = VariableInfo {
-                                                ptr_value: alloca,
-                                                var_type: arg.typ.clone(),
-                                            };
-
-                                            self.builder.build_store(alloca, llvm_arg).unwrap();
-                                            self.variables.insert(arg.name.clone(), variable_info);
-                                        }
-                                    }
-                                }
-
-                                {
-                                    let module = self.module.lock().unwrap();
-
-                                    #[cfg(debug_assertions)]
-                                    {
-                                        println!("Module: {:?}", module);
-                                        dbg!("creating function named: {}", &name);
-                                    }
-
-                                    let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-                                    let function = module.add_function(&name, fn_type, None);
-                                    let basic_block = self.context.append_basic_block(function, "entry");
-                                    self.builder.position_at_end(basic_block);
-
-                                    #[cfg(debug_assertions)]
-                                    {
-                                        dbg!("done");
-                                        dbg!("parsing the function's body");
-                                    }
-                                    for (i, arg) in args.iter().enumerate() {
-                                        let llvm_arg = function.get_nth_param(i as u32).unwrap();//.into_pointer_value();
-                                        let pointee_type = llvm_arg.get_type();
-                                        let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
-
-                                        println!("{:?}", pointee_type);
-                                        println!("{:?}", var_type);
-                                        println!("{:?}", llvm_arg.get_type());
-
-                                        let alloca = self.builder.build_alloca(
-                                            llvm_arg.get_type(),
-                                            &arg.name,
-                                        ).unwrap();
-
-                                        self.builder.build_store(alloca, llvm_arg).unwrap();
-
-                                        let var_info = VariableInfo {
-                                            ptr_value: alloca,
-                                            var_type,
-                                        };
-                                        self.variables.insert(arg.name.clone(), var_info);
-                                    }
-                                }
-                                    self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
-                                    let return_value = self.context.i32_type().const_int(0 as u64, false);
-                                    self.builder.build_return(Some(&return_value)).unwrap();
+                    // Map the argument types to LLVM types 
+                    // remember, we need to speak LLVM IR language, not rust!
+                    #[cfg(debug_assertions)]
+                    {
+                        println!("converting args to llvm args types");
+                    }
+                    let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
+                        match arg.typ {
+                            Type::Int => self.context.i32_type().into(),
+                            Type::Float => self.context.f32_type().into(),
+                            Type::Bool => self.context.bool_type().into(),
+                            Type::Str => self.context.ptr_type(AddressSpace::default()).into(),
+                            _ => panic!("Unknown type: {:?}", arg.typ),
                             }
+                        }).collect();
+
+                        #[cfg(debug_assertions)]
+                        {
+                            println!("done");
+                        }
+
+                    {
+                        let module = self.module.lock().unwrap();
+
+                        if name == "main" && module.get_function("main").is_some() {
+                            let fn_type = self.context.i32_type().fn_type(&arg_types, false);
+                            let function = module.add_function(&name, fn_type, None);
+                            let basic_block = self.context.append_basic_block(function, "entry");
+                            self.builder.position_at_end(basic_block);
+
+
+                            for (i, arg) in args.iter().enumerate() {
+                                let llvm_arg = function.get_nth_param(i as u32).unwrap().into_pointer_value();
+
+                                let alloca = self.builder.build_alloca(
+                                    llvm_arg.get_type(),
+                                    &arg.name,
+                                ).unwrap();
+
+                                let variable_info = VariableInfo {
+                                    ptr_value: alloca,
+                                    var_type: arg.typ.clone(),
+                                };
+
+                                self.builder.build_store(alloca, llvm_arg).unwrap();
+                                self.variables.insert(arg.name.clone(), variable_info);
+                            }
+                        }
+                    }
+
+                    {
+                        let module = self.module.lock().unwrap();
+
+                        #[cfg(debug_assertions)]
+                        {
+                            println!("Module: {:?}", module);
+                            println!("creating function named: {}", &name);
+                        }
+
+                        let fn_type = self.context.i32_type().fn_type(&arg_types, false);
+                        let function = module.add_function(&name, fn_type, None);
+                        let basic_block = self.context.append_basic_block(function, "entry");
+                        self.builder.position_at_end(basic_block);
+
+                        #[cfg(debug_assertions)]
+                        {
+                            println!("done");
+                            println!("parsing the function's body");
+                        }
+                        for (i, arg) in args.iter().enumerate() {
+                            let llvm_arg = function.get_nth_param(i as u32).unwrap();//.into_pointer_value();
+                            let pointee_type = llvm_arg.get_type();
+                            let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
+
+                            println!("{:?}", pointee_type);
+                            println!("{:?}", var_type);
+                            println!("{:?}", llvm_arg.get_type());
+
+                            let alloca = self.builder.build_alloca(
+                                llvm_arg.get_type(),
+                                &arg.name,
+                            ).unwrap();
+
+                            self.builder.build_store(alloca, llvm_arg).unwrap();
+
+                            let var_info = VariableInfo {
+                                ptr_value: alloca,
+                                var_type,
+                            };
+                            self.variables.insert(arg.name.clone(), var_info);
+                        }
+                    }
+                    self.execute_every_stmt_in_code(body, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
+                    let return_value = self.context.i32_type().const_int(0 as u64, false);
+                    self.builder.build_return(Some(&return_value)).unwrap();
+                }
                 Stmt::Import { path, nickname, is_glob} => {
                                 let key = path.join("/");
                                 // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
