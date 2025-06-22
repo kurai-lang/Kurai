@@ -1,5 +1,5 @@
 ## Kurai's Current Logos 
-![Frame 1 (2)](https://github.com/user-attachments/assets/8f1fe4f7-2385-4356-9c71-deb6129f46e0)
+![Frame 1 (3)](https://github.com/user-attachments/assets/b1e92c52-65c8-4982-9964-d20df88ca90b)
 
 ## About the Programming Language
 
