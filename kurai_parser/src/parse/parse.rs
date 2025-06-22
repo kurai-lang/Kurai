@@ -10,7 +10,7 @@ use kurai_token::eat::eat;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::parse_stmt::parse_stmt;
-use crate::{BlockParser, FunctionParser, ImportParser, LoopParser};
+use crate::{BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser};
 
 pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Option<Expr> {
     // parse_equal(tokens, pos)
@@ -131,16 +131,20 @@ pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
 pub fn parse_out_vec_stmt(
     tokens: &[Token],
     discovered_modules: &mut Vec<String>,
-    block_parser: &dyn BlockParser, fn_parser: &dyn FunctionParser,
-    import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser,
+    parsers: &GroupedParsers,
     scope: &mut Scope,
 ) -> Vec<Stmt> {
     let mut pos = 0;
     let mut stmts = Vec::new();
 
     while pos < tokens.len() {
-        match parse_stmt(tokens, &mut pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope) {
+        match parsers.stmt_parser.parse_stmt(
+            tokens,
+            &mut pos,
+            discovered_modules, 
+            parsers,
+            scope
+        ) {
             Ok(stmt) => stmts.push(stmt),
             Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", tokens.get(pos), e, tokens)
         }

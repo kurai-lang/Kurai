@@ -1,5 +1,5 @@
 use kurai_core::scope::Scope;
-use kurai_parser::{parse::parse_block::{parse_block, parse_block_stmt}, BlockParser, FunctionParser, ImportParser, LoopParser};
+use kurai_parser::{parse::parse_block::{parse_block, parse_block_stmt}, BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser};
 use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
 
@@ -18,13 +18,10 @@ impl BlockParser for BlockParserStruct {
         tokens: &[kurai_token::token::token::Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn kurai_parser::FunctionParser,
-        import_parser: &dyn kurai_parser::ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Vec<kurai_stmt::stmt::Stmt>, String> {
-        parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+        parse_block(tokens, pos, discovered_modules, parsers, scope)
     }
 
     fn parse_block_stmt(
@@ -32,13 +29,10 @@ impl BlockParser for BlockParserStruct {
         tokens: &[kurai_token::token::token::Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn kurai_parser::FunctionParser,
-        import_parser: &dyn kurai_parser::ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
-        parse_block_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+        parse_block_stmt(tokens, pos, discovered_modules, parsers, scope)
     }
 }
 
@@ -48,41 +42,32 @@ impl LoopParser for LoopParserStruct {
         &self,
         tokens: &[Token],
         pos: &mut usize,
-        block_parser: &dyn BlockParser,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
-        parse_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope)
+        parse_loop(tokens, pos, discovered_modules, parsers, scope)
     }
 
     fn parse_for_loop(
         &self,
         tokens: &[kurai_token::token::token::Token],
         pos: &mut usize,
-        block_parser: &dyn BlockParser,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn kurai_parser::FunctionParser,
-        import_parser: &dyn kurai_parser::ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
-        parse_for_loop(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+        parse_for_loop(tokens, pos, discovered_modules, parsers, scope)
     }
 
     fn parse_while_loop(
         &self,
         tokens: &[kurai_token::token::token::Token],
         pos: &mut usize,
-        block_parser: &dyn BlockParser,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn kurai_parser::FunctionParser,
-        import_parser: &dyn kurai_parser::ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
-        parse_while_loop(tokens, pos, block_parser, discovered_modules, fn_parser, import_parser, loop_parser, scope)
+        parse_while_loop(tokens, pos, discovered_modules, parsers, scope)
     }
 }

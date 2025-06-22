@@ -1,20 +1,16 @@
 use kurai_core::scope::Scope;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
-use crate::{BlockParser, FunctionParser, ImportParser, LoopParser};
+use crate::GroupedParsers;
 
 use super::parse::parse_expr;
-use super::parse_block::parse_block;
 use kurai_stmt::stmt::{ IfBranch, Stmt };
 
 pub fn parse_if_else(
     tokens: &[Token],
     pos: &mut usize,
     discovered_modules: &mut Vec<String>,
-    block_parser: &dyn BlockParser,
-    fn_parser: &dyn FunctionParser,
-    import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser,
+    parsers: &GroupedParsers,
     scope: &mut Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::If, tokens, pos) {
@@ -36,14 +32,11 @@ pub fn parse_if_else(
     //     return Err("Expected `{` at start of block".to_string());
     // }
 
-    let then_branch = block_parser.parse_block(
+    let then_branch = parsers.block_parser.parse_block(
         tokens,
         pos,
         discovered_modules,
-        block_parser,
-        fn_parser,
-        import_parser,
-        loop_parser,
+        parsers,
         scope,
     )?;
 
@@ -57,14 +50,11 @@ pub fn parse_if_else(
 
     let mut else_body: Option<Vec<Stmt>> = None;
     if eat(&Token::Else, tokens, pos) {
-        else_body = Some(block_parser.parse_block(
+        else_body = Some(parsers.block_parser.parse_block(
             tokens,
             pos,
             discovered_modules, 
-            block_parser,
-            fn_parser,
-            import_parser,
-            loop_parser,
+            parsers,
             scope
         )?);
     }

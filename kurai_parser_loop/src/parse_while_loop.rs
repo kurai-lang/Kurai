@@ -1,17 +1,13 @@
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
-use kurai_parser::{parse::{parse::parse_expr, parse_block::parse_block}, BlockParser, LoopParser};
+use kurai_parser::{parse::parse::parse_expr, GroupedParsers};
 use kurai_stmt::stmt::{IfBranch, Stmt};
 use kurai_token::{eat::eat, token::token::Token};
 
 pub fn parse_while_loop(
     tokens: &[kurai_token::token::token::Token],
     pos: &mut usize,
-    block_parser: &dyn BlockParser,
     discovered_modules: &mut Vec<String>,
-    fn_parser: &dyn kurai_parser::FunctionParser,
-    import_parser: &dyn kurai_parser::ImportParser,
-    loop_parser: &dyn LoopParser,
+    parsers: &GroupedParsers,
     scope: &mut Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::While, tokens, pos) {    
@@ -31,14 +27,11 @@ pub fn parse_while_loop(
     //     return Err("Expected `)` after `while` condition".to_string());
     // }
 
-    let body = parse_block(
+    let body = parsers.block_parser.parse_block(
         tokens,
         pos,
         discovered_modules,
-        block_parser,
-        fn_parser,
-        import_parser,
-        loop_parser,
+        parsers,
         scope,
     )?;
 

@@ -1,13 +1,9 @@
-use kurai_binop::bin_op::BinOp;
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
-use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
-use crate::parse::utils::expr_to_value::expr_to_value;
 
 pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
     if !eat(&Token::Let, tokens, pos) {

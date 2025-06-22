@@ -1,7 +1,7 @@
 use colored::Colorize;
 use inkwell::values::FunctionValue;
 use kurai_core::scope::Scope;
-use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
+use kurai_parser::GroupedParsers;
 use kurai_stmt::stmt::Stmt;
 
 use crate::codegen::CodeGen;
@@ -11,11 +11,7 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         name: &str,
         discovered_modules: &mut Vec<String>,
-        stmt_parser: &dyn StmtParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        block_parser: &dyn BlockParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         if let Some((modname, funcname)) = Self::split_module_function_name(name) {
@@ -24,11 +20,7 @@ impl<'ctx> CodeGen<'ctx> {
                 modname,
                 funcname,
                 discovered_modules,
-                stmt_parser,
-                fn_parser,
-                import_parser,
-                block_parser, 
-                loop_parser,
+                parsers,
                 scope
             )
         } else {
@@ -50,11 +42,7 @@ impl<'ctx> CodeGen<'ctx> {
         modname: &str,
         funcname: &str,
         discovered_modules: &mut Vec<String>,
-        stmt_parser: &dyn StmtParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        block_parser: &dyn BlockParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         let mod_stmts = self.loaded_modules.get(modname)?;
@@ -82,11 +70,7 @@ impl<'ctx> CodeGen<'ctx> {
                 vec![stmt.clone()], 
                 vec![],
                 discovered_modules,
-                stmt_parser,
-                fn_parser,
-                import_parser,
-                block_parser,
-                loop_parser,
+                parsers,
                 scope
             );
         }

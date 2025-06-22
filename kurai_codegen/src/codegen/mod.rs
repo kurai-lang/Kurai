@@ -6,7 +6,7 @@ pub mod value;
 
 use colored::Colorize;
 use kurai_core::scope::Scope;
-use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
+use kurai_parser::{BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser, StmtParser};
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::{typ::Type, value::Value};
 use kurai_expr::expr::Expr;
@@ -60,17 +60,18 @@ impl<'ctx> CodeGen<'ctx> {
         parsed_stmt: Vec<Stmt>,
         exprs: Vec<Expr>, 
         discovered_modules: &mut Vec<String>, 
-        stmt_parser: &dyn StmtParser, 
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        block_parser: &dyn BlockParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) {
         // WARNING: nothing lol ,just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
-        self.execute_every_stmt_in_code(parsed_stmt, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope);
+        self.execute_every_stmt_in_code(
+            parsed_stmt,
+            discovered_modules,
+            parsers,
+            scope
+        );
 
         // self.builder.build_call(
         //     printf_fn,

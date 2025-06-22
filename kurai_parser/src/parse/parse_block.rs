@@ -2,8 +2,7 @@ use kurai_core::scope::Scope;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 use kurai_stmt::stmt::Stmt;
-use crate::parse::parse_stmt::parse_stmt;
-use crate::{BlockParser, FunctionParser, ImportParser, LoopParser};
+use crate::{ GroupedParsers, BlockParser };
 
 pub struct BlockParserStruct;
 impl BlockParser for BlockParserStruct {
@@ -12,13 +11,16 @@ impl BlockParser for BlockParserStruct {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Vec<Stmt>, String> {
-        parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+        parse_block(
+            tokens,
+            pos,
+            discovered_modules,
+            parsers,
+            scope
+        )
     }
 
     fn parse_block_stmt(
@@ -26,13 +28,16 @@ impl BlockParser for BlockParserStruct {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
-        parse_block_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+        parse_block_stmt(
+            tokens,
+            pos,
+            discovered_modules,
+            parsers,
+            scope
+        )
     }
 }
 
@@ -40,10 +45,7 @@ pub fn parse_block(
     tokens: &[Token],
     pos: &mut usize,
     discovered_modules: &mut Vec<String>,
-    block_parser: &dyn BlockParser,
-    fn_parser: &dyn FunctionParser,
-    import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser,
+    parsers: &GroupedParsers,
     scope: &mut Scope,
 ) -> Result<Vec<Stmt>, String> {
     if !eat(&Token::OpenBracket, tokens, pos) {
@@ -65,14 +67,11 @@ pub fn parse_block(
                 #[cfg(debug_assertions)]
                 { println!(">> calling parse_stmt at pos {}: {:?}", *pos, tokens.get(*pos)); }
 
-                let stmt = parse_stmt(
+                let stmt = parsers.stmt_parser.parse_stmt(
                     tokens,
                     pos,
                     discovered_modules,
-                    block_parser,
-                    fn_parser,
-                    import_parser,
-                    loop_parser,
+                    parsers,
                     scope,
                 )?;
 
@@ -93,12 +92,9 @@ pub fn parse_block_stmt(
     tokens: &[Token],
     pos: &mut usize,
     discovered_modules: &mut Vec<String>,
-    block_parser: &dyn BlockParser,
-    fn_parser: &dyn FunctionParser,
-    import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser,
+    parsers: &GroupedParsers,
     scope: &mut Scope,
 ) -> Result<Stmt, String> {
-    parse_block(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope)
+    parse_block(tokens, pos, discovered_modules, parsers,scope)
         .map(Stmt::Block)
 }

@@ -2,11 +2,9 @@ use colored::Colorize;
 use kurai_core::scope::Scope;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
-use kurai_types::value::Value;
 use kurai_stmt::stmt::Stmt;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
-use crate::parse::utils::expr_to_value::expr_to_value;
 
 pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {

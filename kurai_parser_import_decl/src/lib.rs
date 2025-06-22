@@ -1,5 +1,5 @@
 use kurai_core::scope::Scope;
-use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser, StmtParser};
+use kurai_parser::{GroupedParsers, ImportParser};
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
 use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
@@ -20,13 +20,9 @@ impl ImportParser for ImportParserStruct {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        stmt_parser: &dyn StmtParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        block_parser: &dyn BlockParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String> {
-        parse_imported_file(tokens, pos, discovered_modules, stmt_parser, fn_parser, import_parser, block_parser, loop_parser, scope)
+        parse_imported_file(tokens, pos, discovered_modules, parsers, scope)
     }
 }

@@ -1,8 +1,7 @@
 use kurai_core::scope::Scope;
-use kurai_parser::{BlockParser, FunctionParser, ImportParser, LoopParser};
+use kurai_parser::GroupedParsers;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
-use kurai_parser::parse::parse_stmt::parse_stmt;
 use kurai_stmt::stmt::Stmt;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::typ::Type;
@@ -11,10 +10,7 @@ pub fn parse_fn_decl(
     tokens: &[Token],
     pos: &mut usize,
     discovered_modules: &mut Vec<String>,
-    block_parser: &dyn BlockParser,
-    fn_parser: &dyn FunctionParser,
-    import_parser: &dyn ImportParser,
-    loop_parser: &dyn LoopParser,
+    parsers: &GroupedParsers,
     scope: &mut Scope,
 ) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {
@@ -85,7 +81,13 @@ pub fn parse_fn_decl(
                 break;
             }
 
-            match parse_stmt(tokens, pos, discovered_modules, block_parser, fn_parser, import_parser, loop_parser, scope) {
+            match parsers.stmt_parser.parse_stmt(
+                tokens, 
+                pos,
+                discovered_modules, 
+                parsers,
+                scope
+            ) {
                 Ok(stmt) => body.push(stmt),
                 Err(e) => return Err(format!("Couldnt work on the body\nREASON: {}", e))
             }

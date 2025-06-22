@@ -11,11 +11,7 @@ pub trait ImportParser {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        stmt_parser: &dyn StmtParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        block_parser: &dyn BlockParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<kurai_stmt::stmt::Stmt, String>;
 }
@@ -26,10 +22,7 @@ pub trait StmtParser {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
 }
@@ -40,10 +33,7 @@ pub trait BlockParser {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Vec<Stmt>, String>;
 
@@ -52,10 +42,7 @@ pub trait BlockParser {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        block_parser: &dyn BlockParser,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
 }
@@ -65,11 +52,8 @@ pub trait LoopParser {
         &self,
         tokens: &[Token],
         pos: &mut usize,
-        block_parser: &dyn BlockParser,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
 
@@ -77,11 +61,8 @@ pub trait LoopParser {
         &self,
         tokens: &[Token],
         pos: &mut usize,
-        block_parser: &dyn BlockParser,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
 
@@ -89,11 +70,8 @@ pub trait LoopParser {
         &self,
         tokens: &[kurai_token::token::token::Token],
         pos: &mut usize,
-        block_parser: &dyn BlockParser,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
 }
@@ -104,11 +82,34 @@ pub trait FunctionParser {
         tokens: &[Token],
         pos: &mut usize,
         discovered_modules: &mut Vec<String>,
-        fn_parser: &dyn FunctionParser,
-        import_parser: &dyn ImportParser,
-        block_parser: &dyn BlockParser,
-        loop_parser: &dyn LoopParser,
+        parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> Result<Stmt, String>;
     fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
+}
+
+pub struct GroupedParsers<'a> {
+    pub stmt_parser: &'a dyn StmtParser,
+    pub fn_parser: &'a dyn FunctionParser,
+    pub import_parser: &'a dyn ImportParser,
+    pub block_parser: &'a dyn BlockParser,
+    pub loop_parser: &'a dyn LoopParser,
+}
+
+impl<'a> GroupedParsers<'a> {
+    pub fn new(
+        stmt_parser: &'a dyn StmtParser,
+        fn_parser: &'a dyn FunctionParser,
+        import_parser: &'a dyn ImportParser,
+        block_parser: &'a dyn BlockParser,
+        loop_parser: &'a dyn LoopParser,
+    ) -> Self {
+        GroupedParsers {
+            stmt_parser,
+            fn_parser,
+            import_parser,
+            block_parser,
+            loop_parser,
+        }
+    }
 }

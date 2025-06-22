@@ -2,7 +2,7 @@ use colored::Colorize;
 use inkwell::context::Context;
 use kurai_codegen::codegen::CodeGen;
 use kurai_core::scope::Scope;
-use kurai_parser::parse::{parse::{parse_out_vec_expr, parse_out_vec_stmt}, parse_block::BlockParserStruct, parse_stmt::StmtParserStruct};
+use kurai_parser::{parse::{parse::{parse_out_vec_expr, parse_out_vec_stmt}, parse_block::BlockParserStruct, parse_stmt::StmtParserStruct}, GroupedParsers};
 use kurai_parser_function::FunctionParserStruct;
 use kurai_parser_import_decl::ImportParserStruct;
 use kurai_parser_loop::LoopParserStruct;
@@ -34,17 +34,22 @@ fn main() {
         }
     "#.to_string();
 
-    let mut scope = Scope::new();
     let context = Context::create();
+    let parsers = GroupedParsers::new(
+        &StmtParserStruct,
+        &FunctionParserStruct,
+        &ImportParserStruct,
+        &BlockParserStruct,
+        &LoopParserStruct
+    );
+
+    let mut scope = Scope::new();
     let tokens = Token::tokenize(code.as_str());
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parse_out_vec_stmt(
         &tokens,
         &mut discovered_modules,
-        &BlockParserStruct, 
-        &FunctionParserStruct,
-        &ImportParserStruct,
-        &LoopParserStruct,
+        &parsers,
         &mut scope,
     );
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
@@ -56,11 +61,7 @@ fn main() {
         parsed_stmt_vec,
         parsed_expr_vec.unwrap(), 
         &mut discovered_modules,
-        &StmtParserStruct,
-        &FunctionParserStruct,
-        &ImportParserStruct,
-        &BlockParserStruct,
-        &LoopParserStruct,
+        &parsers,
         &mut scope,
     );
 

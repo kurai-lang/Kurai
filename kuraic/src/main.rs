@@ -6,6 +6,7 @@ use inkwell::context::Context;
 use kurai_codegen::codegen::CodeGen;
 use kurai_parser::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
 use kurai_parser::parse::parse_stmt::StmtParserStruct;
+use kurai_parser::GroupedParsers;
 use kurai_parser_function::FunctionParserStruct;
 use kurai_parser_import_decl::ImportParserStruct;
 use kurai_parser_loop::LoopParserStruct;
@@ -58,6 +59,13 @@ fn main() {
     }));
 
     let context = Context::create();
+    let parsers = GroupedParsers::new(
+        &StmtParserStruct,
+        &FunctionParserStruct,
+        &ImportParserStruct,
+        &BlockParserStruct,
+        &LoopParserStruct
+    );
 
     let mut code = String::new();
 
@@ -85,10 +93,7 @@ fn main() {
     let parsed_stmt_vec = parse_out_vec_stmt(
         &tokens,
         &mut discovered_modules,
-        &BlockParserStruct, 
-        &FunctionParserStruct,
-        &ImportParserStruct,
-        &LoopParserStruct,
+        &parsers,
         &mut scope,
     );
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
@@ -107,11 +112,7 @@ fn main() {
         parsed_stmt_vec,
         parsed_expr_vec.unwrap(), 
         &mut discovered_modules,
-        &StmtParserStruct,
-        &FunctionParserStruct,
-        &ImportParserStruct,
-        &BlockParserStruct,
-        &LoopParserStruct,
+        &parsers,
         &mut scope,
     );
     let result = codegen.show_result(); //result returns String
