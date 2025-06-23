@@ -30,6 +30,9 @@ struct Cli {
 
     #[arg(long, default_value="2", short='O', value_parser=clap::value_parser!(u8))]
     pub opt_level: u8,
+
+    #[arg(long, action)]
+    pub show_output_files: bool,
 }
 
 fn main() {
@@ -164,10 +167,10 @@ fn main() {
         println!("{:>5}{} the program in {:.2}s", " ", "Finished".green().bold(), end_time);
         println!("{:>5}{} `{}`", " ", "Running".green().bold(), &output_name);
 
-        if !(cfg!(debug_assertions)) {
+        if !cli.show_output_files {
             remove_file(&output_path_ll).unwrap();
             remove_file(&output_path_bc).unwrap();
-            remove_file(&output_path_opt_bc).unwrap();
+            remove_file(&output_path_opt_ll).unwrap();
             remove_file(&output_path_s).unwrap();
         }
 
