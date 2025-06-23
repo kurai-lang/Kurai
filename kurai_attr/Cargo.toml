@@ -1,0 +1,4 @@
+[package]
+name = "kurai_attr"
+version = "0.4.1"
+edition = "2024"

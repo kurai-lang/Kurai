@@ -16,17 +16,22 @@ pub fn parse_if_else(
     if !eat(&Token::If, tokens, pos) {
         return Err("Expected keyword `if`".to_string());
     }
+    // check if ( exists; if it does, parse inside it; otherwise, parse the next expression directly.
 
-    if !eat(&Token::OpenParenthese, tokens, pos) {
-        return Err("Expected `(` after `if`".to_string());
-    }
+    let condition = if eat(&Token::OpenParenthese, tokens, pos) {
+        let cond = parse_expr(tokens, pos, true)
+            .ok_or_else(|| format!("Failed to parse expression inside `if (...)` at token {}", pos))?;
 
-    let condition = parse_expr(tokens, pos, true)
-        .ok_or_else(|| format!("Failed to parse expression inside `if (...)` at token {}", pos))?;
+        if !eat(&Token::CloseParenthese, tokens, pos) {
+            return Err("Expected `)` after `if` condition".to_string());
+        }
 
-    if !eat(&Token::CloseParenthese, tokens, pos) {
-        return Err("Expected `)` after `if` condition".to_string());
-    }
+        cond
+    } else {
+        parse_expr(tokens, pos, true)
+            .ok_or_else(|| format!("Failed to parse expression after `if` at token {}", pos))?
+    };
+
 
     // if !eat(&Token::OpenBracket, tokens, pos) {
     //     return Err("Expected `{` at start of block".to_string());
@@ -48,31 +53,17 @@ pub fn parse_if_else(
     //     return Err("Expected `{` at start of block".to_string());
     // }
 
-    let mut else_body: Option<Vec<Stmt>> = None;
-    if eat(&Token::Else, tokens, pos) {
-        else_body = Some(parsers.block_parser.parse_block(
+    let else_body = if eat(&Token::Else, tokens, pos) {
+        Some(parsers.block_parser.parse_block(
             tokens,
             pos,
-            discovered_modules, 
+            discovered_modules,
             parsers,
-            scope
-        )?);
-    }
-
-    // let else_body = if eat(&Token::Else, tokens, pos) {
-    //     Some(block_parser.parse_block(
-    //         tokens,
-    //         pos,
-    //         discovered_modules,
-    //         block_parser,
-    //         fn_parser,
-    //         import_parser,
-    //         loop_parser,
-    //         scope,
-    //     )?)
-    // } else {
-    //     None
-    // };
+            scope,
+        )?)
+    } else {
+        None
+    };
 
     // if !eat(&Token::CloseBracket, tokens, pos) {
     //     return Err("Expected `}` at start of block".to_string());

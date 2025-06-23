@@ -1,11 +1,15 @@
+use std::collections::HashMap;
+
 use colored::Colorize;
 use inkwell::{types::BasicMetadataTypeEnum, values::BasicMetadataValueEnum, AddressSpace};
+use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
+use kurai_typedArg::typedArg::TypedArg;
 
-use crate::codegen::{CodeGen, VariableInfo};
+use crate::{codegen::{CodeGen, VariableInfo}, registry::registry::{AttributeHandler, AttributeRegistry}};
 use kurai_types::{typ::Type, value::Value};
 use kurai_stmt::stmt::Stmt;
 
@@ -18,13 +22,13 @@ impl<'ctx> CodeGen<'ctx> {
         scope: &mut Scope,
     ) {
         for stmt in parsed_stmt {
-            match stmt {
+            match &stmt {
                 Stmt::VarDecl { name, typ, value } => {
                     let i64_type = self.context.i64_type();
                     let alloca = self.builder.build_alloca(i64_type, &name).unwrap();
 
                     if let Some(Expr::Literal(Value::Int(v))) = value {
-                        let init_val = i64_type.const_int(v as u64, true);
+                        let init_val = i64_type.const_int(*v as u64, true);
                         self.builder.build_store(alloca, init_val).unwrap();
                         let v_pointer_val = alloca;
                         let var_info = VariableInfo {
@@ -35,10 +39,10 @@ impl<'ctx> CodeGen<'ctx> {
                         self.variables.insert(name.to_string(), var_info);
                     }
                 }
-                Stmt::Assign { name, ref value } => {
+                Stmt::Assign { name, value } => {
                     #[cfg(debug_assertions)]
                     { println!("Assign value AST: {:?}", value); }
-                    let var_ptr = match self.variables.get(&name) {
+                    let var_ptr = match self.variables.get(name.as_str()) {
                         Some(ptr) => ptr.ptr_value,
                         None => {
                             panic!("{} Variable {} not found", "[ERROR]".red().bold(), name);
@@ -69,7 +73,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                             if let Some(function) = function {
                                 let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
-                                for arg in &args {
+                                for arg in args {
                                     let value = arg.value.as_ref().unwrap_or_else(||
                                         panic!("{}: Failed to compile arguments for function {}",
                                             "error".red().bold(),
@@ -85,7 +89,7 @@ impl<'ctx> CodeGen<'ctx> {
                         }
                     }
                 }
-                Stmt::FnDecl { name, args, body } => {
+                Stmt::FnDecl { name, args, body, attributes } => {
                     // Map the argument types to LLVM types 
                     // remember, we need to speak LLVM IR language, not rust!
                     #[cfg(debug_assertions)]
@@ -137,18 +141,41 @@ impl<'ctx> CodeGen<'ctx> {
                     }
 
                     {
-                        let module = self.module.lock().unwrap();
-
                         #[cfg(debug_assertions)]
                         {
-                            println!("Module: {:?}", module);
+                            println!("Module: {:?}", self.module.lock().unwrap());
                             println!("creating function named: {}", &name);
                         }
 
                         let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-                        let function = module.add_function(&name, fn_type, None);
+                        let function = self.module.lock().unwrap().add_function(&name, fn_type, None);
                         let basic_block = self.context.append_basic_block(function, "entry");
                         self.builder.position_at_end(basic_block);
+
+                        let name = name.clone();
+
+                        self.attr_registry.register( 
+                            "test",
+                            move |_, ctx| {
+                            ctx.import_printf().unwrap();
+                            ctx.printf(&vec![TypedArg {
+                                name: name.clone(),
+                                typ: Type::Str,
+                                value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
+                            }]).unwrap();
+                        });
+
+                        for attr in attributes {
+                            match attr {
+                                Attribute::Simple(name) | Attribute::WithArgs(name, _) => {
+                                    let attr_registry = self.attr_registry.handlers.clone(); // needs Clone
+                                    if let Some(handler) = attr_registry.get(name.as_str()) {
+                                        handler.call(&stmt, self);
+                                    }
+                                } 
+                                _ => ()
+                            }
+                        }
 
                         #[cfg(debug_assertions)]
                         {
@@ -179,7 +206,7 @@ impl<'ctx> CodeGen<'ctx> {
                         }
                     }
                     self.execute_every_stmt_in_code(
-                        body,
+                        body.to_vec(),
                         discovered_modules,
                         parsers, scope);
                     let return_value = self.context.i32_type().const_int(0_u64, false);
@@ -218,7 +245,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.loaded_modules.insert(modname.clone(), stmts.clone());
 
-                    if is_glob {
+                    if *is_glob {
                         self.execute_every_stmt_in_code(
                             stmts,
                             discovered_modules,
@@ -249,7 +276,7 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::If { branches, else_body } => {
                     let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-                    // let merge_block = self.context.append_basic_block(current_function, "merge");
+                    let merge_block = self.context.append_basic_block(current_function, "merge");
 
                     let mut prev_block = self.builder.get_insert_block().unwrap();
 
@@ -258,7 +285,21 @@ impl<'ctx> CodeGen<'ctx> {
                         if let Some(block) = Some(prev_block) {
                             self.builder.position_at_end(block);
                         }
+
+                        // imagine if!! or else u die
+                         self.build_conditional_branch(
+                            current_function,
+                            &branch.condition,
+                            &branch.body.clone(),
+                            &else_body,
+                            discovered_modules,
+                            &i.to_string(),
+                            parsers,
+                            scope
+                        );
                     }
+                    // Position builder at merge block for continuation
+                    self.builder.position_at_end(merge_block);
                 }
                 Stmt::Loop { body } => {
                     let function = self.builder.get_insert_block()
@@ -278,7 +319,7 @@ impl<'ctx> CodeGen<'ctx> {
                     self.builder.position_at_end(loop_bb);
 
                     self.execute_every_stmt_in_code(
-                        body,
+                        body.to_vec(),
                         discovered_modules, 
                         parsers,
                         scope
@@ -307,7 +348,7 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::Block(stmts) => {
                     self.execute_every_stmt_in_code(
-                        stmts,
+                        stmts.to_vec(),
                         discovered_modules, 
                         parsers,
                         scope

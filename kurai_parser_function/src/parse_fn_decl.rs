@@ -1,3 +1,4 @@
+use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_token::eat::eat;
@@ -12,6 +13,7 @@ pub fn parse_fn_decl(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    attrs: Vec<Attribute>,
 ) -> Result<Stmt, String> {
     if !eat(&Token::Function, tokens, pos) {
         return Err("Expected keyword `fn`".to_string());
@@ -100,5 +102,6 @@ pub fn parse_fn_decl(
         name,
         args,
         body,
+        attributes: attrs,
     })
 }

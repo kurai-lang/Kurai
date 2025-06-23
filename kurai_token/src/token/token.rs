@@ -45,6 +45,9 @@ pub enum Token {
     Loop,
     Break,
     Dot,
+    Hash,
+    CloseSquareBracket,
+    OpenSquareBracket,
 }
 
 impl Token {
@@ -98,7 +101,10 @@ impl Token {
                 ')' => tokens.push(Token::CloseParenthese),
                 '{' => tokens.push(Token::OpenBracket),
                 '}' => tokens.push(Token::CloseBracket),
+                '[' => tokens.push(Token::OpenSquareBracket),
+                ']' => tokens.push(Token::CloseSquareBracket),
                 ',' => tokens.push(Token::Comma),
+                '#' => tokens.push(Token::Hash),
                 '<' => {
                     if let Some('=') = iter.peek() {
                         iter.next();

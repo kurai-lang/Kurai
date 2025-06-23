@@ -26,11 +26,18 @@ fn main() {
     //     "#.to_string();
 
     let code = r#"
-        fn main() {
+        #[test]
+        fn meow() {
             let x = 0;
-            while x < 5 {
-                printf("PURR..");
+            if x == 0 {
+                printf("meow");
+            } else {
+                printf("hi");
             }
+        }
+
+        fn main() {
+            meow();
         }
     "#.to_string();
 
@@ -45,6 +52,9 @@ fn main() {
 
     let mut scope = Scope::new();
     let tokens = Token::tokenize(code.as_str());
+
+    println!("{:?}", tokens);
+
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parse_out_vec_stmt(
         &tokens,
@@ -52,6 +62,7 @@ fn main() {
         &parsers,
         &mut scope,
     );
+    println!("{:?}", parsed_stmt_vec);
     let parsed_expr_vec = parse_out_vec_expr(&tokens);
     let mut codegen = CodeGen::new(&context);
 

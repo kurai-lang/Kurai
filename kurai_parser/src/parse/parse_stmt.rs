@@ -30,13 +30,20 @@ pub fn parse_stmt(
 ) -> Result<Stmt, String> {
     // println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
 
+    let attrs = if let Some(Token::Hash) = tokens.get(*pos) {
+        parsers.fn_parser.parse_attrs(tokens, pos)?
+    } else {
+        Vec::new()
+    };
+
     match tokens.get(*pos) {
         Some(Token::Function) => parsers.fn_parser.parse_fn_decl(
             tokens,
             pos,
             discovered_modules,
             parsers,
-            scope
+            scope,
+            attrs
         ),
         Some(Token::Loop) => parsers.loop_parser.parse_for_loop(
             tokens,

@@ -6,26 +6,28 @@ pub mod value;
 
 use colored::Colorize;
 use kurai_core::scope::Scope;
-use kurai_parser::{BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser, StmtParser};
+use kurai_parser::GroupedParsers;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::{typ::Type, value::Value};
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
 use inkwell::{
-    basic_block::BasicBlock, builder::Builder, context::Context, module::Module, types::BasicType, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
+    basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
 use std::{collections::HashMap, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
 
+use crate::registry::registry::AttributeRegistry;
+
 static GLOBAL_STRING_ID: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VariableInfo<'ctx> {
     pub ptr_value: PointerValue<'ctx>,
     pub var_type: Type,
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
     pub builder: Builder<'ctx>,
@@ -35,6 +37,7 @@ pub struct CodeGen<'ctx> {
     pub string_counter: usize,
     pub loop_counter: usize,
     pub loop_exit_stack: Vec<BasicBlock<'ctx>>,
+    pub attr_registry: AttributeRegistry,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -43,6 +46,9 @@ impl<'ctx> CodeGen<'ctx> {
         let module = Arc::new(Mutex::new(context.create_module("main_module")));
         let variables = HashMap::new();
         let loaded_modules = HashMap::new();
+        let attr_registry = AttributeRegistry {
+            handlers: HashMap::new(),
+        };
         Self {
             context,
             builder,
@@ -51,7 +57,8 @@ impl<'ctx> CodeGen<'ctx> {
             loaded_modules,
             string_counter: 0,
             loop_counter: 0,
-            loop_exit_stack: vec![]
+            loop_exit_stack: vec![],
+            attr_registry,
             // context: &'ctx Context
         }
     }

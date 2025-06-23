@@ -166,6 +166,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
+name = "kurai_attr"
+version = "0.4.1"
+
+[[package]]
 name = "kurai_binop"
 version = "0.4.1"
 
@@ -175,6 +179,7 @@ version = "0.4.1"
 dependencies = [
  "colored",
  "inkwell",
+ "kurai_attr",
  "kurai_binop",
  "kurai_codegen_traits",
  "kurai_core",
@@ -216,6 +221,7 @@ name = "kurai_parser"
 version = "0.4.1"
 dependencies = [
  "colored",
+ "kurai_attr",
  "kurai_binop",
  "kurai_core",
  "kurai_expr",
@@ -229,6 +235,7 @@ dependencies = [
 name = "kurai_parser_function"
 version = "0.4.1"
 dependencies = [
+ "kurai_attr",
  "kurai_core",
  "kurai_expr",
  "kurai_parser",
@@ -293,6 +300,7 @@ name = "kurai_stmt"
 version = "0.4.1"
 dependencies = [
  "inkwell",
+ "kurai_attr",
  "kurai_expr",
  "kurai_typedArg",
  "kurai_types",

@@ -16,5 +16,6 @@ kurai_parser_import_file = { version = "0.4.1", path = "../kurai_parser_import_f
 kurai_parser = { version = "0.4.1", path = "../kurai_parser" }
 kurai_typedArg = { version = "0.4.1", path = "../kurai_typedArg" }
 kurai_core = { version = "0.4.1", path = "../kurai_core" }
+kurai_attr = { version = "0.4.1", path = "../kurai_attr" }
 # kurai_core = { version = "0.4.1", path = "../kurai_core" }
 # kurai_stdlib = { version = "0.4.1", path = "../kurai_stdlib" }
