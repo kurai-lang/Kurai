@@ -1,13 +1,13 @@
 [package]
 name = "kurai_parser_import_decl"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 
 [dependencies]
-kurai_core = { version = "0.4.1", path = "../kurai_core" }
-kurai_parser = { version = "0.4.1", path = "../kurai_parser" }
-kurai_parser_import_file = { version = "0.4.1", path = "../kurai_parser_import_file" }
-kurai_stmt = { version = "0.4.1", path = "../kurai_stmt" }
-kurai_token = { version = "0.4.1", path = "../kurai_token" }
-kurai_typedArg = { version = "0.4.1", path = "../kurai_typedArg" }
-kurai_types = { version = "0.4.1", path = "../kurai_types" }
+kurai_core = { version = "0.4.2", path = "../kurai_core" }
+kurai_parser = { version = "0.4.2", path = "../kurai_parser" }
+kurai_parser_import_file = { version = "0.4.2", path = "../kurai_parser_import_file" }
+kurai_stmt = { version = "0.4.2", path = "../kurai_stmt" }
+kurai_token = { version = "0.4.2", path = "../kurai_token" }
+kurai_typedArg = { version = "0.4.2", path = "../kurai_typedArg" }
+kurai_types = { version = "0.4.2", path = "../kurai_types" }
