@@ -13,7 +13,7 @@ use kurai_parser_loop::LoopParserStruct;
 use kurai_parser_loop::BlockParserStruct;
 use kurai_token::token::token::Token;
 use kurai_core::scope::Scope;
-use std::fs::{self, File};
+use std::fs::{self, remove_file, File};
 use std::io::prelude::*;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -34,7 +34,8 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let output_name = format!("target/{}", cli.output_name);
+    // let output_name = format!("target/{}", cli.output_name);
+    let output_name = cli.output_name;
     let output_name_clone = output_name.clone();
 
     std::panic::set_hook(Box::new(move |panic_info| {
@@ -151,7 +152,7 @@ fn main() {
         .arg(&output_path_ll)
         .arg("-o")
         .arg(&output_name)
-        .arg("-g")
+        // .arg("-g")
         .status()
         .unwrap();
 
@@ -161,7 +162,14 @@ fn main() {
         println!("{:>5}{} the program in {:.2}s", " ", "Finished".green().bold(), end_time);
         println!("{:>5}{} `{}`", " ", "Running".green().bold(), &output_name);
 
-        Command::new(output_name).status().unwrap();
+        if !(cfg!(debug_assertions)) {
+            remove_file(&output_path_ll).unwrap();
+            remove_file(&output_path_bc).unwrap();
+            remove_file(&output_path_opt_bc).unwrap();
+            remove_file(&output_path_s).unwrap();
+        }
+
+        Command::new(format!("./{}", output_name)).status().unwrap();
     } else {
         println!("{}: Compilation unsuccessful", "error".red());
     }

@@ -167,15 +167,15 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
 name = "kurai_attr"
-version = "0.4.1"
+version = "0.4.3"
 
 [[package]]
 name = "kurai_binop"
-version = "0.4.1"
+version = "0.4.3"
 
 [[package]]
 name = "kurai_codegen"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "colored",
  "inkwell",
@@ -194,7 +194,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_codegen_traits"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "inkwell",
  "kurai_typedArg",
@@ -202,7 +202,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_core"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_expr",
  "kurai_types",
@@ -210,7 +210,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_expr"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_binop",
  "kurai_types",
@@ -218,7 +218,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "colored",
  "kurai_attr",
@@ -233,7 +233,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_function"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_attr",
  "kurai_core",
@@ -247,7 +247,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_import_decl"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_core",
  "kurai_parser",
@@ -260,7 +260,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_import_file"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_core",
  "kurai_parser",
@@ -270,7 +270,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_parser_loop"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_binop",
  "kurai_core",
@@ -283,7 +283,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_stdlib"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "inkwell",
  "kurai_codegen",
@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "kurai_stmt"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "inkwell",
  "kurai_attr",
@@ -308,14 +308,14 @@ dependencies = [
 
 [[package]]
 name = "kurai_token"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "kurai_stmt",
 ]
 
 [[package]]
 name = "kurai_typedArg"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "inkwell",
  "kurai_expr",
@@ -324,14 +324,14 @@ dependencies = [
 
 [[package]]
 name = "kurai_types"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "inkwell",
 ]
 
 [[package]]
 name = "kuraic"
-version = "0.4.1"
+version = "0.4.3"
 dependencies = [
  "clap",
  "colored",
