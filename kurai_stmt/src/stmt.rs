@@ -49,6 +49,34 @@ pub struct IfBranch {
     pub body: Vec<Stmt>
 }
 
+impl Stmt {
+    pub fn has_attr(&self, name: &str) -> bool {
+        match self {
+            Stmt::FnDecl { attributes, .. } => {
+                attributes.iter().any(|attribute| match attribute {
+                    Attribute::Simple(id) => id == name,
+                    Attribute::WithArgs { name: attr_name, ..} => attr_name == name,
+                    _ => false
+                })
+            }
+            _ => false,
+        }
+    }
+
+    pub fn get_attr(&self, target: &str) -> Option<&Attribute> {
+        match self {
+            Stmt::FnDecl { attributes, ..} => {
+                attributes.iter().find(|attribute| match attribute {
+                    Attribute::Simple(name) => name == target,
+                    Attribute::WithArgs { name, .. } => name == target,
+                    _ => false
+                })
+            }
+            _ => None,
+        }
+    }
+}
+
 // This is only for debugging purposes.
 impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

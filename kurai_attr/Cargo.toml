@@ -2,3 +2,6 @@
 name = "kurai_attr"
 version = "0.4.3"
 edition = "2024"
+
+[dependencies]
+kurai_types = { version = "0.4.3", path = "../kurai_types" }

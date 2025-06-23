@@ -14,7 +14,7 @@ use kurai_stmt::stmt::Stmt;
 use inkwell::{
     basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
-use std::{collections::HashMap, sync::atomic::{AtomicUsize, Ordering}};
+use std::{collections::{HashMap, HashSet}, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
 
 use crate::registry::registry::AttributeRegistry;
@@ -38,6 +38,8 @@ pub struct CodeGen<'ctx> {
     pub loop_counter: usize,
     pub loop_exit_stack: Vec<BasicBlock<'ctx>>,
     pub attr_registry: AttributeRegistry,
+
+    pub inline_fns: HashSet<String>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -59,6 +61,8 @@ impl<'ctx> CodeGen<'ctx> {
             loop_counter: 0,
             loop_exit_stack: vec![],
             attr_registry,
+
+            inline_fns: HashSet::new(),
             // context: &'ctx Context
         }
     }

@@ -119,6 +119,7 @@ fn main() {
     let result = codegen.show_result(); //result returns String
 
     let output_path_ll = format!("{}.ll", output_name);
+    let output_path_opt_ll = format!("{}_opt.ll", output_name);
     let output_path_bc = format!("{}.bc", output_name);
     let output_path_opt_bc = format!("{}_opt.bc", output_name);
     let output_path_s = format!("{}.s", output_name);
@@ -135,21 +136,22 @@ fn main() {
         .status()
         .unwrap();
     Command::new("opt")
-        .arg(format!("-O{}", cli.opt_level.to_string()))
+        .arg(format!("-O{}", cli.opt_level))
+        .arg("-S")
         .arg(&output_path_bc)
         .arg("-o")
-        .arg(&output_path_opt_bc)
+        .arg(&output_path_opt_ll)
         .status()
         .unwrap();
     Command::new("llc")
-        .arg(&output_path_opt_bc)
+        .arg(&output_path_opt_ll)
         .arg("-o")
         .arg(&output_path_s)
         .status()
         .unwrap();
 
     let status = Command::new("clang")
-        .arg(&output_path_ll)
+        .arg(&output_path_opt_ll)
         .arg("-o")
         .arg(&output_name)
         // .arg("-g")

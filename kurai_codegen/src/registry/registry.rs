@@ -1,6 +1,7 @@
 use core::fmt;
 use std::{collections::HashMap, mem};
 
+use inkwell::attributes::AttributeLoc;
 use kurai_attr::attribute::Attribute;
 use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
@@ -64,12 +65,31 @@ impl AttributeRegistry {
                 value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
             }]).unwrap();
         });
+
+        // #[inline] attribute 
+        self.register(
+            "inline",
+            move |_, stmt, ctx| {
+                if let Stmt::FnDecl { name, ..} = stmt {
+                    ctx.inline_fns.insert(name.to_string());
+
+                    // adds the tag to the function for inlining
+                    if let Some(llvm_fn) = ctx.module.lock().unwrap().get_function(name.as_str()) {
+                        llvm_fn.add_attribute(
+                            AttributeLoc::Function,
+                            ctx.context.create_enum_attribute(
+                                inkwell::attributes::Attribute::get_named_enum_kind_id("alwaysinline"), 
+                                0),
+                        );
+                    }
+                }
+            });
     }
 
     pub fn _load_attributes(&self, attributes: &[Attribute], stmt: &Stmt, codegen: &mut CodeGen) {
         for attr in attributes {
             match attr {
-                Attribute::Simple(name) | Attribute::WithArgs(name, _) => {
+                Attribute::Simple(name) | Attribute::WithArgs { name, .. } => {
                     let attr_registry = self.handlers.clone(); // needs Clone
 
                     // This checks if the attribute name is available or not

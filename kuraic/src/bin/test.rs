@@ -26,7 +26,7 @@ fn main() {
     //     "#.to_string();
 
     let code = r#"
-        #[test]
+        #[inline]
         fn meow() {
             let x = 0;
             if x == 0 {
