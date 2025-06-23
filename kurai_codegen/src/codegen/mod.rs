@@ -184,7 +184,7 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn printf(&mut self, args: &Vec<TypedArg>) -> Result<(), String>{
+    pub fn printf(&mut self, args: &Vec<TypedArg>) -> Result<(), String>{
         let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
         let mut format = String::new();
@@ -246,7 +246,7 @@ impl<'ctx> CodeGen<'ctx> {
         Ok(())
     }
 
-    fn import_printf(&mut self) -> Result<(), String> {
+    pub fn import_printf(&mut self) -> Result<(), String> {
         #[cfg(debug_assertions)]
         {
             println!("printf imported!");

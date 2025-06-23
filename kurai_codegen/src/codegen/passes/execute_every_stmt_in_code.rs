@@ -8,9 +8,9 @@ use kurai_expr::expr::Expr;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
 use kurai_typedArg::typedArg::TypedArg;
+use kurai_types::{typ::Type, value::Value};
 
 use crate::{codegen::{CodeGen, VariableInfo}, registry::registry::{AttributeHandler, AttributeRegistry}};
-use kurai_types::{typ::Type, value::Value};
 use kurai_stmt::stmt::Stmt;
 
 impl<'ctx> CodeGen<'ctx> {
@@ -152,30 +152,19 @@ impl<'ctx> CodeGen<'ctx> {
                         let basic_block = self.context.append_basic_block(function, "entry");
                         self.builder.position_at_end(basic_block);
 
-                        let name = name.clone();
+                        // self.attr_registry.register( 
+                        //     "test",
+                        //     move |attr_name, _, ctx| {
+                        //     ctx.import_printf().unwrap();
+                        //     ctx.printf(&vec![TypedArg {
+                        //         name: attr_name.to_string(),
+                        //         typ: Type::Str,
+                        //         value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
+                        //     }]).unwrap();
+                        // });
 
-                        self.attr_registry.register( 
-                            "test",
-                            move |_, ctx| {
-                            ctx.import_printf().unwrap();
-                            ctx.printf(&vec![TypedArg {
-                                name: name.clone(),
-                                typ: Type::Str,
-                                value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
-                            }]).unwrap();
-                        });
-
-                        for attr in attributes {
-                            match attr {
-                                Attribute::Simple(name) | Attribute::WithArgs(name, _) => {
-                                    let attr_registry = self.attr_registry.handlers.clone(); // needs Clone
-                                    if let Some(handler) = attr_registry.get(name.as_str()) {
-                                        handler.call(&stmt, self);
-                                    }
-                                } 
-                                _ => ()
-                            }
-                        }
+                        self.attr_registry.register_all();
+                        self.load_attributes(attributes, &stmt);
 
                         #[cfg(debug_assertions)]
                         {

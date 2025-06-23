@@ -1,7 +1,11 @@
 use core::fmt;
-use std::collections::HashMap;
+use std::{collections::HashMap, mem};
 
+use kurai_attr::attribute::Attribute;
+use kurai_expr::expr::Expr;
 use kurai_stmt::stmt::Stmt;
+use kurai_typedArg::typedArg::TypedArg;
+use kurai_types::{typ::Type, value::Value};
 
 use crate::codegen::CodeGen;
 
@@ -12,31 +16,30 @@ use crate::codegen::CodeGen;
 // }
 
 pub trait AttributeHandlerClone: Send + Sync {
-    fn call(&self, stmt: &Stmt, codegen: &mut CodeGen);
+    fn call(&self, attr_name: &str, stmt: &Stmt, codegen: &mut CodeGen);
     fn clone_box(&self) -> Box<dyn AttributeHandlerClone>;
-    // fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 
 impl<T> AttributeHandlerClone for T
 where
-    T: Fn(&Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
+    T: Fn(&str, &Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
 {
-    fn call(&self, stmt: &Stmt, codegen: &mut CodeGen) {
-        (self)(stmt, codegen)
+    fn call(&self, attr_name: &str, stmt: &Stmt, codegen: &mut CodeGen) {
+        (self)(attr_name, stmt, codegen)
     }
 
     fn clone_box(&self) -> Box<dyn AttributeHandlerClone> {
-        let cloned: T = self.clone();
-        let boxed = Box::new(cloned);
-        boxed
+        Box::new(self.clone())
     }
-
-    // fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    //     fmt::Debug::fmt(self, f)
-    // }
 }
 
-#[derive(Clone)]
+impl Clone for Box<dyn AttributeHandlerClone> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}
+
+#[derive(Default, Clone)]
 pub struct AttributeRegistry {
     pub handlers: HashMap<String, AttributeHandler>,
 }
@@ -44,10 +47,49 @@ pub struct AttributeRegistry {
 impl AttributeRegistry {
     pub fn register<F>(&mut self, name: &str, handler: F)
     where
-        F: Fn(&Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
+        F: Fn(&str, &Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
     {
         // just for the simplicity and convenience! XD
         self.handlers.insert(name.to_string(), AttributeHandler::new(handler));
+    }
+
+    pub fn register_all(&mut self) {
+        self.register(
+            "test", 
+            move |attr_name, _, ctx| {
+            ctx.import_printf().unwrap();
+            ctx.printf(&vec![TypedArg {
+                name: attr_name.to_string(),
+                typ: Type::Str,
+                value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
+            }]).unwrap();
+        });
+    }
+
+    pub fn _load_attributes(&self, attributes: &[Attribute], stmt: &Stmt, codegen: &mut CodeGen) {
+        for attr in attributes {
+            match attr {
+                Attribute::Simple(name) | Attribute::WithArgs(name, _) => {
+                    let attr_registry = self.handlers.clone(); // needs Clone
+
+                    // This checks if the attribute name is available or not
+                    if let Some(handler) = attr_registry.get(name.as_str()) {
+                        handler.call(name, stmt, codegen);
+                    }
+                }
+                _ => ()
+            }
+        }
+    }
+}
+
+impl<'ctx> CodeGen<'ctx> {
+    pub fn load_attributes(&mut self, attributes: &[Attribute], stmt: &Stmt) {
+        let attr_registry = mem::take(&mut self.attr_registry);
+        let mut temp_registry = attr_registry;
+
+        temp_registry._load_attributes(attributes, stmt, self);
+        self.attr_registry = temp_registry;
     }
 }
 
@@ -58,15 +100,15 @@ pub struct AttributeHandler {
 impl AttributeHandler {
     pub fn new<T>(f: T) -> Self
     where 
-        T: Fn(&Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
+        T: Fn(&str, &Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
     {
         Self {
             inner: Box::new(f),
         }
     }
 
-    pub fn call(&self, stmt: &Stmt, codegen: &mut CodeGen) {
-        self.inner.call(stmt, codegen);
+    pub fn call(&self, attr_name: &str, stmt: &Stmt, codegen: &mut CodeGen) {
+        self.inner.call(attr_name, stmt, codegen);
     }
 }
 
