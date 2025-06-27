@@ -48,6 +48,7 @@ pub enum Token {
     Hash,
     CloseSquareBracket,
     OpenSquareBracket,
+    Comment,
 }
 
 impl Token {
@@ -70,7 +71,19 @@ impl Token {
                 '+' => tokens.push(Token::Plus),
                 '-' => tokens.push(Token::Dash),
                 '*' => tokens.push(Token::Star),
-                '/' => tokens.push(Token::Slash),
+                '/' => {
+                    if let Some('/') = iter.peek() {
+                        iter.next();
+                        while let Some(&next_char) = iter.peek() {
+                            if next_char == '\n' {
+                                break;
+                            }
+                            iter.next();
+                        }
+                    } else {
+                        tokens.push(Token::Slash);
+                    }
+                }
                 ';' => tokens.push(Token::Semicolon),
                 ':' => tokens.push(Token::Colon),
                 '!' => {

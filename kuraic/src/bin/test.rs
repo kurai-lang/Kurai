@@ -9,28 +9,13 @@ use kurai_parser_loop::LoopParserStruct;
 use kurai_token::token::token::Token;
 
 fn main() {
-    // let code = r#"
-    //     fn main() {
-    //         let x = 5;
-    //
-    //         loop {
-    //             printf("yes");
-    //
-    //             if (x >= 10) {
-    //                 break;
-    //             } else {
-    //                 x = x + 1;
-    //             }
-    //         }
-    //     }
-    //     "#.to_string();
-
     let code = r#"
+        // INLINING TIME!
         #[inline]
         fn meow() {
             let x = 0;
             if x == 0 {
-                printf("meow");
+                printf(1);
             } else {
                 printf("hi");
             }

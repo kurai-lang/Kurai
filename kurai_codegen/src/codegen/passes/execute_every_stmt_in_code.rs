@@ -265,7 +265,7 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::If { branches, else_body } => {
                     let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-                    let merge_block = self.context.append_basic_block(current_function, "merge");
+                    // let merge_block = self.context.append_basic_block(current_function, "merge");
 
                     let mut prev_block = self.builder.get_insert_block().unwrap();
 
@@ -288,7 +288,7 @@ impl<'ctx> CodeGen<'ctx> {
                         );
                     }
                     // Position builder at merge block for continuation
-                    self.builder.position_at_end(merge_block);
+                    // self.builder.position_at_end(merge_block);
                 }
                 Stmt::Loop { body } => {
                     let function = self.builder.get_insert_block()

@@ -53,6 +53,7 @@ impl<'ctx> CodeGen<'ctx> {
         self.builder.build_unconditional_branch(merge_block).unwrap();
 
         self.builder.position_at_end(merge_block);
+        // self.builder.build_return(None).unwrap();
         merge_block
     }
 }
