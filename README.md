@@ -10,4 +10,3 @@ Kurai exists to make writing code a natural, fun, and headache-free experience.
 - 💬 **Expressive & Clear Code** – A language that lets you convey your ideas clearly and concisely  
 - ⚡ **Fast Compilation** – Designed for fast and flexible compilation  
 - 📚 **Friendly Documentation** – Beginner-friendly? Not yet. But we aim for clear and easy-to-understand documentation *(coming soon)*  
-- 📖 **Malay-Friendly Language** – Support your local community with native language programming. Why not right??
