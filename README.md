@@ -1,6 +1,3 @@
-## Kurai's Current Logos 
-![Frame 1 (3)](https://github.com/user-attachments/assets/b1e92c52-65c8-4982-9964-d20df88ca90b)
-
 ## About the Programming Language
 
 **Kurai 🐢** is a modern programming language designed to make it easy to write code in an expressive and easy-to-understand way. With a focus on simplicity, clarity, and a fun developer experience, Kurai is suitable for all levels of developers who want to write neat and elegant code without feeling overwhelmed.
