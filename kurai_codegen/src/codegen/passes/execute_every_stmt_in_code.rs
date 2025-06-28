@@ -343,6 +343,10 @@ impl<'ctx> CodeGen<'ctx> {
                         scope
                     );
                 }
+                Stmt::Return(expr) => {
+                    let ret_val = self.lower_expr_to_llvm(expr).unwrap();
+                    self.builder.build_return(Some(&ret_val)).unwrap();
+                }
             }
         }
     }

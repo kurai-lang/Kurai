@@ -41,6 +41,7 @@ pub enum Stmt {
     Break,
     Expr(Expr),
     Block(Vec<Stmt>),
+    Return(Expr),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -120,7 +121,10 @@ impl fmt::Display for Stmt {
                     }
             Stmt::Block(stmts) => {
                 write!(f, "Block(stmts: {:?}", stmts)
-            },
+            }
+            Stmt::Return(expr) => {
+                write!(f, "Return(expr: {:?})", expr)
+            }
         }
     }
 }
