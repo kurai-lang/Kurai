@@ -135,17 +135,6 @@ impl<'ctx> CodeGen<'ctx> {
                         let basic_block = self.context.append_basic_block(function, "entry");
                         self.builder.position_at_end(basic_block);
 
-                        // self.attr_registry.register( 
-                        //     "test",
-                        //     move |attr_name, _, ctx| {
-                        //     ctx.import_printf().unwrap();
-                        //     ctx.printf(&vec![TypedArg {
-                        //         name: attr_name.to_string(),
-                        //         typ: Type::Str,
-                        //         value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
-                        //     }]).unwrap();
-                        // });
-
                         self.attr_registry.register_all();
                         self.load_attributes(attributes, &stmt);
 
@@ -181,8 +170,14 @@ impl<'ctx> CodeGen<'ctx> {
                         body.to_vec(),
                         discovered_modules,
                         parsers, scope);
-                    // let return_value = self.context.i32_type().const_int(0_u64, false);
-                    // self.builder.build_return(Some(&return_value)).unwrap();
+
+                    if *ret_type == Type::Void {
+                        #[cfg(debug_assertions)] {
+                            println!("Auto-inserting `ret void` for void-returning fn: {}", name);
+                        }
+
+                        self.builder.build_return(None).unwrap();
+                    }
                 }
                 Stmt::Import { path, nickname, is_glob} => {
                     let key = path.join("/");

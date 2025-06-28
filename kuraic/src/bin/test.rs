@@ -29,6 +29,13 @@ fn main() {
         }
     "#.to_string();
 
+    // let code = r#"
+    //     fn main() i32 {
+    //         printf("hello");
+    //         return 0;
+    //     }
+    //     "#.to_string();
+
     let context = Context::create();
     let parsers = GroupedParsers::new(
         &StmtParserStruct,
