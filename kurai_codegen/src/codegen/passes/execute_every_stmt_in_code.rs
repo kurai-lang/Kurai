@@ -198,8 +198,8 @@ impl<'ctx> CodeGen<'ctx> {
                         body.to_vec(),
                         discovered_modules,
                         parsers, scope);
-                    let return_value = self.context.i32_type().const_int(0_u64, false);
-                    self.builder.build_return(Some(&return_value)).unwrap();
+                    // let return_value = self.context.i32_type().const_int(0_u64, false);
+                    // self.builder.build_return(Some(&return_value)).unwrap();
                 }
                 Stmt::Import { path, nickname, is_glob} => {
                     let key = path.join("/");
@@ -344,6 +344,7 @@ impl<'ctx> CodeGen<'ctx> {
                     );
                 }
                 Stmt::Return(expr) => {
+                    let expr = expr.as_ref().unwrap();
                     let ret_val = self.lower_expr_to_llvm(expr).unwrap();
                     self.builder.build_return(Some(&ret_val)).unwrap();
                 }

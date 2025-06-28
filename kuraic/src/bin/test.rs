@@ -19,10 +19,13 @@ fn main() {
             } else {
                 printf("hi");
             }
+
+            return 0;
         }
 
         fn main() {
             meow();
+            return 0;
         }
     "#.to_string();
 

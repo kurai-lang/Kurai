@@ -41,7 +41,7 @@ pub enum Stmt {
     Break,
     Expr(Expr),
     Block(Vec<Stmt>),
-    Return(Expr),
+    Return(Option<Expr>),
 }
 
 #[derive(Debug, PartialEq, Clone)]
