@@ -49,6 +49,7 @@ pub enum Token {
     CloseSquareBracket,
     OpenSquareBracket,
     Comment,
+    Return,
 }
 
 impl Token {
@@ -182,6 +183,7 @@ impl Token {
                         "while" => tokens.push(Token::While),
                         "in" => tokens.push(Token::In),
                         "break" => tokens.push(Token::Break),
+                        "return" => tokens.push(Token::Return),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
                     current.clear();

@@ -333,7 +333,7 @@ impl<'ctx> CodeGen<'ctx> {
                     // self.builder.position_at_end(unreachable_block);
                 }
                 Stmt::Expr(expr) => {
-                    self.lower_expr_to_llvm(&expr);
+                    self.lower_expr_to_llvm(expr);
                 }
                 Stmt::Block(stmts) => {
                     self.execute_every_stmt_in_code(
