@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 kurai_stmt = { version = "0.4.5", path = "../kurai_stmt/" }
+kurai_types = { version = "0.4.5", path = "../kurai_types" }

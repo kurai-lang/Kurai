@@ -12,7 +12,7 @@ fn main() {
     let code = r#"
         // INLINING TIME!
         #[inline]
-        fn meow() {
+        fn meow() void {
             let x = 0;
             if x == 0 {
                 printf(1);
@@ -20,10 +20,10 @@ fn main() {
                 printf("hi");
             }
 
-            return 0;
+            // return 0;
         }
 
-        fn main() {
+        fn main() i32 {
             meow();
             return 0;
         }

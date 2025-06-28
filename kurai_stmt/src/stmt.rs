@@ -2,6 +2,7 @@ use kurai_attr::attribute::Attribute;
 // use crate::scope::Scope;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_expr::expr::Expr;
+use kurai_types::typ::Type;
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -24,6 +25,7 @@ pub enum Stmt {
         args: Vec<TypedArg>,
         body: Vec<Stmt>,
         attributes: Vec<Attribute>,
+        ret_type: Type,
     },
     Import {
         path: Vec<String>, // Originally String lol, its turned into vector to support "directory
@@ -97,8 +99,8 @@ impl fmt::Display for Stmt {
             Stmt::FnCall { name, args } => {
                         write!(f, "FnCall(name: {}, args: {:?})", name, args)
                     }
-            Stmt::FnDecl { name, args, body, attributes } => {
-                        write!(f, "FnDecl(name: {}, args: {:?}, body: {:?}, attributes: {:?})", name, args, body, attributes)
+            Stmt::FnDecl { name, args, body, attributes, ret_type } => {
+                        write!(f, "FnDecl(name: {}, args: {:?}, body: {:?}, attributes: {:?}, ret_type: {:?})", name, args, body, attributes, ret_type)
                     }
             Stmt::Import { path, nickname, is_glob } => {
                         if let Some(nickname) = nickname {
