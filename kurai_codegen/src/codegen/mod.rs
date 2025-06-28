@@ -40,6 +40,7 @@ pub struct CodeGen<'ctx> {
     pub attr_registry: AttributeRegistry,
 
     pub inline_fns: HashSet<String>,
+    pub current_fn_ret_type: Type,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -63,6 +64,7 @@ impl<'ctx> CodeGen<'ctx> {
             attr_registry,
 
             inline_fns: HashSet::new(),
+            current_fn_ret_type: Type::Void,
             // context: &'ctx Context
         }
     }

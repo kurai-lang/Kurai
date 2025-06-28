@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use colored::Colorize;
-use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::BasicMetadataValueEnum, AddressSpace};
+use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue}, AddressSpace};
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
@@ -50,7 +50,7 @@ impl<'ctx> CodeGen<'ctx> {
                     };
 
                     // now do mutable stuff after immutable borrow is over
-                    let llvm_value = self.lower_expr_to_llvm(value).unwrap();
+                    let llvm_value = self.lower_expr_to_llvm(value, None).unwrap();
                     self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
@@ -79,7 +79,7 @@ impl<'ctx> CodeGen<'ctx> {
                                             "error".red().bold(),
                                             name.bold()));
 
-                                    self.lower_expr_to_llvm(value)
+                                    self.lower_expr_to_llvm(value, None)
                                         .map(|expr| compiled_args.push(expr.into()));
                                 }
                                 self.builder.build_call(function, &compiled_args, &name).unwrap();
@@ -135,6 +135,8 @@ impl<'ctx> CodeGen<'ctx> {
                         let basic_block = self.context.append_basic_block(function, "entry");
                         self.builder.position_at_end(basic_block);
 
+                        self.current_fn_ret_type = ret_type.clone();
+
                         self.attr_registry.register_all();
                         self.load_attributes(attributes, &stmt);
 
@@ -171,6 +173,7 @@ impl<'ctx> CodeGen<'ctx> {
                         discovered_modules,
                         parsers, scope);
 
+                    #[cfg(debug_assertions)] { println!("self.current_fn_ret_type = {:?}", self.current_fn_ret_type); }
                     if *ret_type == Type::Void {
                         #[cfg(debug_assertions)] {
                             println!("Auto-inserting `ret void` for void-returning fn: {}", name);
@@ -311,7 +314,10 @@ impl<'ctx> CodeGen<'ctx> {
                     // self.builder.position_at_end(unreachable_block);
                 }
                 Stmt::Expr(expr) => {
-                    self.lower_expr_to_llvm(expr);
+                    if let Some(val) = self.lower_expr_to_llvm(expr, None) {
+                        #[cfg(debug_assertions)]
+                        println!("Expression result (ignored): {:?}", val);
+                    }
                 }
                 Stmt::Block(stmts) => {
                     self.execute_every_stmt_in_code(
@@ -322,9 +328,38 @@ impl<'ctx> CodeGen<'ctx> {
                     );
                 }
                 Stmt::Return(expr) => {
-                    let expr = expr.as_ref().unwrap();
-                    let ret_val = self.lower_expr_to_llvm(expr).unwrap();
-                    self.builder.build_return(Some(&ret_val)).unwrap();
+                    let ret_type = self.current_fn_ret_type.clone();
+                    let raw_val = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type)).unwrap();
+
+                    let final_val = match ret_type {
+                        Type::I32 => {
+                            let val = raw_val.into_int_value();
+                            if val.get_type() != self.context.i32_type() {
+                                self.builder.build_int_cast(
+                                    val, self.context.i32_type(),
+                                    "ret_cast"
+                                )
+                            } else { Ok(val) }
+                        }
+                        Type::I64 => {
+                            let val = raw_val.into_int_value();
+                            if val.get_type() != self.context.i64_type() {
+                                self.builder.build_int_cast(
+                                    val, self.context.i64_type(),
+                                    "ret_cast"
+                                )
+                            } else { Ok(val) }
+                        }
+                        Type::Void => {
+                            // You should've written `return;` with no expression
+                            panic!("Tried to return a value from a function that returns void");
+                        }
+                        _ => {
+                            panic!("Unsupported return type: {:?}", ret_type);
+                        }
+                    }.unwrap().as_basic_value_enum();
+
+                    self.builder.build_return(Some(&final_val)).unwrap();
                 }
             }
         }

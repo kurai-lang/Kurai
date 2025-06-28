@@ -3,11 +3,11 @@ use inkwell::{module::Linkage, values::{BasicValue, BasicValueEnum}, IntPredicat
 
 use kurai_binop::bin_op::BinOp;
 use kurai_expr::expr::Expr;
-use kurai_types::value::Value;
+use kurai_types::{typ::Type, value::Value};
 use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn lower_expr_to_llvm(&mut self, expr: &Expr) -> Option<BasicValueEnum<'ctx>> {
+    pub fn lower_expr_to_llvm(&mut self, expr: &Expr, expected_type: Option<&Type>) -> Option<BasicValueEnum<'ctx>> {
         #[cfg(debug_assertions)]
         {
             println!("Lowering expr: {:?}", expr);
@@ -15,7 +15,15 @@ impl<'ctx> CodeGen<'ctx> {
         match expr {
             Expr::Literal(value) => match value {
                 Value::Int(v) => {
-                    Some(self.context.i64_type().const_int(*v as u64, true).into())
+                    match expected_type {
+                        Some(Type::I8) => Some(self.context.i8_type().const_int(*v as u64, true).into()),
+                        Some(Type::I16) => Some(self.context.i16_type().const_int(*v as u64, true).into()),
+                        Some(Type::I32) => Some(self.context.i32_type().const_int(*v as u64, true).into()),
+                        Some(Type::I64) => Some(self.context.i64_type().const_int(*v as u64, true).into()),
+                        Some(Type::I128) => Some(self.context.i128_type().const_int(*v as u64, true).into()),
+                        _ => Some(self.context.i64_type().const_int(*v as u64, true).into()), // <- DEFAULT TYPE
+                        // _ => panic!("invalid expected type for int literal")
+                    }
                 }
                 Value::Bool(b) => {
                     Some(self.context.bool_type().const_int(*b as u64, false).into())
@@ -82,8 +90,8 @@ impl<'ctx> CodeGen<'ctx> {
                 #[cfg(debug_assertions)]
                 { println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
-                let left_val = self.lower_expr_to_llvm(left)?;
-                let right_val = self.lower_expr_to_llvm(right)?;
+                let left_val = self.lower_expr_to_llvm(left, Some(&Type::I32))?;
+                let right_val = self.lower_expr_to_llvm(right, Some(&Type::I32))?;
 
                 #[cfg(debug_assertions)]
                 { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }

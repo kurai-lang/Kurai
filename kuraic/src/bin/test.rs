@@ -23,7 +23,7 @@ fn main() {
             // return 0;
         }
 
-        fn main() i32 {
+        fn main() i64 {
             meow();
             return 0;
         }

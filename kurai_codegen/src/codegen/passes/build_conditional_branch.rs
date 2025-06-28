@@ -18,14 +18,27 @@ impl<'ctx> CodeGen<'ctx> {
         parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> BasicBlock<'ctx> {
-        let condition = self.lower_expr_to_llvm(condition_expr).unwrap();
+        let condition_value = self.lower_expr_to_llvm(condition_expr, None).unwrap();
+
+        let condition = if condition_value.is_int_value() {
+            let int_val = condition_value.into_int_value();
+            let zero = int_val.get_type().const_zero();
+
+            self.builder.build_int_compare(
+                inkwell::IntPredicate::NE,
+                int_val,
+                zero,
+                "cond_tmp").unwrap()
+        } else {
+            panic!("condition must evaluate to an integer value");
+        };
 
         let then_block = self.context.append_basic_block(current_function, &format!("then_{}", block_suffix));
         let else_block = self.context.append_basic_block(current_function, &format!("else_{}", block_suffix));
         let merge_block = self.context.append_basic_block(current_function, &format!("merge_{}", block_suffix));
 
         self.builder.build_conditional_branch(
-            condition.into_int_value(),
+            condition,
             then_block,
             else_block
         ).unwrap();
