@@ -122,7 +122,7 @@ impl<'ctx> CodeGen<'ctx> {
         args.iter()
             .filter_map(|arg| {
                 match arg.typ {
-                    Type::Int => self.compile_int(arg),
+                    Type::I64 => self.compile_int(arg),
                     Type::Str => self.compile_str(arg),
                     Type::Var => self.compile_id(arg),
                     _ => {
@@ -134,32 +134,9 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     fn compile_int(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-        // let global = self.module.lock().unwrap().
-        //     add_global(self.context.i8_type().array_type(5), None, "int_fmt");
-        // global.set_initializer(&self.context.const_string(b"%ld\n\0", false));
-        // global.set_linkage(inkwell::module::Linkage::Private);
-        // global.set_constant(true);
-        //
-        // let gep = unsafe {
-        //     self.builder.build_gep(
-        //         self.context.i8_type(),
-        //         global.as_pointer_value(), 
-        //         &[self.context.i32_type().const_zero(), self.context.i32_type().const_zero()],
-        //         "fmt_ptr")
-        //         .unwrap()
-        // };
-
         match &arg.value {
             Some(Expr::Literal(Value::Int(v))) => {
-                // Some(self.context.i64_type().const_int(*v as u64, true).into())
-                // let print_fn = self.module.lock().unwrap().get_function("printf");
                 let int_val = self.context.i64_type().const_int(*v as u64, true);
-
-                // self.builder.build_call(
-                //     print_fn?,
-                //     &[gep.into(), int_val.into()], 
-                //     "printf_call_int"
-                // ).unwrap();
 
                 Some(int_val.into())
             }
@@ -223,7 +200,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         for arg in args.iter() {
             match arg.typ {
-                Type::Int => {
+                Type::I64 => {
                     format.push_str("%ld");
 
                     // if let Some(val) = self.compile_int(arg) {

@@ -1,13 +1,13 @@
 [package]
 name = "kurai_parser_loop"
-version = "0.4.5"
+version = "0.4.6"
 edition = "2024"
 
 [dependencies]
-kurai_binop = { version = "0.4.5", path = "../kurai_binop" }
-kurai_core = { version = "0.4.5", path = "../kurai_core" }
-kurai_expr = { version = "0.4.5", path = "../kurai_expr" }
-kurai_parser = { version = "0.4.5", path = "../kurai_parser" }
-kurai_stmt = { version = "0.4.5", path = "../kurai_stmt" }
-kurai_token = { version = "0.4.5", path = "../kurai_token" }
-kurai_types = { version = "0.4.5", path = "../kurai_types" }
+kurai_binop = { version = "0.4.6", path = "../kurai_binop" }
+kurai_core = { version = "0.4.6", path = "../kurai_core" }
+kurai_expr = { version = "0.4.6", path = "../kurai_expr" }
+kurai_parser = { version = "0.4.6", path = "../kurai_parser" }
+kurai_stmt = { version = "0.4.6", path = "../kurai_stmt" }
+kurai_token = { version = "0.4.6", path = "../kurai_token" }
+kurai_types = { version = "0.4.6", path = "../kurai_types" }

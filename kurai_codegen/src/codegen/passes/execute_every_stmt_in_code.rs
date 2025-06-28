@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use colored::Colorize;
-use inkwell::{types::BasicMetadataTypeEnum, values::BasicMetadataValueEnum, AddressSpace};
+use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::BasicMetadataValueEnum, AddressSpace};
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
@@ -33,7 +33,7 @@ impl<'ctx> CodeGen<'ctx> {
                         let v_pointer_val = alloca;
                         let var_info = VariableInfo {
                             ptr_value: v_pointer_val,
-                            var_type: Type::Int,
+                            var_type: Type::I64,
                         };
 
                         self.variables.insert(name.to_string(), var_info);
@@ -89,7 +89,7 @@ impl<'ctx> CodeGen<'ctx> {
                         }
                     }
                 }
-                Stmt::FnDecl { name, args, body, attributes } => {
+                Stmt::FnDecl { name, args, body, attributes, ret_type } => {
                     // Map the argument types to LLVM types 
                     // remember, we need to speak LLVM IR language, not rust!
                     #[cfg(debug_assertions)]
@@ -98,46 +98,17 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ {
-                            Type::Int => self.context.i32_type().into(),
-                            Type::Float => self.context.f32_type().into(),
+                            Type::I32 => self.context.i32_type().into(),
+                            Type::F32 => self.context.f32_type().into(),
                             Type::Bool => self.context.bool_type().into(),
                             Type::Str => self.context.ptr_type(AddressSpace::default()).into(),
                             _ => panic!("Unknown type: {:?}", arg.typ),
                             }
                         }).collect();
 
-                        #[cfg(debug_assertions)]
-                        {
-                            println!("done");
-                        }
-
+                    #[cfg(debug_assertions)]
                     {
-                        let module = self.module.lock().unwrap();
-
-                        if name == "main" && module.get_function("main").is_some() {
-                            let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-                            let function = module.add_function(&name, fn_type, None);
-                            let basic_block = self.context.append_basic_block(function, "entry");
-                            self.builder.position_at_end(basic_block);
-
-
-                            for (i, arg) in args.iter().enumerate() {
-                                let llvm_arg = function.get_nth_param(i as u32).unwrap().into_pointer_value();
-
-                                let alloca = self.builder.build_alloca(
-                                    llvm_arg.get_type(),
-                                    &arg.name,
-                                ).unwrap();
-
-                                let variable_info = VariableInfo {
-                                    ptr_value: alloca,
-                                    var_type: arg.typ.clone(),
-                                };
-
-                                self.builder.build_store(alloca, llvm_arg).unwrap();
-                                self.variables.insert(arg.name.clone(), variable_info);
-                            }
-                        }
+                        println!("done");
                     }
 
                     {
@@ -147,8 +118,20 @@ impl<'ctx> CodeGen<'ctx> {
                             println!("creating function named: {}", &name);
                         }
 
-                        let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-                        let function = self.module.lock().unwrap().add_function(&name, fn_type, None);
+                        let fn_type = if *ret_type == Type::Void { 
+                            self.context.void_type().fn_type(&arg_types, false)
+                        } else {
+                            let llvm_ret_type = ret_type.to_llvm_type(self.context).unwrap();
+                            #[cfg(debug_assertions)] { println!("{:?}", llvm_ret_type) }
+                            // let fn_type = self.context.i32_type().fn_type(&arg_types, false);
+                            match llvm_ret_type {
+                                BasicTypeEnum::IntType(int_type) => int_type.fn_type(&arg_types, false),
+                                BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&arg_types, false),
+                                BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&arg_types, false),
+                                _ => panic!("Unsupported return type in fn_type gen"),
+                            }
+                        };
+                        let function = self.module.lock().unwrap().add_function(name, fn_type, None);
                         let basic_block = self.context.append_basic_block(function, "entry");
                         self.builder.position_at_end(basic_block);
 

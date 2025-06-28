@@ -75,6 +75,13 @@ pub fn parse_fn_decl(
         }
     }
 
+    let ret_type = if let Some(Token::Type(typ)) = tokens.get(*pos) {
+        *pos += 1;
+        typ.clone()
+    } else {
+        Type::Void
+    };
+
     let mut body = Vec::new();
     if eat(&Token::OpenBracket, tokens, pos) {
         while *pos < tokens.len() {
@@ -103,5 +110,6 @@ pub fn parse_fn_decl(
         args,
         body,
         attributes: attrs,
+        ret_type
     })
 }

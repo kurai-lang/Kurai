@@ -1,9 +1,13 @@
+use kurai_types::typ::Type;
+
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Let,
-    Int,
     If,
     Else,
+
+    // Int
+    Type(Type),
 
     Id(String),
     Number(i64),
@@ -169,7 +173,6 @@ impl Token {
 
                     // keywords i guess
                     match current.as_str() {
-                        "int" => tokens.push(Token::Int),
                         "let" => tokens.push(Token::Let),
                         "fn" => tokens.push(Token::Function),
                         "use" => tokens.push(Token::Import),
@@ -184,6 +187,20 @@ impl Token {
                         "in" => tokens.push(Token::In),
                         "break" => tokens.push(Token::Break),
                         "return" => tokens.push(Token::Return),
+
+                        // NOTE: Data types
+                        "i8" => tokens.push(Token::Type(Type::I8)),
+                        "i16" => tokens.push(Token::Type(Type::I16)),
+                        "i32" => tokens.push(Token::Type(Type::I32)),
+                        "i64" => tokens.push(Token::Type(Type::I64)),
+                        "i128" => tokens.push(Token::Type(Type::I128)),
+
+                        "f32" => tokens.push(Token::Type(Type::F32)),
+                        "f64" => tokens.push(Token::Type(Type::F64)),
+                        "f128" => tokens.push(Token::Type(Type::F128)),
+
+                        "bool" => tokens.push(Token::Type(Type::Bool)),
+                        "void" => tokens.push(Token::Type(Type::Void)),
                         _ => tokens.push(Token::Id(current.clone())),
                     }
                     current.clear();

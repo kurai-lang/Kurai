@@ -59,7 +59,7 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
             Some(Token::Number(v)) => {
                 args.push(TypedArg {
                     name: "_".to_string(),
-                    typ: Type::Int,
+                    typ: Type::I64,
                     value: Some(Expr::Literal(Value::Int(*v))),
                 });
                 *pos += 1;
