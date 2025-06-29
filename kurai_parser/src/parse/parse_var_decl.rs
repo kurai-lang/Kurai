@@ -4,9 +4,8 @@ use kurai_token::eat::eat;
 use kurai_stmt::stmt::Stmt;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
-use crate::GroupedParsers;
 
-pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope, parsers: &GroupedParsers) -> Result<Stmt, String> {
+pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
     if !eat(&Token::Let, tokens, pos) {
         return Err("Expected keyword `let`".to_string());
     }
@@ -44,7 +43,7 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope, pars
     //     _ => return Err(format!("Unsupported value {:?}", tokens.get(*pos)))
     // };
 
-    let expr = parse_arithmetic(tokens, pos, 0, scope, parsers);
+    let expr = parse_arithmetic(tokens, pos, 0);
     scope.0.insert(name.clone(), expr.clone().unwrap());
     // *pos += 1;
 
@@ -57,10 +56,9 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope, pars
 
     // stands for... i forgot
     // oh btw typ does nothing, at least for now 
-    Ok(Stmt::Let {
+    Ok(Stmt::VarDecl {
         name,
-        typ: Some("int".to_string()), 
-        value: Some(Box::new(expr.unwrap())),
-        then: None, // this can be worked on later
+        typ: "int".to_string(), 
+        value: expr,
     })
 }

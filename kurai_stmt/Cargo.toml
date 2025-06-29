@@ -9,4 +9,3 @@ kurai_types = { version = "0.4.6", path = "../kurai_types/"}
 kurai_expr = { version = "0.4.6", path = "../kurai_expr/"}
 kurai_typedArg = { version = "0.4.6", path = "../kurai_typedArg/"}
 kurai_attr = { version = "0.4.6", path = "../kurai_attr" }
-kurai_binop = { version = "0.4.6", path = "../kurai_binop" }

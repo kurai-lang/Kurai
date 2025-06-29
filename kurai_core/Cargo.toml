@@ -4,7 +4,5 @@ version = "0.4.6"
 edition = "2024"
 
 [dependencies]
-colored = "3.0.0"
 kurai_expr = { version = "0.4.6", path = "../kurai_expr" }
-kurai_stmt = { version = "0.4.6", path = "../kurai_stmt" }
 kurai_types = { version = "0.4.6", path = "../kurai_types" }

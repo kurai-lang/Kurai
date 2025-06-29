@@ -46,45 +46,39 @@ pub fn parse_for_loop(
 
                 return Ok(Stmt::Block(vec![
                     // let i = <starting_num>;
-                    Stmt::Let {
+                    Stmt::VarDecl {
                         name: id.clone(),
-                        typ: Some("int".to_string()),
-                        value: Some(Box::new(Stmt::Literal(Value::Int(*starting_num)))),
-                        then: None,
+                        typ: "int".to_string(),
+                        value: Some(Expr::Literal(Value::Int(*starting_num))),
                     },
                     // loop {}
-                    Stmt::Loop(
-                        // vec![
-                        Box::new(
-                            Stmt::Block(
-                                vec![
-                                // if i >= ending_num { break; }
-                                Stmt::If {
-                                    branches: vec![IfBranch {
-                                        condition: Box::new(Stmt::Binary {
-                                            op: BinOp::Ge,
-                                            left: Box::new(Stmt::Id(id.clone())),
-                                            right: Box::new(Stmt::Literal(Value::Int(*ending_num))),
-                                        }),
-                                        body: Box::new(Stmt::Break),
-                                    }],
-                                    else_: None,
+                    Stmt::Loop {
+                        body: vec![
+                            // if i >= ending_num { break; }
+                            Stmt::If {
+                                branches: vec![IfBranch {
+                                    condition: Expr::Binary {
+                                        op: BinOp::Ge,
+                                        left: Box::new(Expr::Var(id.clone())),
+                                        right: Box::new(Expr::Literal(Value::Int(*ending_num))),
+                                    },
+                                    body: vec![Stmt::Break],
+                                }],
+                                else_body: None,
+                            },
+                            // body block
+                            Stmt::Block(body),
+                            // i = i + 1;
+                            Stmt::Assign {
+                                name: id.clone(),
+                                value: Expr::Binary {
+                                    op: BinOp::Add,
+                                    left: Box::new(Expr::Var(id.clone())),
+                                    right: Box::new(Expr::Literal(Value::Int(1))),
                                 },
-                                // body block
-                                Stmt::Block(body),
-                                // i = i + 1;
-                                Stmt::Assign {
-                                    target: Box::new(Stmt::Id(id.clone())),
-                                    value: Box::new(Stmt::Binary {
-                                        op: BinOp::Add,
-                                        left: Box::new(Stmt::Id(id.clone())),
-                                        right: Box::new(Stmt::Literal(Value::Int(1))),
-                                    }),
-                                },
-                            ]),
-                        ),
-                            // ],
-                    ),
+                            },
+                        ],
+                    },
                 ]));
             }
         }

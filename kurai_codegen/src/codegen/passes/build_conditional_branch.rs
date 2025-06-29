@@ -1,33 +1,24 @@
-use inkwell::{basic_block::BasicBlock, values::{BasicValue, BasicValueEnum, FunctionValue}};
+use inkwell::{basic_block::BasicBlock, values::FunctionValue};
 
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_stmt::stmt::Stmt;
 use kurai_expr::expr::Expr;
-use kurai_types::typ::Type;
 use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn build_conditional_branch(
         &mut self,
         current_function: FunctionValue<'ctx>,
-        condition_expr: &Stmt,
+        condition_expr: &Expr,
         then_body: &[Stmt],
         else_body: &Option<Vec<Stmt>>,
         discovered_modules: &mut Vec<String>,
         block_suffix: &str,
-        expected_type: Option<&Type>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
-    ) -> Option<BasicValueEnum<'ctx>> 
-    {
-        let condition_value = self.lower_expr_to_llvm(
-            condition_expr,
-            Some(&Type::Bool),
-            discovered_modules,
-            scope,
-            parsers,
-        ).unwrap();
+    ) -> BasicBlock<'ctx> {
+        let condition_value = self.lower_expr_to_llvm(condition_expr, None).unwrap();
 
         let condition = if condition_value.is_int_value() {
             let int_val = condition_value.into_int_value();
@@ -54,64 +45,28 @@ impl<'ctx> CodeGen<'ctx> {
 
         // then block
         self.builder.position_at_end(then_block);
-
-        // let mut last_val: Option<_> = None;
-        let then_val = {
-            let mut val = None;
-            for (i, expr) in then_body.iter().enumerate() {
-                let expected = if i == then_body.len() - 1 { expected_type } else { None };
-                val = self.lower_expr_to_llvm(
-                    expr,
-                    expected,
-                    discovered_modules,
-                    scope,
-                    parsers,
-                );
-            }
-            val
-        };
+        self.execute_every_stmt_in_code(
+            then_body.to_vec(),
+            discovered_modules,
+            parsers,
+            scope
+        );
         self.builder.build_unconditional_branch(merge_block).unwrap();
 
         // generate else block if it exists
         self.builder.position_at_end(else_block);
-        let else_val = if let Some(else_exprs) = else_body.as_ref() {
-            let mut val = None;
-            for (i, else_expr) in else_exprs.iter().enumerate() {
-                let expected = if i == else_exprs.len() - 1 { expected_type } else { None };
-                val = self.lower_expr_to_llvm(
-                    else_expr,
-                    expected,
-                    discovered_modules,
-                    scope,
-                    parsers,
-                );
-            }
-
-            val
-        } else {
-            None
-        };
+        if let Some(else_stmts) = else_body.as_ref() {
+            self.execute_every_stmt_in_code(
+                else_stmts.to_vec(),
+                discovered_modules,
+                parsers,
+                scope
+            );
+        }
         self.builder.build_unconditional_branch(merge_block).unwrap();
 
         self.builder.position_at_end(merge_block);
-        if let Some(expected_type) = expected_type {
-            let phi = self.builder.build_phi(
-                expected_type.to_llvm_type(self.context).unwrap(),
-                "if_result"
-            ).unwrap();
-
-            if let Some(val) = then_val {
-                phi.add_incoming(&[(&val, then_block)]);
-            }
-
-            if let Some(val) = else_val {
-                phi.add_incoming(&[(&val, else_block)]);
-            }
-
-            return Some(phi.as_basic_value().as_basic_value_enum());
-        } else {
-            return None;
-        }
         // self.builder.build_return(None).unwrap();
+        merge_block
     }
 }

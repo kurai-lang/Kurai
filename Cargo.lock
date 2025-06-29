@@ -207,9 +207,7 @@ dependencies = [
 name = "kurai_core"
 version = "0.4.6"
 dependencies = [
- "colored",
  "kurai_expr",
- "kurai_stmt",
  "kurai_types",
 ]
 
@@ -218,17 +216,6 @@ name = "kurai_expr"
 version = "0.4.6"
 dependencies = [
  "kurai_binop",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_item"
-version = "0.4.6"
-dependencies = [
- "kurai_attr",
- "kurai_expr",
- "kurai_stmt",
- "kurai_typedArg",
  "kurai_types",
 ]
 
@@ -318,7 +305,6 @@ version = "0.4.6"
 dependencies = [
  "inkwell",
  "kurai_attr",
- "kurai_binop",
  "kurai_expr",
  "kurai_typedArg",
  "kurai_types",

@@ -1,433 +1,174 @@
 use colored::Colorize;
-use inkwell::{module::Linkage, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, IntPredicate};
+use inkwell::{module::Linkage, values::{BasicValue, BasicValueEnum}, IntPredicate};
 
 use kurai_binop::bin_op::BinOp;
-use kurai_core::{kurai_panic, print_error, scope::Scope};
 use kurai_expr::expr::Expr;
-use kurai_parser::GroupedParsers;
-use kurai_stmt::stmt::Stmt;
 use kurai_types::{typ::Type, value::Value};
-use crate::codegen::{CodeGen, VariableInfo};
+use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn lower_expr_to_llvm(&mut self, expr: &Stmt, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, scope: &mut Scope, parsers: &GroupedParsers ) -> Option<BasicValueEnum<'ctx>> {
+    pub fn lower_expr_to_llvm(&mut self, expr: &Expr, expected_type: Option<&Type>) -> Option<BasicValueEnum<'ctx>> {
         #[cfg(debug_assertions)]
         {
             println!("Lowering expr: {:?}", expr);
         }
-        match &expr {
-            Stmt::Let { name, typ, value, then } => {
-                let llvm_value = self.lower_expr_to_llvm(
-                    value.as_ref().unwrap(), 
-                    None,
-                    discovered_modules, 
-                    scope,
-                    parsers
-                ).unwrap();
-                
-                let llvm_type = llvm_value.get_type();
-                let alloca = self.builder.build_alloca(llvm_type, &name).unwrap();
-                self.builder.build_store(alloca, llvm_value).unwrap();
-
-                let var_info = VariableInfo {
-                    ptr_value: alloca,
-                    var_type: Type::from_llvm_type(llvm_type).unwrap_or(Type::Unknown),
-                };
-                self.variables.insert(name.clone(), var_info);
-
-                let then_val = match then {
-                    Some(then_expr) => self.lower_expr_to_llvm(then_expr, expected_type, discovered_modules, scope, parsers),
-                    None => Some(self.context.i64_type().const_zero().as_basic_value_enum()),
-                };
-
-                then_val
-            }
-            Stmt::Assign { value, target } => {
-                #[cfg(debug_assertions)]
-                { println!("Assign value AST: {:?}", value); }
-                let var_ptr = match self.variables.get(target.as_str()) {
-                    Some(ptr) => ptr.ptr_value,
-                    None => {
-                        print_error!("Identifier {} not found", target);
-                        kurai_panic!();
+        match expr {
+            Expr::Literal(value) => match value {
+                Value::Int(v) => {
+                    match expected_type {
+                        Some(Type::I8) => Some(self.context.i8_type().const_int(*v as u64, true).into()),
+                        Some(Type::I16) => Some(self.context.i16_type().const_int(*v as u64, true).into()),
+                        Some(Type::I32) => Some(self.context.i32_type().const_int(*v as u64, true).into()),
+                        Some(Type::I64) => Some(self.context.i64_type().const_int(*v as u64, true).into()),
+                        Some(Type::I128) => Some(self.context.i128_type().const_int(*v as u64, true).into()),
+                        _ => Some(self.context.i64_type().const_int(*v as u64, true).into()), // <- DEFAULT TYPE
+                        // _ => panic!("invalid expected type for int literal")
                     }
-                };
+                }
+                Value::Float(v) => {
+                    match expected_type {
+                        Some(Type::F16) => Some(self.context.f16_type().const_float(*v).into()),
+                        Some(Type::F32) => Some(self.context.f32_type().const_float(*v).into()),
+                        Some(Type::F64) => Some(self.context.f64_type().const_float(*v).into()),
+                        Some(Type::F128) => Some(self.context.f128_type().const_float(*v).into()),
+                        _ => Some(self.context.f64_type().const_float(*v).into()), // <- DEFAULT TYPE
+                    }
+                }
+                Value::Bool(b) => {
+                    Some(self.context.bool_type().const_int(*b as u64, false).into())
+                }
+                // Value::Str(s) => {
+                //     let global_str = self.builder.build_global_string_ptr(s, &format!("str_{}_{}", 1, 1));
+                //     Some(global_str.unwrap().as_basic_value_enum())
+                // }
+                Value::Str(s) => {
+                    let id = format!("str_{}", self.string_counter);
+                    self.string_counter += 1;
 
-                // now do mutable stuff after immutable borrow is over
-                let llvm_value = self.lower_expr_to_llvm(value, None, discovered_modules, scope, parsers).unwrap();
-                self.builder.build_store(var_ptr, llvm_value).unwrap();
-                return Some(llvm_value);
+                    // @str_{} = constant [3 x i8] c"hi\00"
+                    // let llvm_string_type = self.context.i8_type().array_type((s.len() + 1) as u32);
+                    // let global_str = self.module.lock().unwrap().add_global(llvm_string_type, None, &id);
+
+                    let cstr = format!("{}\0", s);
+                    let str_bytes = cstr.as_bytes();
+                    let str_len = str_bytes.len();
+
+                    let str_type = self.context.i8_type().array_type(str_len as u32);
+
+                    let global = self.module.lock().unwrap().add_global(str_type, None, &id);
+                    global.set_initializer(&self.context.const_string(str_bytes, false));
+                    global.set_constant(true);
+                    global.set_linkage(Linkage::Private);
+
+                    // GET DA POINTER TO DA START OF STRING (GEP trick)
+                    let ptr = unsafe {
+                        self.builder.build_gep(
+                            str_type,
+                            global.as_pointer_value(),
+                            &[
+                                self.context.i32_type().const_zero(),
+                                self.context.i32_type().const_zero()
+                            ],
+                            format!("str_{}_ptr", self.string_counter).as_str(),
+                        ).unwrap()
+                    };
+
+                    Some(ptr.as_basic_value_enum())
+                }
+                _ => None
+            },
+            Expr::Var(name) => {
+                if let Some(ptr) = self.variables.get(name) {
+                    let loaded = self.builder.build_load(
+                        self.context.i64_type(),
+                        ptr.ptr_value,
+                        &format!("load_{}", name)
+                    );
+                    Some(loaded.unwrap())
+                } else {
+                    println!("Variable {} not found!", name);
+                    None
+                }
             }
-            Stmt::FnCall { args, callee } => {
-                match callee.as_ref() {
-                    Stmt::Id(name) => {
-                        let function = if name.contains("::") {
-                            self.get_or_compile_function(name, discovered_modules, parsers, scope)
-                        } else {
-                            self.module.lock().unwrap().get_function(name)
+            Expr::Id(name) => {
+                #[cfg(debug_assertions)]
+                { println!("{}: codegen for Expr::Id({}) not implemented", "warning".yellow().bold(), name); }
+                Some(self.context.i32_type().const_int(0, false).as_basic_value_enum())
+            }
+            Expr::Binary { op, left, right } => {
+                #[cfg(debug_assertions)]
+                { println!("{:?}", op);
+                println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
+                let left_val = self.lower_expr_to_llvm(left, Some(&Type::I32))?;
+                let right_val = self.lower_expr_to_llvm(right, Some(&Type::I32))?;
+
+                #[cfg(debug_assertions)]
+                { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
+
+                match op {
+                    BinOp::Lt | BinOp::Le | BinOp::Eq | BinOp::Ge | BinOp::Gt | BinOp::Ne => {
+                        let predicate = match op {
+                            BinOp::Lt => IntPredicate::SLT,
+                            BinOp::Le => IntPredicate::SLE,
+                            BinOp::Eq => IntPredicate::EQ,
+                            BinOp::Ge => IntPredicate::SGE,
+                            BinOp::Gt => IntPredicate::SGT,
+                            BinOp::Ne => IntPredicate::NE,
+                            _ => {
+                                panic!("Operator {:?} not supported", op);
+                                // return None;
+                            }
                         };
 
-                        if let Some(function) = function {
-                            let mut compiled_args = Vec::new();
-
-                            for arg in args {
-                                let value = arg.value.as_ref().unwrap_or_else(|| {
-                                    panic!("{}: Failed to compile arguments for function {}",
-                                        "error".red().bold(), name.bold())
-                                });
-
-                                let val = self.lower_expr_to_llvm(value, None, discovered_modules, scope, parsers).unwrap();
-                                compiled_args.push(val.into());
-                            }
-
-                            let call = self.builder.build_call(function, &compiled_args, name).unwrap();
-                            let return_val = call.try_as_basic_value().left();
-
-                            #[cfg(debug_assertions)]
-                            if let Some(ret) = return_val {
-                                println!("{}: Function call `{}` returned {:?}", "debug".cyan(), name, ret);
-                            }
-
-                            return return_val;
-                        } else {
-                            print_error!("Could not find function `{}`", name);
-                            kurai_panic!();
-                        }
+                        Some(self.builder.build_int_compare(
+                            predicate,
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "cmp"
+                        ).unwrap().as_basic_value_enum())
                     }
-                    _ => {
-                        print_error!("Function call target must be an identifier");
-                        kurai_panic!();
+
+                    // Arithmetic'ing time
+                    BinOp::Add => {
+                        let sum = self.builder.build_int_add(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "addtmp",
+                        ).unwrap();
+
+                        Some(sum.as_basic_value_enum())
                     }
+                    BinOp::Sub => {
+                        let diff = self.builder.build_int_sub(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "subtmp",
+                        ).unwrap();
+
+                        Some(diff.as_basic_value_enum())
+                    }
+                    BinOp::Mul => {
+                        let product = self.builder.build_int_mul(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "multmp",
+                        ).unwrap();
+
+                        Some(product.as_basic_value_enum())
+                    }
+                    BinOp::Div => {
+                        let div = self.builder.build_int_signed_div(
+                            left_val.into_int_value(),
+                            right_val.into_int_value(),
+                            "divtmp",
+                        ).unwrap();
+
+                        Some(div.as_basic_value_enum())
+                    }
+                    _ => panic!("Operator {:?} not supported yet", op),
                 }
             }
-            // Stmt::FnDecl { name, args, body, attributes, ret_type } => {
-            //     // Map the argument types to LLVM types 
-            //     // remember, we need to speak LLVM IR language, not rust!
-            //     #[cfg(debug_assertions)]
-            //     {
-            //         println!("converting args to llvm args types");
-            //     }
-            //     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
-            //         match arg.typ {
-            //             Type::I32 => self.context.i32_type().into(),
-            //             Type::F32 => self.context.f32_type().into(),
-            //             Type::Bool => self.context.bool_type().into(),
-            //             Type::Str => self.context.ptr_type(AddressSpace::default()).into(),
-            //             _ => panic!("Unknown type: {:?}", arg.typ),
-            //             }
-            //         }).collect();
-            //
-            //     #[cfg(debug_assertions)]
-            //     {
-            //         println!("done");
-            //     }
-            //
-            //     {
-            //         #[cfg(debug_assertions)]
-            //         {
-            //             println!("Module: {:?}", self.module.lock().unwrap());
-            //             println!("creating function named: {}", &name);
-            //         }
-            //
-            //         let fn_type = if *ret_type == Type::Void { 
-            //             self.context.void_type().fn_type(&arg_types, false)
-            //         } else {
-            //             let llvm_ret_type = ret_type.to_llvm_type(self.context).unwrap();
-            //             #[cfg(debug_assertions)] { println!("{:?}", llvm_ret_type) }
-            //             // let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-            //             match llvm_ret_type {
-            //                 BasicTypeEnum::IntType(int_type) => int_type.fn_type(&arg_types, false),
-            //                 BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&arg_types, false),
-            //                 BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&arg_types, false),
-            //                 _ => panic!("Unsupported return type in fn_type gen"),
-            //             }
-            //         };
-            //         let function = self.module.lock().unwrap().add_function(name, fn_type, None);
-            //         let basic_block = self.context.append_basic_block(function, "entry");
-            //         self.builder.position_at_end(basic_block);
-            //
-            //         self.current_fn_ret_type = ret_type.clone();
-            //
-            //         self.attr_registry.register_all();
-            //         self.load_attributes(attributes, &stmt);
-            //
-            //         #[cfg(debug_assertions)]
-            //         {
-            //             println!("done");
-            //             println!("parsing the function's body");
-            //         }
-            //         for (i, arg) in args.iter().enumerate() {
-            //             let llvm_arg = function.get_nth_param(i as u32).unwrap();//.into_pointer_value();
-            //             let pointee_type = llvm_arg.get_type();
-            //             let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
-            //
-            //             println!("{:?}", pointee_type);
-            //             println!("{:?}", var_type);
-            //             println!("{:?}", llvm_arg.get_type());
-            //
-            //             let alloca = self.builder.build_alloca(
-            //                 llvm_arg.get_type(),
-            //                 &arg.name,
-            //             ).unwrap();
-            //
-            //             self.builder.build_store(alloca, llvm_arg).unwrap();
-            //
-            //             let var_info = VariableInfo {
-            //                 ptr_value: alloca,
-            //                 var_type,
-            //             };
-            //             self.variables.insert(arg.name.clone(), var_info);
-            //         }
-            //     }
-            //     self.execute_every_stmt_in_code(
-            //         body.to_vec(),
-            //         discovered_modules,
-            //         parsers, scope);
-            //
-            //     #[cfg(debug_assertions)] { println!("self.current_fn_ret_type = {:?}", self.current_fn_ret_type); }
-            //     if *ret_type == Type::Void {
-            //         #[cfg(debug_assertions)] {
-            //             println!("Auto-inserting `ret void` for void-returning fn: {}", name);
-            //         }
-            //
-            //         self.builder.build_return(None).unwrap();
-            //     }
-            // }
-            // Stmt::Import { path, nickname, is_glob} => {
-            //     let key = path.join("/");
-            //     // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
-            //     let modname = path[0].clone();
-            //
-            //     if self.loaded_modules.contains_key(&modname) {
-            //         eprintln!("Module `{}` already loaded", modname);
-            //         return;
-            //     }
-            //
-            //     let path_str = format!("{}.kurai", key);
-            //     let code = std::fs::read_to_string(&path_str)
-            //         .unwrap_or_else(|_| panic!("Failed to load module {}", path_str));
-            //     let tokens = Token::tokenize(&code);
-            //
-            //     let mut pos = 0;
-            //     let mut stmts = Vec::new();
-            //
-            //     while pos < tokens.len() {
-            //         match parsers.import_parser.parse_imported_file(
-            //             &tokens,
-            //             &mut pos,
-            //             discovered_modules,
-            //             parsers,
-            //             scope
-            //         ) {
-            //             Ok(stmt) => stmts.push(stmt),
-            //             Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
-            //         }
-            //     }
-            //
-            //     self.loaded_modules.insert(modname.clone(), stmts.clone());
-            //
-            //     if *is_glob {
-            //         self.execute_every_stmt_in_code(
-            //             stmts,
-            //             discovered_modules,
-            //             parsers,
-            //             scope
-            //         );
-            //     } else {
-            //         #[cfg(debug_assertions)]
-            //         {
-            //             println!("{}: Not global import. Just a testing", "testing".cyan().bold());
-            //         }
-            //
-            //         self.generate_code(
-            //             stmts,
-            //             vec![], 
-            //             discovered_modules, 
-            //             parsers,
-            //             scope
-            //         );
-            //     }
-            //
-            //     // NOTE: Later
-            //     // if let Some(nick) = nickname {
-            //     //     self.imports.insert(nick.clone(), name.clone()); // Make sure `imports` is in your struct
-            //     // } else {
-            //     //     self.imports.insert(name.clone(), name.clone());
-            //     // }
-            // }
-            // Stmt::If { condition, then, else_ } => {
-            //     let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-            //     // let merge_block = self.context.append_basic_block(current_function, "merge");
-            //
-            //     let mut prev_block = self.builder.get_insert_block().unwrap();
-            //
-            //     // process each branch hehe
-            //     for (i, branch) in branches.iter().enumerate() {
-            //         if let Some(block) = Some(prev_block) {
-            //             self.builder.position_at_end(block);
-            //         }
-            //
-            //         // imagine if!! or else u die
-            //             self.build_conditional_branch(
-            //             current_function,
-            //             &branch.condition,
-            //             &branch.body.clone(),
-            //             &else_,
-            //             discovered_modules,
-            //             &i.to_string(),
-            //             parsers,
-            //             scope
-            //         );
-            //     }
-            //     // Position builder at merge block for continuation
-            //     // self.builder.position_at_end(merge_block);
-            // }
-            // Stmt::Loop => {
-            //     let function = self.builder.get_insert_block()
-            //         .expect("Not inside a block")
-            //         .get_parent()
-            //         .expect("Block has no parent function");
-            //
-            //     let loop_bb = self.context.append_basic_block(function, format!("loop_{}", self.loop_counter).as_str());
-            //     let after_bb = self.context.append_basic_block(function, format!("after_loop_{}", self.loop_counter).as_str());
-            //     self.loop_counter += 1;
-            //
-            //     // memory
-            //     self.loop_exit_stack.push(after_bb);
-            //
-            //     // starts the loop
-            //     self.builder.build_unconditional_branch(loop_bb).unwrap();
-            //     self.builder.position_at_end(loop_bb);
-            //
-            //     self.execute_every_stmt_in_code(
-            //         body.to_vec(),
-            //         discovered_modules, 
-            //         parsers,
-            //         scope
-            //     );
-            //
-            //     if self.builder.get_insert_block()
-            //         .map(|bb| bb.get_terminator().is_none())
-            //         .unwrap_or(true)
-            //     {
-            //         self.builder.build_unconditional_branch(loop_bb).unwrap();
-            //     }
-            //     self.loop_exit_stack.pop();
-            //
-            //     self.builder.position_at_end(after_bb);
-            // }
-            // Stmt::Break => {
-            //     let target = self.loop_exit_stack.last().ok_or("Break outside of loop").unwrap();
-            //     self.builder.build_unconditional_branch(*target).unwrap();
-            //
-            //     // safety net: prevent building more instructions in the same block
-            //     // let unreachable_block = self.context.append_basic_block(function, "unreachable");
-            //     // self.builder.position_at_end(unreachable_block);
-            // }
-            // Stmt::Expr(expr) => {
-            //     if let Some(val) = self.lower_expr_to_llvm(expr, None) {
-            //         #[cfg(debug_assertions)]
-            //         println!("Expression result (ignored): {:?}", val);
-            //     }
-            // }
-            Stmt::Block(stmts) => {
-                let mut last_val = None;
-                let expected_type = Some(&Type::I32);
-
-                for (i, stmt) in stmts.iter().enumerate() {
-                    let is_last = i == stmts.len() - 1;
-
-                    last_val = self.lower_expr_to_llvm(
-                        stmt,
-                        if is_last { expected_type } else { None },
-                        discovered_modules,
-                        scope,
-                        parsers
-                    );
-                }
-
-                last_val
-            }
-            // Stmt::Return(expr) => {
-            //     let ret_type = self.current_fn_ret_type.clone();
-            //     #[cfg(debug_assertions)] {
-            //         println!("{}: Current function return type is {:?}", "debug".cyan().bold(), ret_type);
-            //         println!("{}: Current expression is {:?}", "debug".cyan().bold(), expr);
-            //     }
-            //     let raw_val = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type)).unwrap();
-            //
-            //     let final_val = match ret_type {
-            //         Type::I32 => {
-            //             let val = match raw_val {
-            //                 BasicValueEnum::IntValue(v) => v,
-            //                 other => { 
-            //                     let variant = match other {
-            //                         BasicValueEnum::IntValue(_) => "IntValue",
-            //                         BasicValueEnum::FloatValue(_) => "FloatValue",
-            //                         BasicValueEnum::PointerValue(_) => "PointerValue",
-            //                         BasicValueEnum::StructValue(_) => "StructValue",
-            //                         BasicValueEnum::ArrayValue(_) => "ArrayValue",
-            //                         BasicValueEnum::VectorValue(_) => "VectorValue",
-            //                         BasicValueEnum::ScalableVectorValue(_) => "ScalableVectorValue",
-            //                     };
-            //
-            //                     print_error!(
-            //                         "Expected an `IntValue` for return type `i32`, but got `{}` instead.",
-            //                         variant,
-            //                     );
-            //
-            //                     print_hint!("Maybe try checking your return statement, and your function return type");
-            //                     kurai_panic!();
-            //                 }
-            //             };
-            //             let val = if val.get_type() != self.context.i32_type() {
-            //                 self.builder.build_int_cast(
-            //                     val, self.context.i32_type(),
-            //                     "ret_cast"
-            //                 ).unwrap()
-            //             } else { val };
-            //             val.as_basic_value_enum()
-            //         }
-            //         Type::I64 => {
-            //             let val = raw_val.into_int_value();
-            //             let val = if val.get_type() != self.context.i64_type() {
-            //                 self.builder.build_int_cast(
-            //                     val, self.context.i64_type(),
-            //                     "ret_cast"
-            //                 ).unwrap()
-            //             } else { val };
-            //             val.as_basic_value_enum()
-            //         }
-            //         Type::F32 => {
-            //             let val = raw_val.into_float_value();
-            //             let val = if val.get_type() != self.context.f32_type() {
-            //                 self.builder.build_float_cast(
-            //                     val, self.context.f32_type(),
-            //                     "ret_cast"
-            //                 ).unwrap()
-            //             } else { val };
-            //             val.as_basic_value_enum()
-            //         }
-            //         Type::F64 => {
-            //             let val = raw_val.into_float_value();
-            //             let val = if val.get_type() != self.context.f64_type() {
-            //                 self.builder.build_float_cast(
-            //                     val, self.context.f64_type(),
-            //                     "ret_cast"
-            //                 ).unwrap()
-            //             } else { val };
-            //             val.as_basic_value_enum()
-            //         }
-            //         Type::Void => {
-            //             panic!("Tried to return a value from a function that returns void");
-            //         }
-            //         _ => {
-            //             panic!("Unsupported return type: {:?}", ret_type);
-            //         }
-            //     };
-            //
-            //     self.builder.build_return(Some(&final_val)).unwrap();
-            // }
+            Expr::FnCall { name, args } => todo!(),
         }
     }
 }

@@ -79,15 +79,12 @@ impl<'ctx> CodeGen<'ctx> {
         // WARNING: nothing lol ,just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
-        for stmt in parsed_stmt {
-            self.lower_expr_to_llvm(
-                &stmt,
-                None,
-                discovered_modules,
-                scope,
-                parsers,
-            );
-        }
+        self.execute_every_stmt_in_code(
+            parsed_stmt,
+            discovered_modules,
+            parsers,
+            scope
+        );
 
         // self.builder.build_call(
         //     printf_fn,

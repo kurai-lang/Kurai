@@ -1,17 +1,16 @@
 use kurai_binop::bin_op::BinOp;
-use kurai_core::scope::Scope;
-use kurai_stmt::stmt::Stmt;
 use kurai_token::token::token::Token;
-use crate::{parse::parse::parse_expr, GroupedParsers};
+use kurai_expr::expr::Expr;
+use crate::parse::parse::parse_expr;
 
-pub fn parse_equal(tokens: &[Token], pos: &mut usize, scope: &mut Scope, parsers: &GroupedParsers) -> Option<Stmt> {
-    let mut left = parse_expr(tokens, pos, scope, parsers).unwrap();
+pub fn parse_equal(tokens: &[Token], pos: &mut usize) -> Option<Expr> {
+    let mut left = parse_expr(tokens, pos, true)?;
 
     while let Some(op) = parse_comparison_op(tokens, pos) {
         *pos += 1;
-        let right = parse_expr(tokens, pos, scope, parsers).unwrap();
+        let right = parse_expr(tokens, pos, true)?;
 
-        left = Stmt::Binary { 
+        left = Expr::Binary { 
             op,
             left: Box::new(left),
             right: Box::new(right)
