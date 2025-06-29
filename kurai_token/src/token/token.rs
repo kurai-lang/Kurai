@@ -11,7 +11,7 @@ pub enum Token {
 
     Id(String),
     Number(i64),
-    Float(f32),
+    Float(f64),
     Bool(bool),
     StringLiteral(String),
     Equal,
@@ -149,16 +149,43 @@ impl Token {
                 }
                 '0'..='9' => {
                     current.push(ch);
+                    let mut is_float = false;
+
                     while let Some(&next_ch) = iter.peek() {
                         #[allow(warnings)]
                         if next_ch.is_digit(10) {
                             current.push(iter.next().unwrap());
+                        } else if next_ch == '.' {
+                            let mut clone = iter.clone();
+                            clone.next();
+                            if let Some(&after_dot) = clone.peek() {
+                                if after_dot.is_digit(10) {
+                                    is_float = true;
+                                    current.push(iter.next().unwrap());
+
+                                    while let Some(&float_ch) = iter.peek() {
+                                        if float_ch.is_digit(10) {
+                                            current.push(iter.next().unwrap());
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                break;
+                            }
                         } else {
                             break;
                         }
                     }
 
-                    tokens.push(Token::Number(current.parse::<i64>().unwrap()));
+                    if is_float {
+                        tokens.push(Token::Float(current.parse::<f64>().unwrap()));
+                    } else {
+                        tokens.push(Token::Number(current.parse::<i64>().unwrap()));
+                    }
                     current.clear(); // Reset for next token
                 }
                 'a'..='z' | 'A'..='Z' | '_' => {
