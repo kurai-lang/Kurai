@@ -19,6 +19,10 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
             *pos += 1;
             Some(Expr::Literal(Value::Int(*v)))
         }
+        Token::Float(v) => {
+            *pos += 1;
+            Some(Expr::Literal(Value::Float(*v)))
+        }
         Token::StringLiteral(v) => {
             *pos += 1;
             let v = v.clone();

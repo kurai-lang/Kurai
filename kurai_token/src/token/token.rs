@@ -6,7 +6,6 @@ pub enum Token {
     If,
     Else,
 
-    // Int
     Type(Type),
 
     Id(String),

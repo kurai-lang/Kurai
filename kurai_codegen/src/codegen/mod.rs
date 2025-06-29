@@ -162,35 +162,21 @@ impl<'ctx> CodeGen<'ctx> {
     }
 
     fn compile_id(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-        if let Some(var_info) = self.variables.get(&arg.name) {
-            let ptr_type = match var_info.var_type.to_llvm_type(self.context) {
-                Some(ty) => ty,
-                None => {
-                    eprintln!("Type of variable `{}` is unknown at compile time.", arg.name);
-                    return None;
-                }
-            };
-            let loaded_val = self.builder.build_load(
-                ptr_type,
-                var_info.ptr_value,
-                "loaded_id"
-            ).unwrap();
+        let var_info = self.variables.get(&arg.name).unwrap();
+        let llvm_type = var_info.var_type.to_llvm_type(self.context).unwrap();
 
-            println!("{:?}", loaded_val.get_type());
-
-            // WARNING: THIS IS UNUSED, MIGHT BE REMOVED IN THE FUTURE
-            // let gep = unsafe {
-            //     self.builder.build_gep(
-            //         ptr_type.as_basic_type_enum(),
-            //         *var_ptr,
-            //         &[self.context.i32_type().const_zero()],
-            //         format!("str_{}_gep", self.string_counter).as_str(),
-            //     ).unwrap()
-            // };
-
-            Some(loaded_val.as_basic_value_enum())
-        } else {
-            None
+        match arg.typ {
+            Type::Str => Some(var_info.ptr_value.as_basic_value_enum()), // just return the
+                                                                              // pointer as it is
+                                                                              // lmfao
+            _ => {
+                let loaded_val = self.builder.build_load(
+                    llvm_type,
+                    var_info.ptr_value,
+                    "loaded_id"
+                ).unwrap();
+                Some(loaded_val.as_basic_value_enum())
+            }
         }
     }
 
@@ -223,11 +209,11 @@ impl<'ctx> CodeGen<'ctx> {
                 Type::Var => {
                     format.push_str("%s");
 
-                    if let Some(val) = self.compile_id(arg) {
-                        final_args.push(val.into());
-                    } else {
-                        return Err("Failed to compile var".to_string());
-                    }
+                    // if let Some(val) = self.compile_id(arg) {
+                    //     final_args.push(val.into());
+                    // } else {
+                    //     return Err("Failed to compile var".to_string());
+                    // }
                 }
                 _ => panic!("UNSUPPORTED PRINTF ARG TYPE")
             }

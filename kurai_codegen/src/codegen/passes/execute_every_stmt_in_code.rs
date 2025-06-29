@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use colored::Colorize;
-use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue}, AddressSpace};
+use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
@@ -10,7 +10,7 @@ use kurai_token::token::token::Token;
 use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::{typ::Type, value::Value};
 
-use crate::{codegen::{CodeGen, VariableInfo}, registry::registry::{AttributeHandler, AttributeRegistry}};
+use crate::{codegen::{CodeGen, VariableInfo}, kurai_panic, print_error, print_hint};
 use kurai_stmt::stmt::Stmt;
 
 impl<'ctx> CodeGen<'ctx> {
@@ -329,35 +329,81 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::Return(expr) => {
                     let ret_type = self.current_fn_ret_type.clone();
+                    #[cfg(debug_assertions)] {
+                        println!("{}: Current function return type is {:?}", "debug".cyan().bold(), ret_type);
+                        println!("{}: Current expression is {:?}", "debug".cyan().bold(), expr);
+                    }
                     let raw_val = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type)).unwrap();
 
                     let final_val = match ret_type {
                         Type::I32 => {
-                            let val = raw_val.into_int_value();
-                            if val.get_type() != self.context.i32_type() {
+                            let val = match raw_val {
+                                BasicValueEnum::IntValue(v) => v,
+                                other => { 
+                                    let variant = match other {
+                                        BasicValueEnum::IntValue(_) => "IntValue",
+                                        BasicValueEnum::FloatValue(_) => "FloatValue",
+                                        BasicValueEnum::PointerValue(_) => "PointerValue",
+                                        BasicValueEnum::StructValue(_) => "StructValue",
+                                        BasicValueEnum::ArrayValue(_) => "ArrayValue",
+                                        BasicValueEnum::VectorValue(_) => "VectorValue",
+                                        BasicValueEnum::ScalableVectorValue(_) => "ScalableVectorValue",
+                                    };
+
+                                    print_error!(
+                                        "Expected an `IntValue` for return type `i32`, but got `{}` instead.",
+                                        variant,
+                                    );
+
+                                    print_hint!("Maybe try checking your return statement, and your function return type");
+                                    kurai_panic!();
+                                }
+                            };
+                            let val = if val.get_type() != self.context.i32_type() {
                                 self.builder.build_int_cast(
                                     val, self.context.i32_type(),
                                     "ret_cast"
-                                )
-                            } else { Ok(val) }
+                                ).unwrap()
+                            } else { val };
+                            val.as_basic_value_enum()
                         }
                         Type::I64 => {
                             let val = raw_val.into_int_value();
-                            if val.get_type() != self.context.i64_type() {
+                            let val = if val.get_type() != self.context.i64_type() {
                                 self.builder.build_int_cast(
                                     val, self.context.i64_type(),
                                     "ret_cast"
-                                )
-                            } else { Ok(val) }
+                                ).unwrap()
+                            } else { val };
+                            val.as_basic_value_enum()
+                        }
+                        Type::F32 => {
+                            let val = raw_val.into_float_value();
+                            let val = if val.get_type() != self.context.f32_type() {
+                                self.builder.build_float_cast(
+                                    val, self.context.f32_type(),
+                                    "ret_cast"
+                                ).unwrap()
+                            } else { val };
+                            val.as_basic_value_enum()
+                        }
+                        Type::F64 => {
+                            let val = raw_val.into_float_value();
+                            let val = if val.get_type() != self.context.f64_type() {
+                                self.builder.build_float_cast(
+                                    val, self.context.f64_type(),
+                                    "ret_cast"
+                                ).unwrap()
+                            } else { val };
+                            val.as_basic_value_enum()
                         }
                         Type::Void => {
-                            // You should've written `return;` with no expression
                             panic!("Tried to return a value from a function that returns void");
                         }
                         _ => {
                             panic!("Unsupported return type: {:?}", ret_type);
                         }
-                    }.unwrap().as_basic_value_enum();
+                    };
 
                     self.builder.build_return(Some(&final_val)).unwrap();
                 }

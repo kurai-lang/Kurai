@@ -9,32 +9,36 @@ use kurai_parser_loop::LoopParserStruct;
 use kurai_token::token::token::Token;
 
 fn main() {
-    let code = r#"
-        // INLINING TIME!
-        #[inline]
-        fn meow() void {
-            let x = 0;
-            if x == 0 {
-                printf(1);
-            } else {
-                printf("hi");
-            }
-
-            // return 0;
-        }
-
-        fn main() i64 {
-            meow();
-            return 0;
-        }
-    "#.to_string();
-
     // let code = r#"
-    //     fn main() i32 {
-    //         printf("hello");
+    //     // INLINING TIME!
+    //     #[inline]
+    //     fn meow() void {
+    //         let x = 0;
+    //         if x == 0 {
+    //             printf(1);
+    //         } else {
+    //             printf("hi");
+    //         }
+    //
+    //         // return 0;
+    //     }
+    //
+    //     fn main() i64 {
+    //         meow();
     //         return 0;
     //     }
-    //     "#.to_string();
+    // "#.to_string();
+
+    let code = r#"
+        fn print(msg: str) void {
+            printf(msg);
+        }
+        fn main() i32 {
+            printf("Hello there!");
+            print("hello");
+            return 0;
+        }
+        "#.to_string();
 
     let context = Context::create();
     let parsers = GroupedParsers::new(

@@ -1,3 +1,4 @@
+use colored::Colorize;
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
@@ -75,12 +76,16 @@ pub fn parse_fn_decl(
         }
     }
 
+    #[cfg(debug_assertions)]
+    println!("{}: parsing return type", "debug".cyan().bold());
     let ret_type = if let Some(Token::Type(typ)) = tokens.get(*pos) {
         *pos += 1;
         typ.clone()
     } else {
         Type::Void
     };
+    #[cfg(debug_assertions)]
+    println!("{}: return type of function {} is {:?}", "debug".cyan().bold(), name, ret_type);
 
     let mut body = Vec::new();
     if eat(&Token::OpenBracket, tokens, pos) {

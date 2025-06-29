@@ -64,6 +64,14 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
                 });
                 *pos += 1;
             }
+            Some(Token::Float(v)) => {
+                args.push(TypedArg {
+                    name: "_".to_string(),
+                    typ: Type::F64,
+                    value: Some(Expr::Literal(Value::Float(*v))),
+                });
+                *pos += 1;
+            }
             Some(Token::StringLiteral(s)) => {
                 args.push(TypedArg {
                     name: "_".to_string(),
