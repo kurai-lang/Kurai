@@ -5,8 +5,9 @@ use kurai_token::token::token::Token;
 use kurai_stmt::stmt::Stmt;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
+use crate::GroupedParsers;
 
-pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
+pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope, parsers: &GroupedParsers) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {
         *pos += 1;
 
@@ -31,7 +32,7 @@ pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope) ->
         //     _ => return Err(format!("Unsupported value: {:?}", tokens.get(*pos)))
         // };
 
-        let expr = parse_arithmetic(tokens, pos, 0);
+        let expr = parse_arithmetic(tokens, pos, 0, scope, parsers);
         let value = &expr.unwrap();
 
         #[cfg(debug_assertions)]
@@ -42,8 +43,8 @@ pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, scope: &mut Scope) ->
         }
 
         Ok(Stmt::Assign {
-            name: id.to_string(),
-            value: value.clone(),
+            target: Box::new(Stmt::Id(id.to_string())),
+            value: Box::new(value.clone()),
         })
     } else {
         return Err("Where identifier".to_string());

@@ -19,8 +19,7 @@ pub fn parse_if_else(
     // check if ( exists; if it does, parse inside it; otherwise, parse the next expression directly.
 
     let condition = if eat(&Token::OpenParenthese, tokens, pos) {
-        let cond = parse_expr(tokens, pos, true)
-            .ok_or_else(|| format!("Failed to parse expression inside `if (...)` at token {}", pos))?;
+        let cond = parse_expr(tokens, pos, scope, parsers).unwrap();
 
         if !eat(&Token::CloseParenthese, tokens, pos) {
             return Err("Expected `)` after `if` condition".to_string());
@@ -28,52 +27,30 @@ pub fn parse_if_else(
 
         cond
     } else {
-        parse_expr(tokens, pos, true)
-            .ok_or_else(|| format!("Failed to parse expression after `if` at token {}", pos))?
+        parse_expr(tokens, pos, scope, parsers).unwrap()
     };
 
+    let then_block = Box::new(Stmt::Block(
+        parsers.block_parser.parse_block(
+            tokens, pos, discovered_modules, parsers, scope
+        )?
+    ));
 
-    // if !eat(&Token::OpenBracket, tokens, pos) {
-    //     return Err("Expected `{` at start of block".to_string());
-    // }
-
-    let then_branch = parsers.block_parser.parse_block(
-        tokens,
-        pos,
-        discovered_modules,
-        parsers,
-        scope,
-    )?;
-
-    // if !eat(&Token::CloseBracket, tokens, pos) {
-    //     return Err("Expected `}` at start of block".to_string());
-    // }
-
-    // if !eat(&Token::OpenBracket, tokens, pos) {
-    //     return Err("Expected `{` at start of block".to_string());
-    // }
-
-    let else_body = if eat(&Token::Else, tokens, pos) {
-        Some(parsers.block_parser.parse_block(
-            tokens,
-            pos,
-            discovered_modules,
-            parsers,
-            scope,
-        )?)
+    let else_block = if eat(&Token::Else, tokens, pos) {
+        Some(Box::new(Stmt::Block(
+            parsers.block_parser.parse_block(
+                tokens, pos, discovered_modules, parsers, scope
+            )?
+        )))
     } else {
         None
     };
 
-    // if !eat(&Token::CloseBracket, tokens, pos) {
-    //     return Err("Expected `}` at start of block".to_string());
-    // }
-
     Ok(Stmt::If {
         branches: vec![IfBranch {
-            condition,
-            body: then_branch,
+            condition: Box::new(condition),
+            body: then_block,
         }],
-        else_body,
+        else_: else_block,
     })
 }

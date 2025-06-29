@@ -15,6 +15,7 @@ members = [
   "kurai_parser_function",
   "kurai_parser_loop",
   "kurai_attr",
+  "kurai_item",
 ]
 
 # [dependencies]
