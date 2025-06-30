@@ -14,4 +14,14 @@ pub enum Expr {
         name: String,
         args: Vec<Expr>,
     },
+    If {
+        branches: Vec<IfBranch>,
+        else_body: Option<Vec<Expr>>,
+    },
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct IfBranch {
+    pub condition: Expr,
+    pub body: Vec<Expr>
 }

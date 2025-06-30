@@ -33,10 +33,6 @@ pub enum Stmt {
         nickname: Option<String>,
         is_glob: bool,
     },
-    If {
-        branches: Vec<IfBranch>,
-        else_body: Option<Vec<Stmt>>,
-    },
     Loop {
         body: Vec<Stmt>,
     },
@@ -44,12 +40,6 @@ pub enum Stmt {
     Expr(Expr),
     Block(Vec<Stmt>),
     Return(Option<Expr>),
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct IfBranch {
-    pub condition: Expr,
-    pub body: Vec<Stmt>
 }
 
 impl Stmt {
@@ -108,9 +98,6 @@ impl fmt::Display for Stmt {
                         } else {
                             write!(f, "Import(name: {:?}, nickname: {:?})", path, nickname)
                         }
-                    }
-            Stmt::If { branches, else_body } => {
-                        write!(f, "If(branches: {:?}, else_body: {:?}", branches, else_body)
                     }
             Stmt::Loop { body } => {
                         write!(f, "Loop(body: {:?})", body)
