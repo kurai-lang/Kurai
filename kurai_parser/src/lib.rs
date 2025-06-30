@@ -1,6 +1,6 @@
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 use kurai_token::token::token::Token;
 
 pub mod parse;
@@ -14,7 +14,7 @@ pub trait ImportParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
-    ) -> Result<kurai_stmt::stmt::Stmt, String>;
+    ) -> Result<Stmt, String>;
 }
 
 pub trait StmtParser {

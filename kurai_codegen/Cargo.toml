@@ -14,7 +14,6 @@ kurai_codegen_traits = { version = "0.4.6", path = "../kurai_codegen_traits/" }
 kurai_token = { version = "0.4.6", path = "../kurai_token/" }
 kurai_parser_import_file = { version = "0.4.6", path = "../kurai_parser_import_file/" }
 kurai_parser = { version = "0.4.6", path = "../kurai_parser" }
-kurai_typedArg = { version = "0.4.6", path = "../kurai_typedArg" }
 kurai_core = { version = "0.4.6", path = "../kurai_core" }
 kurai_attr = { version = "0.4.6", path = "../kurai_attr" }
 # kurai_core = { version = "0.4.6", path = "../kurai_core" }

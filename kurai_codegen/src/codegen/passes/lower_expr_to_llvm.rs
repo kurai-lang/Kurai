@@ -2,12 +2,14 @@ use colored::Colorize;
 use inkwell::{module::Linkage, values::{BasicValue, BasicValueEnum}, IntPredicate};
 
 use kurai_binop::bin_op::BinOp;
+use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
+use kurai_parser::GroupedParsers;
 use kurai_types::{typ::Type, value::Value};
 use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn lower_expr_to_llvm(&mut self, expr: &Expr, expected_type: Option<&Type>) -> Option<BasicValueEnum<'ctx>> {
+    pub fn lower_expr_to_llvm(&mut self, expr: &Expr, expected_type: Option<&Type>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<BasicValueEnum<'ctx>> {
         #[cfg(debug_assertions)]
         {
             println!("Lowering expr: {:?}", expr);
@@ -94,8 +96,8 @@ impl<'ctx> CodeGen<'ctx> {
                 #[cfg(debug_assertions)]
                 { println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
-                let left_val = self.lower_expr_to_llvm(left, Some(&Type::I32))?;
-                let right_val = self.lower_expr_to_llvm(right, Some(&Type::I32))?;
+                let left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), parsers, scope)?;
+                let right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), parsers, scope)?;
 
                 #[cfg(debug_assertions)]
                 { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
@@ -164,6 +166,42 @@ impl<'ctx> CodeGen<'ctx> {
                 }
             }
             Expr::FnCall { name, args } => todo!(),
+            Expr::If { branches, else_body } => {
+                // NOTE: FOR REFERENCE ONLY, THIS IS LEGACY CODE
+                // Stmt::If { branches, else_body } => {
+                //     let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+                //     // let merge_block = self.context.append_basic_block(current_function, "merge");
+                //
+                //     let mut prev_block = self.builder.get_insert_block().unwrap();
+                //
+                //     // process each branch hehe
+                //     for (i, branch) in branches.iter().enumerate() {
+                //         if let Some(block) = Some(prev_block) {
+                //             self.builder.position_at_end(block);
+                //         }
+                //
+                //         // imagine if!! or else u die
+                //          self.build_conditional_branch(
+                //             current_function,
+                //             &branch.condition,
+                //             &branch.body.clone(),
+                //             &else_body,
+                //             discovered_modules,
+                //             &i.to_string(),
+                //             parsers,
+                //             scope
+                //         );
+                //     }
+                //     // Position builder at merge block for continuation
+                //     // self.builder.position_at_end(merge_block);
+                // }
+                let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+
+                let merge_block = self.context.append_basic_block(current_function, "merge");
+                let mut result_phi = None;
+
+                let mut prev_block = self.builder.get_insert_block().unwrap();
+            }
         }
     }
 }

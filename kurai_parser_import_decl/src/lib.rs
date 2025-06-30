@@ -1,7 +1,7 @@
 use kurai_core::scope::Scope;
 use kurai_parser::{GroupedParsers, ImportParser};
 use kurai_parser_import_file::parse_imported_file::parse_imported_file;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 use kurai_token::token::token::Token;
 
 use crate::parse_import_decl::parse_import_decl;

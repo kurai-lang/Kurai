@@ -1,6 +1,6 @@
 use kurai_core::scope::Scope;
 use kurai_parser:: GroupedParsers;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
 
 pub fn parse_loop(

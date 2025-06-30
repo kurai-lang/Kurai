@@ -2,7 +2,7 @@ use colored::Colorize;
 use kurai_core::scope::Scope;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 

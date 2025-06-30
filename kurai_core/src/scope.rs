@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use kurai_expr::expr::Expr;
-use kurai_types::value::Value;
+use kurai_ast::expr::Expr;
 
 #[derive(Debug)]
 pub struct Scope(pub HashMap<String, Expr>);

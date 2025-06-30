@@ -1,0 +1,10 @@
+[package]
+name = "kurai_ast"
+version = "0.4.6"
+edition = "2024"
+
+[dependencies]
+kurai_attr = { version = "0.4.6", path = "../kurai_attr" }
+kurai_binop = { version = "0.4.6", path = "../kurai_binop" }
+kurai_typedArg = { version = "0.4.6", path = "../kurai_typedArg" }
+kurai_types = { version = "0.4.6", path = "../kurai_types" }

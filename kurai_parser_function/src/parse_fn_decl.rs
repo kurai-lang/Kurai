@@ -4,8 +4,8 @@ use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
-use kurai_stmt::stmt::Stmt;
-use kurai_typedArg::typedArg::TypedArg;
+use kurai_ast::stmt::Stmt;
+use kurai_ast::typedArg::TypedArg;
 use kurai_types::typ::Type;
 
 pub fn parse_fn_decl(

@@ -1,10 +1,11 @@
+use kurai_ast::expr::{Expr, IfBranch};
 use kurai_core::scope::Scope;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
+use crate::parse::parse_block::parse_expr_block;
 use crate::GroupedParsers;
 
 use super::parse::parse_expr;
-use kurai_stmt::stmt::{ IfBranch, Stmt };
 
 pub fn parse_if_else(
     tokens: &[Token],
@@ -12,7 +13,7 @@ pub fn parse_if_else(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
-) -> Result<Stmt, String> {
+) -> Result<Expr, String> {
     if !eat(&Token::If, tokens, pos) {
         return Err("Expected keyword `if`".to_string());
     }
@@ -37,7 +38,7 @@ pub fn parse_if_else(
     //     return Err("Expected `{` at start of block".to_string());
     // }
 
-    let then_branch = parsers.block_parser.parse_block(
+    let then_branch = parse_expr_block(
         tokens,
         pos,
         discovered_modules,
@@ -54,7 +55,7 @@ pub fn parse_if_else(
     // }
 
     let else_body = if eat(&Token::Else, tokens, pos) {
-        Some(parsers.block_parser.parse_block(
+        Some(parse_expr_block(
             tokens,
             pos,
             discovered_modules,
@@ -69,7 +70,7 @@ pub fn parse_if_else(
     //     return Err("Expected `}` at start of block".to_string());
     // }
 
-    Ok(Stmt::If {
+    Ok(Expr::If {
         branches: vec![IfBranch {
             condition,
             body: then_branch,

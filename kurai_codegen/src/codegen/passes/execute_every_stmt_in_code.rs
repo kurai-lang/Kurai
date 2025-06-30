@@ -1,13 +1,10 @@
-use std::collections::HashMap;
 
 use colored::Colorize;
 use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
-use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_expr::expr::Expr;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
-use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::{typ::Type, value::Value};
 
 use crate::{codegen::{CodeGen, VariableInfo}, kurai_panic, print_error, print_hint};
@@ -50,7 +47,7 @@ impl<'ctx> CodeGen<'ctx> {
                     };
 
                     // now do mutable stuff after immutable borrow is over
-                    let llvm_value = self.lower_expr_to_llvm(value, None).unwrap();
+                    let llvm_value = self.lower_expr_to_llvm(value, None, parsers, scope).unwrap();
                     self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
@@ -79,7 +76,7 @@ impl<'ctx> CodeGen<'ctx> {
                                             "error".red().bold(),
                                             name.bold()));
 
-                                    self.lower_expr_to_llvm(value, None)
+                                    self.lower_expr_to_llvm(value, None, parsers, scope)
                                         .map(|expr| compiled_args.push(expr.into()));
                                 }
                                 self.builder.build_call(function, &compiled_args, &name).unwrap();
@@ -244,33 +241,6 @@ impl<'ctx> CodeGen<'ctx> {
                     //     self.imports.insert(name.clone(), name.clone());
                     // }
                 }
-                Stmt::If { branches, else_body } => {
-                    let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-                    // let merge_block = self.context.append_basic_block(current_function, "merge");
-
-                    let mut prev_block = self.builder.get_insert_block().unwrap();
-
-                    // process each branch hehe
-                    for (i, branch) in branches.iter().enumerate() {
-                        if let Some(block) = Some(prev_block) {
-                            self.builder.position_at_end(block);
-                        }
-
-                        // imagine if!! or else u die
-                         self.build_conditional_branch(
-                            current_function,
-                            &branch.condition,
-                            &branch.body.clone(),
-                            &else_body,
-                            discovered_modules,
-                            &i.to_string(),
-                            parsers,
-                            scope
-                        );
-                    }
-                    // Position builder at merge block for continuation
-                    // self.builder.position_at_end(merge_block);
-                }
                 Stmt::Loop { body } => {
                     let function = self.builder.get_insert_block()
                         .expect("Not inside a block")
@@ -314,7 +284,7 @@ impl<'ctx> CodeGen<'ctx> {
                     // self.builder.position_at_end(unreachable_block);
                 }
                 Stmt::Expr(expr) => {
-                    if let Some(val) = self.lower_expr_to_llvm(expr, None) {
+                    if let Some(val) = self.lower_expr_to_llvm(expr, None, parsers, scope) {
                         #[cfg(debug_assertions)]
                         println!("Expression result (ignored): {:?}", val);
                     }
@@ -333,7 +303,7 @@ impl<'ctx> CodeGen<'ctx> {
                         println!("{}: Current function return type is {:?}", "debug".cyan().bold(), ret_type);
                         println!("{}: Current expression is {:?}", "debug".cyan().bold(), expr);
                     }
-                    let raw_val = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type)).unwrap();
+                    let raw_val = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type), parsers, scope).unwrap();
 
                     let final_val = match ret_type {
                         Type::I32 => {

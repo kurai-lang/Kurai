@@ -1,8 +1,9 @@
 use kurai_core::scope::Scope;
+use kurai_ast::expr::Expr;
+use kurai_ast::stmt::Stmt;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
-use kurai_stmt::stmt::Stmt;
-use crate::{ GroupedParsers, BlockParser };
+use crate::{ parse::parse::parse_expr, BlockParser, GroupedParsers };
 
 pub struct BlockParserStruct;
 impl BlockParser for BlockParserStruct {
@@ -86,6 +87,47 @@ pub fn parse_block(
     // }
 
     Ok(stmts)
+}
+
+pub fn parse_expr_block(
+    tokens: &[Token],
+    pos: &mut usize,
+    discovered_modules: &mut Vec<String>,
+    parsers: &GroupedParsers,
+    scope: &mut Scope,
+) -> Result<Vec<Expr>, String> {
+    if !eat(&Token::OpenBracket, tokens, pos) {
+        return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(*pos)));
+    }
+
+    let mut exprs = Vec::new();
+    while *pos < tokens.len() {
+        match tokens.get(*pos) {
+            Some(Token::CloseBracket) => {
+                *pos += 1;
+                return Ok(exprs);
+            }
+            Some(Token::Else) => {
+                // Don't parse 'else' inside a block, let parse_if_else handle it
+                break;
+            }
+            Some(_) => {
+                #[cfg(debug_assertions)]
+                { println!(">> calling parse_stmt at pos {}: {:?}", *pos, tokens.get(*pos)); }
+
+                let expr = parse_expr(
+                    tokens,
+                    pos,
+                    false,
+                ).unwrap();
+
+                exprs.push(expr);
+            }
+            None => return Err("Unexpected end of token stream while parsing block.".to_string()),
+        }
+    }
+
+    Ok(exprs)
 }
 
 pub fn parse_block_stmt(

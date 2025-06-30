@@ -1,7 +1,7 @@
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 
 pub fn parse_imported_file(
     tokens: &[Token],

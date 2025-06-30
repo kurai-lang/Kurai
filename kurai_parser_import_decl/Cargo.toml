@@ -4,6 +4,7 @@ version = "0.4.6"
 edition = "2024"
 
 [dependencies]
+kurai_ast = { version = "0.4.6", path = "../kurai_ast" }
 kurai_core = { version = "0.4.6", path = "../kurai_core" }
 kurai_parser = { version = "0.4.6", path = "../kurai_parser" }
 kurai_parser_import_file = { version = "0.4.6", path = "../kurai_parser_import_file" }

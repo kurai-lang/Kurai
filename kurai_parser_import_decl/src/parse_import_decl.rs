@@ -1,7 +1,6 @@
 use kurai_token::eat::eat;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 use kurai_token::token::token::Token;
-
 
 pub fn parse_import_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
     if !eat(&Token::Import, tokens, pos) {

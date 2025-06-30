@@ -1,8 +1,7 @@
+use kurai_ast::{expr::{Expr, IfBranch}, stmt::Stmt};
 use kurai_binop::bin_op::BinOp;
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
 use kurai_parser::GroupedParsers;
-use kurai_stmt::stmt::{IfBranch, Stmt};
 use kurai_token::{eat::eat, token::token::Token};
 use kurai_types::value::Value;
 
@@ -55,17 +54,20 @@ pub fn parse_for_loop(
                     Stmt::Loop {
                         body: vec![
                             // if i >= ending_num { break; }
-                            Stmt::If {
+                            Stmt::Expr(Expr::If {
                                 branches: vec![IfBranch {
                                     condition: Expr::Binary {
                                         op: BinOp::Ge,
                                         left: Box::new(Expr::Id(id.clone())),
                                         right: Box::new(Expr::Literal(Value::Int(*ending_num))),
                                     },
-                                    body: vec![Stmt::Break],
+                                    body: vec![Expr::Block {
+                                        stmts: vec![Stmt::Break],
+                                        final_expr: None,
+                                    }],
                                 }],
                                 else_body: None,
-                            },
+                            }),
                             // body block
                             Stmt::Block(body),
                             // i = i + 1;

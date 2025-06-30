@@ -1,11 +1,11 @@
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::expr::Expr;
+use kurai_ast::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
-use kurai_typedArg::typedArg::TypedArg;
+use kurai_ast::typedArg::TypedArg;
 use kurai_types::typ::Type;
 
-use crate::{parse::{parse::parse_expr, parse_expr::parse_arithmetic::parse_arithmetic, parse_if_else::parse_if_else, parse_return::parse_return, parse_var_assign::parse_var_assign, parse_var_decl::parse_var_decl}, BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser, StmtParser};
+use crate::{parse::{parse_expr::parse_arithmetic::parse_arithmetic, parse_return::parse_return, parse_var_assign::parse_var_assign, parse_var_decl::parse_var_decl}, BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser, StmtParser};
 
 pub struct StmtParserStruct;
 impl StmtParser for StmtParserStruct {
@@ -37,6 +37,10 @@ pub fn parse_stmt(
     };
 
     match tokens.get(*pos) {
+        // NOTE: OLD STATEMENT FUNCTIONS
+        // Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope),
+
+        // NOTE: NEW ONES
         Some(Token::Function) => parsers.fn_parser.parse_fn_decl(
             tokens,
             pos,
@@ -65,7 +69,6 @@ pub fn parse_stmt(
         Some(Token::Return) => parse_return(tokens, pos),
         Some(Token::Let) => parse_var_decl(tokens, pos, scope),
         Some(Token::Import) => parsers.import_parser.parse_import_decl(tokens, pos, discovered_modules),
-        Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope),
         Some(Token::For) => parsers.loop_parser.parse_for_loop(tokens, pos, discovered_modules, parsers, scope),
         Some(Token::Id(_)) => {
                 // For functions from modules. like foo::bar()

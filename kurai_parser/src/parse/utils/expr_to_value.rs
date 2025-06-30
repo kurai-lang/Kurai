@@ -1,5 +1,5 @@
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
+use kurai_ast::expr::Expr;
 use kurai_types::value::Value;
 use kurai_binop::bin_op::BinOp;
 

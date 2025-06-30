@@ -1,5 +1,5 @@
-use kurai_expr::expr::Expr;
 use kurai_types::typ::Type;
+use crate::expr::Expr;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TypedArg {

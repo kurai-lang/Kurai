@@ -166,6 +166,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
+name = "kurai_ast"
+version = "0.4.6"
+dependencies = [
+ "kurai_attr",
+ "kurai_binop",
+ "kurai_typedArg",
+ "kurai_types",
+]
+
+[[package]]
 name = "kurai_attr"
 version = "0.4.6"
 dependencies = [
@@ -191,7 +201,6 @@ dependencies = [
  "kurai_parser_import_file",
  "kurai_stmt",
  "kurai_token",
- "kurai_typedArg",
  "kurai_types",
 ]
 
@@ -200,13 +209,13 @@ name = "kurai_codegen_traits"
 version = "0.4.6"
 dependencies = [
  "inkwell",
- "kurai_typedArg",
 ]
 
 [[package]]
 name = "kurai_core"
 version = "0.4.6"
 dependencies = [
+ "kurai_ast",
  "kurai_expr",
  "kurai_types",
 ]
@@ -224,6 +233,7 @@ name = "kurai_parser"
 version = "0.4.6"
 dependencies = [
  "colored",
+ "kurai_ast",
  "kurai_attr",
  "kurai_binop",
  "kurai_core",
@@ -239,6 +249,7 @@ name = "kurai_parser_function"
 version = "0.4.6"
 dependencies = [
  "colored",
+ "kurai_ast",
  "kurai_attr",
  "kurai_core",
  "kurai_expr",
@@ -253,6 +264,7 @@ dependencies = [
 name = "kurai_parser_import_decl"
 version = "0.4.6"
 dependencies = [
+ "kurai_ast",
  "kurai_core",
  "kurai_parser",
  "kurai_parser_import_file",
@@ -266,6 +278,7 @@ dependencies = [
 name = "kurai_parser_import_file"
 version = "0.4.6"
 dependencies = [
+ "kurai_ast",
  "kurai_core",
  "kurai_parser",
  "kurai_stmt",
@@ -276,6 +289,7 @@ dependencies = [
 name = "kurai_parser_loop"
 version = "0.4.6"
 dependencies = [
+ "kurai_ast",
  "kurai_binop",
  "kurai_core",
  "kurai_expr",
@@ -304,6 +318,7 @@ name = "kurai_stmt"
 version = "0.4.6"
 dependencies = [
  "inkwell",
+ "kurai_ast",
  "kurai_attr",
  "kurai_expr",
  "kurai_typedArg",
@@ -314,6 +329,7 @@ dependencies = [
 name = "kurai_token"
 version = "0.4.6"
 dependencies = [
+ "kurai_ast",
  "kurai_stmt",
  "kurai_types",
 ]
@@ -321,11 +337,6 @@ dependencies = [
 [[package]]
 name = "kurai_typedArg"
 version = "0.4.6"
-dependencies = [
- "inkwell",
- "kurai_expr",
- "kurai_types",
-]
 
 [[package]]
 name = "kurai_types"

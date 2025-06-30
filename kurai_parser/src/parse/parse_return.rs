@@ -1,4 +1,4 @@
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
 
 use crate::parse::parse::parse_expr;

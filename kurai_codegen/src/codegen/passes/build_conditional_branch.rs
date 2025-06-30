@@ -18,7 +18,7 @@ impl<'ctx> CodeGen<'ctx> {
         parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> BasicBlock<'ctx> {
-        let condition_value = self.lower_expr_to_llvm(condition_expr, None).unwrap();
+        let condition_value = self.lower_expr_to_llvm(condition_expr, None, parsers, scope).unwrap();
 
         let condition = if condition_value.is_int_value() {
             let int_val = condition_value.into_int_value();

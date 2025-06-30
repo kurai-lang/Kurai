@@ -1,6 +1,6 @@
 use kurai_core::scope::Scope;
-use kurai_parser::{parse::parse_block::{parse_block, parse_block_stmt}, BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser};
-use kurai_stmt::stmt::Stmt;
+use kurai_parser::{parse::parse_block::{parse_block, parse_block_stmt}, BlockParser, GroupedParsers, LoopParser};
+use kurai_ast::stmt::Stmt;
 use kurai_token::token::token::Token;
 
 use crate::parse_for_loop::parse_for_loop;
@@ -20,7 +20,7 @@ impl BlockParser for BlockParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
-    ) -> Result<Vec<kurai_stmt::stmt::Stmt>, String> {
+    ) -> Result<Vec<Stmt>, String> {
         parse_block(tokens, pos, discovered_modules, parsers, scope)
     }
 
