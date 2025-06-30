@@ -66,8 +66,8 @@ pub fn parse_stmt(
             *pos += 1;
             Ok(Stmt::Break)
         }
-        Some(Token::Return) => parse_return(tokens, pos),
-        Some(Token::Let) => parse_var_decl(tokens, pos, scope),
+        Some(Token::Return) => parse_return(tokens, pos, discovered_modules, parsers, scope),
+        Some(Token::Let) => parse_var_decl(tokens, pos, discovered_modules, parsers, scope),
         Some(Token::Import) => parsers.import_parser.parse_import_decl(tokens, pos, discovered_modules),
         Some(Token::For) => parsers.loop_parser.parse_for_loop(tokens, pos, discovered_modules, parsers, scope),
         Some(Token::Id(_)) => {
@@ -80,7 +80,7 @@ pub fn parse_stmt(
 
             match tokens.get(*pos + 1) {
                 Some(Token::OpenParenthese) => parsers.fn_parser.parse_fn_call(tokens, pos),
-                Some(Token::Equal) => parse_var_assign(tokens, pos, scope),
+                Some(Token::Equal) => parse_var_assign(tokens, pos, discovered_modules, parsers, scope),
                 _ => Err("Identifier expected, is this supposed to be a function call or variable assignment?".to_string())
             }
         }
@@ -92,7 +92,7 @@ pub fn parse_stmt(
         }
         _ => {
             let start_pos = *pos;
-            match parse_arithmetic(tokens, pos, 0) {
+            match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope) {
                 Some(Expr::FnCall { name, args }) if *pos > start_pos => {
                     let typed_args = args
                         .into_iter()

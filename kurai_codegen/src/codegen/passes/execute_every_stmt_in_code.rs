@@ -2,13 +2,13 @@
 use colored::Colorize;
 use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
 use kurai_types::{typ::Type, value::Value};
 
 use crate::{codegen::{CodeGen, VariableInfo}, kurai_panic, print_error, print_hint};
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
+use kurai_ast::expr::Expr;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn execute_every_stmt_in_code(

@@ -11,7 +11,7 @@ pub mod parse_import_decl;
 pub struct ImportParserStruct;
 
 impl ImportParser for ImportParserStruct {
-    fn parse_import_decl(&self, tokens: &[kurai_token::token::token::Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<kurai_stmt::stmt::Stmt, String> {
+    fn parse_import_decl(&self, tokens: &[kurai_token::token::token::Token], pos: &mut usize, discovered_modules: &mut Vec<String>) -> Result<Stmt, String> {
         parse_import_decl(tokens, pos, discovered_modules)
     }
 

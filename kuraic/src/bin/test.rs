@@ -30,13 +30,10 @@ fn main() {
     // "#.to_string();
 
     let code = r#"
-        fn print(msg: str) void {
-            printf(msg);
-        }
-        fn main() i32 {
-            printf("Hello there!");
-            print("hello");
-            return 0;
+        fn test() void {
+            if x == 0 {
+                printf("Hello there!");
+            }
         }
         "#.to_string();
 
@@ -62,7 +59,7 @@ fn main() {
         &mut scope,
     );
     println!("{:?}", parsed_stmt_vec);
-    let parsed_expr_vec = parse_out_vec_expr(&tokens);
+    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope);
     let mut codegen = CodeGen::new(&context);
 
     let mut discovered_modules = Vec::new();

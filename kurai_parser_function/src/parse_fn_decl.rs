@@ -1,6 +1,7 @@
 use colored::Colorize;
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
+use kurai_parser::parse::parse_if_else::parse_if_else;
 use kurai_parser::GroupedParsers;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
@@ -43,6 +44,10 @@ pub fn parse_fn_decl(
                     *pos += 1;
                     break;
                 }
+                // Some(Token::If) => {
+                //     let expr = parse_if_else(tokens, pos, discovered_modules, parsers, scope)?;
+                //     return Ok(Stmt::Expr(expr)); // wrap it in a Stmt!
+                // }
                 Some(Token::Id(arg_name)) => {
                     let name = arg_name.clone();
                     *pos += 1;

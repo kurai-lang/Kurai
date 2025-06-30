@@ -7,10 +7,10 @@ pub mod value;
 use colored::Colorize;
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
-use kurai_typedArg::typedArg::TypedArg;
 use kurai_types::{typ::Type, value::Value};
-use kurai_expr::expr::Expr;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::expr::Expr;
+use kurai_ast::stmt::Stmt;
+use kurai_ast::typedArg::TypedArg;
 use inkwell::{
     basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };

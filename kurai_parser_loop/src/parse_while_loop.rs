@@ -1,7 +1,7 @@
 use kurai_core::scope::Scope;
-use kurai_expr::expr::{Expr, IfBranch};
+use kurai_ast::expr::{Expr, IfBranch};
 use kurai_parser::{parse::{parse::parse_expr, parse_block::parse_expr_block}, GroupedParsers};
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
 
 pub fn parse_while_loop(
@@ -20,7 +20,7 @@ pub fn parse_while_loop(
     // }
 
     println!("parsing conditions...");
-    let condition = parse_expr(tokens, pos, true)
+    let condition = parse_expr(tokens, pos, true, discovered_modules, parsers, scope)
         .ok_or_else(|| format!("Failed to parse expression inside `while (...)` at token {}", pos))?;
     println!("parsing conditions succeed");
 
@@ -44,7 +44,14 @@ pub fn parse_while_loop(
                         condition,
                         body,
                     }],
-                    else_body: Some(vec![Stmt::Break]),
+                    else_body: Some(
+                            vec![
+                                Expr::Block {
+                                    stmts: vec![Stmt::Break],
+                                    final_expr: None 
+                                }
+                            ]
+                    ),
                 })
             ]
         }]

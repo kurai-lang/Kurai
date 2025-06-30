@@ -100,7 +100,7 @@ fn main() {
         &parsers,
         &mut scope,
     );
-    let parsed_expr_vec = parse_out_vec_expr(&tokens);
+    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope);
     let mut codegen = CodeGen::new(&context);
     // codegen.printf("hi");
 

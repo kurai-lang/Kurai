@@ -1,5 +1,5 @@
 use inkwell::values::BasicValueEnum;
-use kurai_typedArg::typedArg::TypedArg;
+use kurai_ast::typedArg::TypedArg;
 
 use crate::codegen::CodeGen;
 

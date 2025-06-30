@@ -2,8 +2,8 @@ use inkwell::{basic_block::BasicBlock, values::FunctionValue};
 
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
-use kurai_stmt::stmt::Stmt;
-use kurai_expr::expr::Expr;
+use kurai_ast::stmt::Stmt;
+use kurai_ast::expr::Expr;
 use crate::codegen::CodeGen;
 
 impl<'ctx> CodeGen<'ctx> {

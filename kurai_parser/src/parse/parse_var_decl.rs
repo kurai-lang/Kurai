@@ -4,8 +4,9 @@ use kurai_token::eat::eat;
 use kurai_ast::stmt::Stmt;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
+use crate::GroupedParsers;
 
-pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> Result<Stmt, String> {
+pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<Stmt, String> {
     if !eat(&Token::Let, tokens, pos) {
         return Err("Expected keyword `let`".to_string());
     }
@@ -43,7 +44,7 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, scope: &mut Scope) -> R
     //     _ => return Err(format!("Unsupported value {:?}", tokens.get(*pos)))
     // };
 
-    let expr = parse_arithmetic(tokens, pos, 0);
+    let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope);
     scope.0.insert(name.clone(), expr.clone().unwrap());
     // *pos += 1;
 

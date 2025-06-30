@@ -3,9 +3,9 @@ use std::{collections::HashMap, mem};
 
 use inkwell::attributes::AttributeLoc;
 use kurai_attr::attribute::Attribute;
-use kurai_expr::expr::Expr;
-use kurai_stmt::stmt::Stmt;
-use kurai_typedArg::typedArg::TypedArg;
+use kurai_ast::expr::Expr;
+use kurai_ast::stmt::Stmt;
+use kurai_ast::typedArg::TypedArg;
 use kurai_types::{typ::Type, value::Value};
 
 use crate::codegen::CodeGen;

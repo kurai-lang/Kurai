@@ -1,8 +1,7 @@
-use colored::Colorize;
 use inkwell::values::FunctionValue;
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
-use kurai_stmt::stmt::Stmt;
+use kurai_ast::stmt::Stmt;
 
 use crate::codegen::CodeGen;
 

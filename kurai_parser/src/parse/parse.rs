@@ -9,10 +9,15 @@ use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
+use crate::parse::parse_if_else::parse_if_else;
 use crate::GroupedParsers;
 
-pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Option<Expr> {
+pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<Expr> {
     // parse_equal(tokens, pos)
+    match tokens.get(*pos) {
+        Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
+        _ => None
+    };
     let mut left = match tokens.get(*pos)? {
         Token::Number(v) => {
             *pos += 1;
@@ -38,7 +43,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
             if eat(&Token::OpenParenthese, tokens, pos) {
                 let mut args = Vec::new();
                 while !eat(&Token::CloseParenthese, tokens, pos) {
-                    if let Some(arg) = parse_arithmetic(tokens, pos, 0) {
+                    if let Some(arg) = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope) {
                         args.push(arg);
                         eat(&Token::Comma, tokens, pos);
                     } else {
@@ -56,7 +61,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
         Token::OpenParenthese => {
             println!("yay");
             *pos += 1;
-            let expr = match parse_arithmetic(tokens, pos, 0) {
+            let expr = match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope) {
                 Some(e) => e,
                 None => {
                     panic!("Failed to parse expression inside parentheses at pos {pos}");
@@ -75,6 +80,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
         //     None
         // }
         _ => {
+            // NOTE: this is def correct
             *pos += 1;
             None
         }
@@ -98,7 +104,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
             *pos += 1;
 
             let right_start = *pos;
-            let right = parse_arithmetic(tokens, pos, 0)?;
+            let right = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope)?;
             if *pos == right_start {
                 return None;
             }
@@ -117,12 +123,12 @@ pub fn parse_typed_arg(tokens: &[Token], pos: &mut usize) -> Option<TypedArg> {
     todo!()
 }
 
-pub fn parse_out_vec_expr(tokens: &[Token]) -> Result<Vec<Expr>, String> {
+pub fn parse_out_vec_expr(tokens: &[Token], discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<Vec<Expr>, String> {
     let mut pos = 0;
     let mut exprs = Vec::new();
 
     while pos < tokens.len() {
-        if let Some(expr) = parse_expr(tokens, &mut pos, false) {
+        if let Some(expr) = parse_expr(tokens, &mut pos, false, discovered_modules, parsers, scope) {
             exprs.push(expr);
             if eat(&Token::Comma, tokens, &mut pos) { continue; }
         }

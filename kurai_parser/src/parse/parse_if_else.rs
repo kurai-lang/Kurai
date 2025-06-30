@@ -20,7 +20,7 @@ pub fn parse_if_else(
     // check if ( exists; if it does, parse inside it; otherwise, parse the next expression directly.
 
     let condition = if eat(&Token::OpenParenthese, tokens, pos) {
-        let cond = parse_expr(tokens, pos, true)
+        let cond = parse_expr(tokens, pos, true, discovered_modules, parsers, scope)
             .ok_or_else(|| format!("Failed to parse expression inside `if (...)` at token {}", pos))?;
 
         if !eat(&Token::CloseParenthese, tokens, pos) {
@@ -29,7 +29,7 @@ pub fn parse_if_else(
 
         cond
     } else {
-        parse_expr(tokens, pos, true)
+        parse_expr(tokens, pos, true, discovered_modules, parsers, scope)
             .ok_or_else(|| format!("Failed to parse expression after `if` at token {}", pos))?
     };
 

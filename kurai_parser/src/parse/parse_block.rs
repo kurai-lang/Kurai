@@ -113,14 +113,19 @@ pub fn parse_expr_block(
             }
             Some(_) => {
                 #[cfg(debug_assertions)]
-                { println!(">> calling parse_stmt at pos {}: {:?}", *pos, tokens.get(*pos)); }
+                { println!(">> calling parse_expr_block at pos {}: {:?}", *pos, tokens.get(*pos)); }
 
                 let expr = parse_expr(
                     tokens,
                     pos,
                     false,
-                ).unwrap();
+                    discovered_modules,
+                    parsers,
+                    scope
+                ).unwrap_or_else(|| panic!("Invalid expression"));
 
+                // NOTE: gotta make this more safe next time, use if !eat(...)
+                *pos += eat(&Token::Semicolon, tokens, pos) as usize;
                 exprs.push(expr);
             }
             None => return Err("Unexpected end of token stream while parsing block.".to_string()),

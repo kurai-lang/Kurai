@@ -1,9 +1,9 @@
 use colored::Colorize;
 use inkwell::{module::Linkage, values::{BasicValue, BasicValueEnum}, IntPredicate};
 
+use kurai_ast::expr::Expr;
 use kurai_binop::bin_op::BinOp;
 use kurai_core::scope::Scope;
-use kurai_expr::expr::Expr;
 use kurai_parser::GroupedParsers;
 use kurai_types::{typ::Type, value::Value};
 use crate::codegen::CodeGen;
@@ -195,13 +195,106 @@ impl<'ctx> CodeGen<'ctx> {
                 //     // Position builder at merge block for continuation
                 //     // self.builder.position_at_end(merge_block);
                 // }
+                #[cfg(debug_assertions)]
+                println!("Its if'ing time");
+
                 let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
 
                 let merge_block = self.context.append_basic_block(current_function, "merge");
                 let mut result_phi = None;
 
                 let mut prev_block = self.builder.get_insert_block().unwrap();
+
+                let mut branch_blocks = Vec::new();
+                let mut branch_values = Vec::new();
+
+                for (i, branch) in branches.iter().enumerate() {
+                    let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
+                    branch_blocks.push(then_block);
+
+                    self.builder.position_at_end(prev_block);
+
+                    // evaluate condition
+                    let cond_val = self.lower_expr_to_llvm(
+                        &branch.condition,
+                        Some(&Type::Bool),
+                        parsers,
+                        scope
+                    ).unwrap();
+
+                    self.builder.build_conditional_branch(
+                        cond_val.into_int_value(), 
+                        then_block, 
+                        merge_block, // Supposed to be else_block, but its temporary here
+                    ).unwrap();
+
+                    self.builder.position_at_end(then_block);
+
+                    let mut last_expr_value = None;
+
+                    for expr in &branch.body {
+                        last_expr_value = self.lower_expr_to_llvm(
+                            expr,
+                            expected_type,
+                            parsers,
+                            scope
+                        );
+                    }
+
+                    self.builder.build_unconditional_branch(merge_block).unwrap(); // jumps
+                                                                                             // to
+                                                                                             // merge
+                                                                                             // lol
+                    if let Some(val) = last_expr_value {
+                        branch_values.push(val);
+                    }
+
+                    prev_block = then_block;
+                }
+
+                if let Some(else_exprs) = else_body {
+                    let else_block = self.context.append_basic_block(current_function, "else");
+
+                    self.builder.position_at_end(prev_block);
+                    self.builder.build_unconditional_branch(else_block).unwrap();
+
+                    self.builder.position_at_end(else_block);
+
+                    let mut last_expr_value = None;
+
+                    for expr in else_exprs {
+                        last_expr_value = self.lower_expr_to_llvm(
+                            expr,
+                            expected_type, 
+                            parsers,
+                            scope
+                        );
+                    }
+
+                    self.builder.build_unconditional_branch(merge_block).unwrap();
+
+                    if let Some(val) = last_expr_value {
+                        branch_values.push(val);
+                    }
+
+                    prev_block = else_block;
+                }
+
+                self.builder.position_at_end(merge_block);
+
+                if !branch_values.is_empty() {
+                    let phi = self.builder.build_phi(branch_values[0].get_type(), "if_result").unwrap();
+
+                    for (i, val) in branch_values.iter().enumerate() {
+                        phi.add_incoming(&[(val, branch_blocks[i])]);
+                    }
+
+                    result_phi = Some(phi.as_basic_value());
+                }
+
+                result_phi
             }
+            Expr::Block { stmts, final_expr } => todo!(),
         }
     }
 }
