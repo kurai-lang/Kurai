@@ -84,7 +84,7 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
                 args.push(TypedArg {
                     name: id.to_string(),
                     typ: Type::Var,
-                    value: Some(Expr::Var(id.clone())),
+                    value: Some(Expr::Id(id.clone())),
                 });
                 *pos += 1;
             }

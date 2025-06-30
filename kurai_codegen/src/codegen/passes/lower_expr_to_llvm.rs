@@ -76,8 +76,8 @@ impl<'ctx> CodeGen<'ctx> {
                     Some(ptr.as_basic_value_enum())
                 }
                 _ => None
-            },
-            Expr::Var(name) => {
+            }
+            Expr::Id(name) => {
                 if let Some(ptr) = self.variables.get(name) {
                     let loaded = self.builder.build_load(
                         self.context.i64_type(),
@@ -89,11 +89,6 @@ impl<'ctx> CodeGen<'ctx> {
                     println!("Variable {} not found!", name);
                     None
                 }
-            }
-            Expr::Id(name) => {
-                #[cfg(debug_assertions)]
-                { println!("{}: codegen for Expr::Id({}) not implemented", "warning".yellow().bold(), name); }
-                Some(self.context.i32_type().const_int(0, false).as_basic_value_enum())
             }
             Expr::Binary { op, left, right } => {
                 #[cfg(debug_assertions)]

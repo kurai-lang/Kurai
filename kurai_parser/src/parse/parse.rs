@@ -51,7 +51,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool) -> Opti
                     args
                 })
             } else {
-                Some(Expr::Var(name))
+                Some(Expr::Id(name))
             }
         }
         Token::OpenParenthese => {

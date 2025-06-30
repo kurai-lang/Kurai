@@ -3,7 +3,6 @@ use kurai_types::value::Value;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
-    Var(String),                 // refers to variable name
     Id(String),
     Literal(Value),
     Binary {
