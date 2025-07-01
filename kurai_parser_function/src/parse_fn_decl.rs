@@ -100,6 +100,7 @@ pub fn parse_fn_decl(
                 break;
             }
 
+            let old_pos = *pos;
             match parsers.stmt_parser.parse_stmt(
                 tokens, 
                 pos,
@@ -107,8 +108,25 @@ pub fn parse_fn_decl(
                 parsers,
                 scope
             ) {
-                Ok(stmt) => body.push(stmt),
-                Err(e) => return Err(format!("Couldnt work on the body\nREASON: {}", e))
+                Ok(stmt) => {
+                    if *pos == old_pos {
+                        return Err(format!(
+                            "{}: parse_stmt() made no progress at pos {}: {:?}", "debug".cyan().bold(),
+                            pos,
+                            tokens.get(*pos),
+                        ));
+                    }
+                    body.push(stmt);
+                }
+                Err(e) => {
+                    if let Some(Token::CloseBracket) = tokens.get(*pos) {
+                        // legit end of function block
+                        #[cfg(debug_assertions)]
+                        println!("{}: end of function block", "debug".cyan().bold());
+                        break;
+                    }
+                    return Err(format!("Couldnt work on the body\nREASON: {}", e));
+                }
             }
         }
     } else {

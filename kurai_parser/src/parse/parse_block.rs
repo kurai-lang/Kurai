@@ -111,6 +111,10 @@ pub fn parse_expr_block(
                 // Don't parse 'else' inside a block, let parse_if_else handle it
                 break;
             }
+            Some(Token::Semicolon) => {
+                *pos += 1; // just skip semicolon, it’s not an expression
+                continue;
+            }
             Some(_) => {
                 #[cfg(debug_assertions)]
                 { println!(">> calling parse_expr_block at pos {}: {:?}", *pos, tokens.get(*pos)); }
@@ -122,10 +126,8 @@ pub fn parse_expr_block(
                     discovered_modules,
                     parsers,
                     scope
-                ).unwrap_or_else(|| panic!("Invalid expression"));
+                ).unwrap();
 
-                // NOTE: gotta make this more safe next time, use if !eat(...)
-                *pos += eat(&Token::Semicolon, tokens, pos) as usize;
                 exprs.push(expr);
             }
             None => return Err("Unexpected end of token stream while parsing block.".to_string()),

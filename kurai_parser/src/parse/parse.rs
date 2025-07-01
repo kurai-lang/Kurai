@@ -14,11 +14,12 @@ use crate::GroupedParsers;
 
 pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<Expr> {
     // parse_equal(tokens, pos)
-    match tokens.get(*pos) {
-        Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
-        _ => None
-    };
+    // match tokens.get(*pos) {
+    //     Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
+    //     _ => None
+    // };
     let mut left = match tokens.get(*pos)? {
+        Token::If => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
         Token::Number(v) => {
             *pos += 1;
             Some(Expr::Literal(Value::Int(*v)))
@@ -74,9 +75,9 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discove
 
             Some(expr)
         }
-        // Token::OpenBracket => {
+        // Token::CloseBracket => {
         //     // A standalone block is a valid statement in some languages, or maybe error here
-        //     println!("Unexpected `{{` without a control structure");
+        //     println!("Unexpected `}}` without a control structure");
         //     None
         // }
         _ => {

@@ -31,6 +31,7 @@ fn main() {
 
     let code = r#"
         fn test() void {
+            let x = 0;
             if x == 0 {
                 printf("Hello there!");
             }
