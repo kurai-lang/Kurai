@@ -17,7 +17,7 @@ use inkwell::{
 use std::{collections::{HashMap, HashSet}, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
 
-use crate::registry::registry::AttributeRegistry;
+use crate::{codegen::passes::lower_expr_to_llvm, registry::registry::AttributeRegistry};
 
 static GLOBAL_STRING_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -120,103 +120,83 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn printf_format(&mut self, args: &Vec<TypedArg>) -> Vec<BasicValueEnum<'ctx>> {
+    fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
         args.iter()
             .filter_map(|arg| {
-                match arg.typ {
-                    Type::I64 => self.compile_int(arg),
-                    Type::Str => self.compile_str(arg),
-                    Type::Var => self.compile_id(arg),
-                    _ => {
-                        panic!("{}: Unknown typ: {:?}", "error".red().bold(), arg.typ);
-                    }
-                }
+                self.lower_expr_to_llvm(arg, None, discovered_modules, parsers, scope)
+                    .map(|(val, _typ)| val)
             })
         .collect()
     }
 
-    fn compile_int(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-        match &arg.value {
-            Some(Expr::Literal(Value::Int(v))) => {
-                let int_val = self.context.i64_type().const_int(*v as u64, true);
+    // fn compile_int(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
+    //     match &arg.value {
+    //         Some(Expr::Literal(Value::Int(v))) => {
+    //             let int_val = self.context.i64_type().const_int(*v as u64, true);
+    //
+    //             Some(int_val.into())
+    //         }
+    //         _ => None
+    //     }
+    // }
+    //
+    // fn compile_str(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
+    //     match &arg.value {
+    //         Some(Expr::Literal(Value::Str(s))) => {
+    //             let global_str = self
+    //                 .builder.build_global_string_ptr(s, &format!("str_{}", self.string_counter));
+    //
+    //             self.string_counter += 1;
+    //             Some(global_str.unwrap().as_basic_value_enum())
+    //         }
+    //         _ => {
+    //             None
+    //         }
+    //     }
+    // }
+    //
+    // fn compile_id(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
+    //     let var_info = self.variables.get(&arg.name).unwrap();
+    //     let llvm_type = var_info.var_type.to_llvm_type(self.context).unwrap();
+    //
+    //     match arg.typ {
+    //         Type::Str => Some(var_info.ptr_value.as_basic_value_enum()), // just return the
+    //                                                                           // pointer as it is
+    //                                                                           // lmfao
+    //         _ => {
+    //             let loaded_val = self.builder.build_load(
+    //                 llvm_type,
+    //                 var_info.ptr_value,
+    //                 "loaded_id"
+    //             ).unwrap();
+    //             Some(loaded_val.as_basic_value_enum())
+    //         }
+    //     }
+    // }
 
-                Some(int_val.into())
-            }
-            _ => None
-        }
-    }
-
-    fn compile_str(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-        match &arg.value {
-            Some(Expr::Literal(Value::Str(s))) => {
-                let global_str = self
-                    .builder.build_global_string_ptr(s, &format!("str_{}", self.string_counter));
-
-                self.string_counter += 1;
-                Some(global_str.unwrap().as_basic_value_enum())
-            }
-            _ => {
-                None
-            }
-        }
-    }
-
-    fn compile_id(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-        let var_info = self.variables.get(&arg.name).unwrap();
-        let llvm_type = var_info.var_type.to_llvm_type(self.context).unwrap();
-
-        match arg.typ {
-            Type::Str => Some(var_info.ptr_value.as_basic_value_enum()), // just return the
-                                                                              // pointer as it is
-                                                                              // lmfao
-            _ => {
-                let loaded_val = self.builder.build_load(
-                    llvm_type,
-                    var_info.ptr_value,
-                    "loaded_id"
-                ).unwrap();
-                Some(loaded_val.as_basic_value_enum())
-            }
-        }
-    }
-
-    pub fn printf(&mut self, args: &Vec<TypedArg>) -> Result<(), String>{
+    pub fn printf(&mut self, args: &Vec<Expr>, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<(), String>{
         let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
         let mut format = String::new();
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
-        for arg in args.iter() {
-            match arg.typ {
+        for expr in args.iter() {
+            let (value, ty)= self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope).unwrap();
+            
+            match ty {
                 Type::I64 => {
                     format.push_str("%ld");
-
-                    // if let Some(val) = self.compile_int(arg) {
-                    //     final_args.push(val.into());
-                    // } else {
-                    //     return Err("Failed to compile int".to_string());
-                    // }
                 }
                 Type::Str => {
                     format.push_str("%s");
-
-                    // if let Some(val) = self.compile_str(arg) {
-                    //     final_args.push(val.into());
-                    // } else {
-                    //     return Err("Failed to compile str".to_string());
-                    // }
                 }
                 Type::Var => {
                     format.push_str("%s");
-
-                    // if let Some(val) = self.compile_id(arg) {
-                    //     final_args.push(val.into());
-                    // } else {
-                    //     return Err("Failed to compile var".to_string());
-                    // }
                 }
                 _ => panic!("UNSUPPORTED PRINTF ARG TYPE")
             }
+
+            final_args.push(value.into());
         }
         format.push('\n');
 
@@ -227,7 +207,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_basic_value_enum();
         // let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
         {
-            let compiled_args = self.printf_format(&args);
+            let compiled_args = self.printf_format(&args, discovered_modules, parsers, scope);
             final_args.extend(
                 compiled_args
                     .clone()

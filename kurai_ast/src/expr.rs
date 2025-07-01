@@ -26,6 +26,9 @@ pub enum Expr {
     }
 }
 
+unsafe impl Send for Expr {}
+unsafe impl Sync for Expr {}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct IfBranch {
     pub condition: Expr,

@@ -17,6 +17,7 @@ use std::fs::{self, remove_file, File};
 use std::io::prelude::*;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 
 static PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -64,11 +65,11 @@ fn main() {
 
     let context = Context::create();
     let parsers = GroupedParsers::new(
-        &StmtParserStruct,
-        &FunctionParserStruct,
-        &ImportParserStruct,
-        &BlockParserStruct,
-        &LoopParserStruct
+        Arc::new(StmtParserStruct),
+        Arc::new(FunctionParserStruct),
+        Arc::new(ImportParserStruct),
+        Arc::new(BlockParserStruct),
+        Arc::new(LoopParserStruct),
     );
 
     let mut code = String::new();

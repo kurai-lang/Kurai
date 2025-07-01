@@ -47,44 +47,46 @@ impl<'ctx> CodeGen<'ctx> {
                     };
 
                     // now do mutable stuff after immutable borrow is over
-                    let llvm_value = self.lower_expr_to_llvm(value, None, parsers, scope).unwrap();
+                    let (llvm_value, _)= self.lower_expr_to_llvm(value, None, discovered_modules,parsers, scope).unwrap();
                     self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
-                    match name.as_str() {
-                        "printf" => {
-                            self.import_printf().unwrap();
-                            self.printf(&args).unwrap();
-                        }
-                        _ => {
-                            let function = if name.contains("::") {
-                                self.get_or_compile_function(
-                                    name.as_str(),
-                                    discovered_modules,
-                                    parsers,
-                                    scope
-                                )
-                            } else {
-                                self.module.lock().unwrap().get_function(&name)
-                            };
-
-                            if let Some(function) = function {
-                                let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
-                                for arg in args {
-                                    let value = arg.value.as_ref().unwrap_or_else(||
-                                        panic!("{}: Failed to compile arguments for function {}",
-                                            "error".red().bold(),
-                                            name.bold()));
-
-                                    self.lower_expr_to_llvm(value, None, parsers, scope)
-                                        .map(|expr| compiled_args.push(expr.into()));
-                                }
-                                self.builder.build_call(function, &compiled_args, &name).unwrap();
-                            } else {
-                                println!("{} {}", "Couldnt find function named:".red(), name.red());
-                            }
-                        }
-                    }
+                    // match name.as_str() {
+                    //     "printf" => {
+                    //         self.import_printf().unwrap();
+                    //         self.printf(&args).unwrap();
+                    //     }
+                    //     _ => {
+                    //         let function = if name.contains("::") {
+                    //             self.get_or_compile_function(
+                    //                 name.as_str(),
+                    //                 discovered_modules,
+                    //                 parsers,
+                    //                 scope
+                    //             )
+                    //         } else {
+                    //             self.module.lock().unwrap().get_function(&name)
+                    //         };
+                    //
+                    //         if let Some(function) = function {
+                    //             let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
+                    //             for arg in args {
+                    //                 let value = arg.value.as_ref().unwrap_or_else(||
+                    //                     panic!("{}: Failed to compile arguments for function {}",
+                    //                         "error".red().bold(),
+                    //                         name.bold()));
+                    //
+                    //                 self.lower_expr_to_llvm(value, None, parsers, scope)
+                    //                     .map(|expr| compiled_args.push(expr.into()));
+                    //             }
+                    //             self.builder.build_call(function, &compiled_args, &name).unwrap();
+                    //         } else {
+                    //             println!("{} {}", "Couldnt find function named:".red(), name.red());
+                    //         }
+                    //     }
+                    // }
+                    #[cfg(debug_assertions)]
+                    println!("broken lol (nah i just commented legacy code)");
                 }
                 Stmt::FnDecl { name, args, body, attributes, ret_type } => {
                     // Map the argument types to LLVM types 
@@ -134,7 +136,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                         self.current_fn_ret_type = ret_type.clone();
 
-                        self.attr_registry.register_all();
+                        self.attr_registry.register_all(Some(ret_type), discovered_modules, parsers);
                         self.load_attributes(attributes, &stmt);
 
                         #[cfg(debug_assertions)]
@@ -284,7 +286,7 @@ impl<'ctx> CodeGen<'ctx> {
                     // self.builder.position_at_end(unreachable_block);
                 }
                 Stmt::Expr(expr) => {
-                    if let Some(val) = self.lower_expr_to_llvm(expr, None, parsers, scope) {
+                    if let Some(val) = self.lower_expr_to_llvm(expr, None, discovered_modules,parsers, scope) {
                         #[cfg(debug_assertions)]
                         println!("Expression result (ignored): {:?}", val);
                     }
@@ -303,7 +305,7 @@ impl<'ctx> CodeGen<'ctx> {
                         println!("{}: Current function return type is {:?}", "debug".cyan().bold(), ret_type);
                         println!("{}: Current expression is {:?}", "debug".cyan().bold(), expr);
                     }
-                    let raw_val = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type), parsers, scope).unwrap();
+                    let (raw_val, _) = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type), discovered_modules,parsers, scope).unwrap();
 
                     let final_val = match ret_type {
                         Type::I32 => {

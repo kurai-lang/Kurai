@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use kurai_ast::expr::Expr;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Scope(pub HashMap<String, Expr>);
 
 impl Scope {
@@ -11,11 +11,5 @@ impl Scope {
 
     pub fn declare_var(&mut self, name: String, expr: Expr) {
         self.0.insert(name, expr);
-    }
-}
-
-impl Default for Scope {
-    fn default() -> Self {
-        Self::new()
     }
 }

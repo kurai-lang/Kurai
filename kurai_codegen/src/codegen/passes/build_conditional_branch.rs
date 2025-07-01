@@ -18,10 +18,10 @@ impl<'ctx> CodeGen<'ctx> {
         parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> BasicBlock<'ctx> {
-        let condition_value = self.lower_expr_to_llvm(condition_expr, None, parsers, scope).unwrap();
+        let condition_value = self.lower_expr_to_llvm(condition_expr, None, discovered_modules, parsers, scope).unwrap();
 
-        let condition = if condition_value.is_int_value() {
-            let int_val = condition_value.into_int_value();
+        let condition = if condition_value.0.is_int_value() {
+            let int_val = condition_value.0.into_int_value();
             let zero = int_val.get_type().const_zero();
 
             self.builder.build_int_compare(

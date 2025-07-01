@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_ast::stmt::Stmt;
@@ -91,21 +93,22 @@ pub trait FunctionParser {
     fn parse_attrs(&self, tokens: &[Token], pos: &mut usize) -> Result<Vec<Attribute>, String>;
 }
 
-pub struct GroupedParsers<'a> {
-    pub stmt_parser: &'a dyn StmtParser,
-    pub fn_parser: &'a dyn FunctionParser,
-    pub import_parser: &'a dyn ImportParser,
-    pub block_parser: &'a dyn BlockParser,
-    pub loop_parser: &'a dyn LoopParser,
+#[derive(Clone)]
+pub struct GroupedParsers{
+    pub stmt_parser: Arc<dyn StmtParser + Send + Sync>,
+    pub fn_parser: Arc<dyn FunctionParser + Send + Sync>,
+    pub import_parser: Arc<dyn ImportParser + Send + Sync>,
+    pub block_parser: Arc<dyn BlockParser + Send + Sync>,
+    pub loop_parser: Arc<dyn LoopParser + Send + Sync>,
 }
 
-impl<'a> GroupedParsers<'a> {
+impl GroupedParsers {
     pub fn new(
-        stmt_parser: &'a dyn StmtParser,
-        fn_parser: &'a dyn FunctionParser,
-        import_parser: &'a dyn ImportParser,
-        block_parser: &'a dyn BlockParser,
-        loop_parser: &'a dyn LoopParser,
+        stmt_parser: Arc<dyn StmtParser + Send + Sync>,    
+        fn_parser: Arc<dyn FunctionParser + Send + Sync>,  
+        import_parser: Arc<dyn ImportParser + Send + Sync>,
+        block_parser: Arc<dyn BlockParser + Send + Sync>,  
+        loop_parser: Arc<dyn LoopParser + Send + Sync>,    
     ) -> Self {
         GroupedParsers {
             stmt_parser,

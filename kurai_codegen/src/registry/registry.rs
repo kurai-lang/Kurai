@@ -1,11 +1,13 @@
 use core::fmt;
-use std::{collections::HashMap, mem};
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, mem, rc::Rc, sync::{Arc, Mutex, RwLock}};
 
 use inkwell::attributes::AttributeLoc;
 use kurai_attr::attribute::Attribute;
 use kurai_ast::expr::Expr;
 use kurai_ast::stmt::Stmt;
 use kurai_ast::typedArg::TypedArg;
+use kurai_core::scope::Scope;
+use kurai_parser::GroupedParsers;
 use kurai_types::{typ::Type, value::Value};
 
 use crate::codegen::CodeGen;
@@ -54,16 +56,27 @@ impl AttributeRegistry {
         self.handlers.insert(name.to_string(), AttributeHandler::new(handler));
     }
 
-    pub fn register_all(&mut self) {
+    pub fn register_all(&mut self, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers) {
+        let scope = Arc::new(RwLock::new(Scope::new()));
+        let scope = Arc::clone(&scope);
+        let expected_type = expected_type.cloned(); // Option<Type>, not Option<&Type>
+        let parsers = Arc::new(parsers.clone());   // or manually clone/own them
+        let parsers_ref = Arc::clone(&parsers);
+
         self.register(
             "test", 
             move |attr_name, _, ctx| {
+            // let mut local_modules: Vec<String> = vec![];
+            let mut scope_ref = scope.write().unwrap();
+            let mut discovered_modules = vec![]; // empty or cloned vec
+
             ctx.import_printf().unwrap();
-            ctx.printf(&vec![TypedArg {
-                name: attr_name.to_string(),
-                typ: Type::Str,
-                value: Some(Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string())))
-            }]).unwrap();
+            ctx.printf(&vec![Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string()))],
+                expected_type.as_ref(),
+                &mut discovered_modules,
+                &*parsers_ref,
+                &mut *scope_ref
+            ).unwrap();
         });
 
         // #[inline] attribute 

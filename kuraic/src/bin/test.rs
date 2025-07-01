@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use colored::Colorize;
 use inkwell::context::Context;
 use kurai_codegen::codegen::CodeGen;
@@ -40,11 +42,11 @@ fn main() {
 
     let context = Context::create();
     let parsers = GroupedParsers::new(
-        &StmtParserStruct,
-        &FunctionParserStruct,
-        &ImportParserStruct,
-        &BlockParserStruct,
-        &LoopParserStruct
+        Arc::new(StmtParserStruct),
+        Arc::new(FunctionParserStruct),
+        Arc::new(ImportParserStruct),
+        Arc::new(BlockParserStruct),
+        Arc::new(LoopParserStruct),
     );
 
     let mut scope = Scope::new();
