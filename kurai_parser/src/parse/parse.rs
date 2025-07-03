@@ -10,6 +10,7 @@ use kurai_token::eat::eat;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::parse_if_else::parse_if_else;
+use crate::parse::parse_stmt::parse_stmt;
 use crate::GroupedParsers;
 
 pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<Expr> {
@@ -147,8 +148,8 @@ pub fn parse_out_vec_stmt(
     let mut pos = 0;
     let mut stmts = Vec::new();
 
-    while pos < tokens.len() {
-        match parsers.stmt_parser.parse_stmt(
+    while let Some(token) = tokens.get(pos) {
+        match parse_stmt(
             tokens,
             &mut pos,
             discovered_modules, 
@@ -156,7 +157,7 @@ pub fn parse_out_vec_stmt(
             scope
         ) {
             Ok(stmt) => stmts.push(stmt),
-            Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", tokens.get(pos), e, tokens)
+            Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", token, e, tokens)
         }
     }
 

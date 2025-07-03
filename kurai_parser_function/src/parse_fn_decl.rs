@@ -1,7 +1,6 @@
 use colored::Colorize;
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
-use kurai_parser::parse::parse_if_else::parse_if_else;
 use kurai_parser::GroupedParsers;
 use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
@@ -38,9 +37,9 @@ pub fn parse_fn_decl(
     if let Some(&Token::CloseParenthese) = tokens.get(*pos) {
         *pos += 1;
     } else {
-        while *pos < tokens.len() {
-            match tokens.get(*pos) {
-                Some(Token::CloseParenthese) => {
+        while let Some(token) = tokens.get(*pos) {
+            match token {
+                Token::CloseParenthese => {
                     *pos += 1;
                     break;
                 }
@@ -48,7 +47,7 @@ pub fn parse_fn_decl(
                 //     let expr = parse_if_else(tokens, pos, discovered_modules, parsers, scope)?;
                 //     return Ok(Stmt::Expr(expr)); // wrap it in a Stmt!
                 // }
-                Some(Token::Id(arg_name)) => {
+                Token::Id(arg_name) => {
                     let name = arg_name.clone();
                     *pos += 1;
 
@@ -95,37 +94,52 @@ pub fn parse_fn_decl(
     let mut body = Vec::new();
     if eat(&Token::OpenBracket, tokens, pos) {
         while *pos < tokens.len() {
-            if let Some(Token::CloseBracket) = tokens.get(*pos) {
-                *pos += 1;
-                break;
-            }
-
-            let old_pos = *pos;
-            match parsers.stmt_parser.parse_stmt(
-                tokens, 
-                pos,
-                discovered_modules, 
-                parsers,
-                scope
-            ) {
-                Ok(stmt) => {
-                    if *pos == old_pos {
-                        return Err(format!(
-                            "{}: parse_stmt() made no progress at pos {}: {:?}", "debug".cyan().bold(),
-                            pos,
-                            tokens.get(*pos),
-                        ));
-                    }
-                    body.push(stmt);
-                }
-                Err(e) => {
-                    if let Some(Token::CloseBracket) = tokens.get(*pos) {
-                        // legit end of function block
+            while let Some(token) = tokens.get(*pos) {
+                match token {
+                    Token::CloseBracket => {
                         #[cfg(debug_assertions)]
                         println!("{}: end of function block", "debug".cyan().bold());
+                        *pos += 1;
+
                         break;
                     }
-                    return Err(format!("Couldnt work on the body\nREASON: {}", e));
+                    _ => {
+                    let old_pos = *pos;
+                    match parsers.stmt_parser.parse_stmt(
+                        tokens, 
+                        pos,
+                        discovered_modules, 
+                        parsers,
+                        scope
+                    ) {
+                        Ok(stmt) => {
+                            if *pos == old_pos {
+                                return Err(format!(
+                                    "{}: parse_stmt() made no progress at pos {}: {:?}", "debug".cyan().bold(),
+                                    *pos,
+                                    tokens.get(*pos),
+                                ));
+                            }
+                            body.push(stmt);
+                        }
+                        Err(e) => {
+                            println!(
+                                "{}: statement failed at pos {} → token: {:?}",
+                                "debug".cyan().bold(),
+                                *pos,
+                                tokens.get(*pos)
+                            );
+
+                            return Err(format!(
+                                "Error parsing statement in function `{}` at pos {} (token: {:?}):\n{}",
+                                name,
+                                *pos,
+                                tokens.get(*pos),
+                                e
+                            ));
+                        }
+                    }
+                }
                 }
             }
         }

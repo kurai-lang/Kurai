@@ -34,8 +34,9 @@ fn main() {
     let code = r#"
         fn test() void {
             let x = 0;
+            let y = 0;
             if x == 0 {
-                printf("Hello there!");
+                y = 2;
             }
         }
         "#.to_string();

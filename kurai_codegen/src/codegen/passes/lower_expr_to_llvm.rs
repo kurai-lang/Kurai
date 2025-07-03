@@ -360,7 +360,18 @@ impl<'ctx> CodeGen<'ctx> {
 
                 result_phi
             }
-            Expr::Block { stmts, final_expr } => todo!(),
+            Expr::Block { stmts, final_expr } => {
+                self.execute_every_stmt_in_code(stmts.to_vec(), discovered_modules, parsers, scope);
+
+                if let Some(expr) = final_expr {
+                    self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope)
+                } else {
+                    // It returns nothing here lol
+                    // it found no expr here remember?
+                    let void_val = self.context.i32_type().const_zero();
+                    Some((void_val.as_basic_value_enum(), Type::Void))
+                }
+            },
         }
     }
 }

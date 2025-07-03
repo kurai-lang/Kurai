@@ -3,7 +3,8 @@ use kurai_ast::expr::Expr;
 use kurai_ast::stmt::Stmt;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
-use crate::{ parse::parse::parse_expr, BlockParser, GroupedParsers };
+use crate::{ parse::{parse::parse_expr, parse_stmt::parse_stmt}, BlockParser, GroupedParsers };
+use colored::Colorize;
 
 pub struct BlockParserStruct;
 impl BlockParser for BlockParserStruct {
@@ -57,6 +58,9 @@ pub fn parse_block(
     while *pos < tokens.len() {
         match tokens.get(*pos) {
             Some(Token::CloseBracket) => {
+                #[cfg(debug_assertions)]
+                println!("{}: closing bracket detected, bumping pos", "debug".cyan().bold());
+
                 *pos += 1;
                 return Ok(stmts);
             }
@@ -100,41 +104,56 @@ pub fn parse_expr_block(
         return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(*pos)));
     }
 
-    let mut exprs = Vec::new();
-    while *pos < tokens.len() {
-        match tokens.get(*pos) {
-            Some(Token::CloseBracket) => {
+    let mut stmts: Vec<Stmt> = Vec::new();
+    let mut final_expr: Option<Box<Expr>> = None;
+
+    while let Some(token) = tokens.get(*pos) {
+        match token {
+            Token::CloseBracket => {
+                #[cfg(debug_assertions)]
+                println!("{}: found end of block at pos {}, stopping.", "debug".cyan().bold(), pos);
+
                 *pos += 1;
-                return Ok(exprs);
+                return Ok(vec![Expr::Block {
+                    stmts,
+                    final_expr,
+                }]);
             }
-            Some(Token::Else) => {
+            Token::Else => {
                 // Don't parse 'else' inside a block, let parse_if_else handle it
                 break;
             }
-            Some(Token::Semicolon) => {
+            Token::Semicolon => {
                 *pos += 1; // just skip semicolon, it’s not an expression
                 continue;
             }
-            Some(_) => {
+            _ => {
                 #[cfg(debug_assertions)]
-                { println!(">> calling parse_expr_block at pos {}: {:?}", *pos, tokens.get(*pos)); }
+                { 
+                    println!("{}: calling parse_expr_block at pos {}: {:?}", "debug".cyan().bold(), *pos, tokens.get(*pos)); 
+                    println!("{}: parsing statements", "debug".cyan().bold());
+                }
+                let old_pos = *pos;
+                let stmt = parse_stmt(tokens, pos, discovered_modules, parsers, scope).unwrap();
+                match stmt {
+                    Stmt::Expr(expr) => {
+                        #[cfg(debug_assertions)]
+                        println!("{}: parsing final expressions", "debug".cyan().bold());
+                        final_expr = Some(Box::new(expr));
+                    }
+                    _ => stmts.push(stmt)
+                }
 
-                let expr = parse_expr(
-                    tokens,
-                    pos,
-                    false,
-                    discovered_modules,
-                    parsers,
-                    scope
-                ).unwrap();
-
-                exprs.push(expr);
+                if *pos == old_pos {
+                    return Err(format!("⚠️ parse_stmt made no progress at pos = {}, token = {:?}", pos, token));
+                }
             }
-            None => return Err("Unexpected end of token stream while parsing block.".to_string()),
         }
     }
 
-    Ok(exprs)
+    Ok(vec![Expr::Block {
+        stmts, final_expr
+    }])
 }
 
 pub fn parse_block_stmt(
