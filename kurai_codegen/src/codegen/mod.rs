@@ -43,6 +43,7 @@ pub struct CodeGen<'ctx> {
     pub current_fn_ret_type: Type,
 
     pub final_check_blocks: Vec<BasicBlock<'ctx>>,
+    terminated_blocks: HashSet<BasicBlock<'ctx>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -69,6 +70,7 @@ impl<'ctx> CodeGen<'ctx> {
             current_fn_ret_type: Type::Void,
 
             final_check_blocks: Vec::new(),
+            terminated_blocks: HashSet::new(),
             // context: &'ctx Context
         }
     }

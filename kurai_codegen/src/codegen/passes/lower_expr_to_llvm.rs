@@ -312,30 +312,31 @@ impl<'ctx> CodeGen<'ctx> {
                 // tbh i dont even understand what is get_insert_block() lmfao
                 // nayways this is for chaining condition branches
                 let mut next_check_block = self.builder.get_insert_block().unwrap();
-                let mut last_check_block = None;
+                let mut else_entry_block = None;
+                // let mut last_check_block = None;
 
                 for (i, branch) in branches.iter().enumerate() {
                     let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
                     // branch_blocks.push(then_block);
-                    let check_next_block = if i < branches.len() - 1 || else_block.is_some() {
-                        let b = self.context.append_basic_block(current_function, &format!("check_next_{}", i));
-                        last_check_block = Some(b);
-                        b
+
+                    let is_last_branch = i == branches.len() - 1;
+                    let has_else = else_body.is_some();
+
+                    let check_next_block = if !is_last_branch || has_else {
+                        let check_block = self.context.append_basic_block(current_function, &format!("check_next_{}", i));
+                        if is_last_branch && has_else {
+                            // this is the last branch, we would have an else by that time
+                            else_entry_block = Some(check_block);
+                        }
+                        check_block
                     } else {
                         // OLD CODE: merge_block
                         // compared to this old code, we aint jumping straight to merge_block.
                         // just make a last check
-                        let b = self.context.append_basic_block(current_function, &format!("final_check_{}", i));
-                        self.final_check_blocks.push(b);
-                        b
+                        let fallback_block = self.context.append_basic_block(current_function, &format!("final_check_{}", i));
+                        self.final_check_blocks.push(fallback_block);
+                        fallback_block
                     };
-
-                    // position to current check block
-                    // but we gotta check if the check_next_block isnt equal to merge_block or not
-                    // this a guard to make sure random shit doesnt get thrown in merge_block
-                    if check_next_block != merge_block {
-                        self.builder.position_at_end(check_next_block);
-                    }
 
                     // evaluate condition
                     let cond_val = self.lower_expr_to_llvm(
@@ -346,15 +347,32 @@ impl<'ctx> CodeGen<'ctx> {
                         scope
                     ).unwrap();
 
-                    self.builder.build_conditional_branch(
-                        cond_val.0.into_int_value(), 
-                        then_block, 
-                        check_next_block
-                    ).unwrap();
+                    // position to current check block
+                    // but we gotta check if the check_next_block isnt equal to merge_block or not
+                    // this a guard to make sure random shit doesnt get thrown in merge_block
+                    if !self.terminated_blocks.contains(&check_next_block)
+                    && check_next_block != merge_block {
+                        self.builder.position_at_end(check_next_block);
 
-                    if let Some(prev_check_block) = last_check_block {
-                        self.builder.position_at_end(prev_check_block);
-                        self.builder.build_unconditional_branch(else_block.unwrap()).unwrap();
+                        if is_last_branch && has_else {
+                            // last one gets else lol
+                            self.builder.build_conditional_branch(
+                                cond_val.0.into_int_value(), 
+                                then_block, 
+                                else_block.unwrap()
+                            ).unwrap();
+
+                            // this way, its guaranteed to not be overwriting blocks with multiple
+                            // branches
+                        } else {
+                            self.builder.build_conditional_branch(
+                                cond_val.0.into_int_value(),
+                                then_block,
+                            check_next_block
+                            ).unwrap();
+                        }
+
+                        self.terminated_blocks.insert(check_next_block);
                     }
 
                     self.builder.position_at_end(then_block);
@@ -383,9 +401,12 @@ impl<'ctx> CodeGen<'ctx> {
                 }
 
                 if let (Some(else_exprs), Some(else_block)) = (else_body, else_block) {
-                    if let Some(prev_check_block) = last_check_block {
-                        self.builder.position_at_end(prev_check_block);
-                        self.builder.build_unconditional_branch(else_block).unwrap();
+                    if let Some(else_jump_from_block) = else_entry_block {
+                        if !self.terminated_blocks.contains(&else_jump_from_block) {
+                            self.builder.position_at_end(else_jump_from_block);
+                            self.builder.build_unconditional_branch(else_block).unwrap();
+                            self.terminated_blocks.insert(else_jump_from_block);
+                        }
                     }
 
                     self.builder.position_at_end(else_block);
