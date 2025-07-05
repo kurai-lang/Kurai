@@ -37,6 +37,8 @@ fn main() {
             let y = 0;
             if x == 0 {
                 y = 2;
+            } else {
+                y = 1;
             }
         }
         "#.to_string();

@@ -41,6 +41,8 @@ pub struct CodeGen<'ctx> {
 
     pub inline_fns: HashSet<String>,
     pub current_fn_ret_type: Type,
+
+    pub final_check_blocks: Vec<BasicBlock<'ctx>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
@@ -60,11 +62,13 @@ impl<'ctx> CodeGen<'ctx> {
             loaded_modules,
             string_counter: 0,
             loop_counter: 0,
-            loop_exit_stack: vec![],
+            loop_exit_stack: Vec::new(),
             attr_registry,
 
             inline_fns: HashSet::new(),
             current_fn_ret_type: Type::Void,
+
+            final_check_blocks: Vec::new(),
             // context: &'ctx Context
         }
     }

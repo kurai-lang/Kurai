@@ -27,7 +27,7 @@ pub fn parse_arithmetic(tokens: &[Token], pos: &mut usize, min_prec: u8, discove
 
             *pos += 1;
 
-            let mut right = parse_arithmetic(tokens, pos, op.1+1, discovered_modules, parsers, scope).unwrap();
+            let right = parse_arithmetic(tokens, pos, op.1+1, discovered_modules, parsers, scope).unwrap();
 
             left = Expr::Binary { 
                 op: op.0, 

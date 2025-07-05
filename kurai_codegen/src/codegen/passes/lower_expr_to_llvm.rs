@@ -6,7 +6,7 @@ use kurai_binop::bin_op::BinOp;
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_types::{typ::Type, value::Value};
-use crate::{codegen::CodeGen, kurai_panic, print_error};
+use crate::{codegen::{passes::utils::{basic_type_enum_to_string, basic_value_enum_to_string}, CodeGen}, kurai_panic, print_error};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn lower_expr_to_llvm(&mut self, expr: &Expr, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<(BasicValueEnum<'ctx>, Type)> {
@@ -120,8 +120,8 @@ impl<'ctx> CodeGen<'ctx> {
                 #[cfg(debug_assertions)]
                 { println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
-                let left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), discovered_modules, parsers, scope)?;
-                let right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), discovered_modules, parsers, scope)?;
+                let mut left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), discovered_modules, parsers, scope)?;
+                let mut right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), discovered_modules, parsers, scope)?;
 
                 #[cfg(debug_assertions)]
                 { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
@@ -140,6 +140,43 @@ impl<'ctx> CodeGen<'ctx> {
                                 // return None;
                             }
                         };
+
+                        let l_debug = basic_value_enum_to_string(&left_val.0);
+                        let r_debug = basic_value_enum_to_string(&right_val.0);
+                        let l_type_debug = basic_type_enum_to_string(&left_val.0.get_type());
+                        let r_type_debug = basic_type_enum_to_string(&right_val.0.get_type());
+
+                        if left_val.0.get_type() != right_val.0.get_type() {
+                            #[cfg(debug_assertions)]
+                            println!("{}: {:?}'s bit width isn't equal to {:?}", "debug".cyan().bold(), l_debug, r_debug);
+
+                            if left_val.0.get_type().into_int_type().get_bit_width() <
+                            right_val.0.get_type().into_int_type().get_bit_width() {
+                                #[cfg(debug_assertions)] {
+                                    println!("{}: beginning conversion. {:?}: {:?} to {:?}: {:?}", "debug".cyan().bold(), 
+                                        l_debug, l_type_debug,
+                                        r_debug, r_type_debug);
+                                }
+
+                                left_val.0 = self.builder.build_int_cast(
+                                    left_val.0.into_int_value(),
+                                    right_val.0.get_type().into_int_type(),
+                                    "cast_l")
+                                    .unwrap().as_basic_value_enum();
+                            } else {
+                                #[cfg(debug_assertions)] {
+                                    println!("{}: beginning conversion. {:?}: {:?} to {:?}: {:?}", "debug".cyan().bold(), 
+                                        l_debug, l_type_debug,
+                                        r_debug, r_type_debug);
+                                }
+
+                                right_val.0 = self.builder.build_int_cast(
+                                    right_val.0.into_int_value(),
+                                    left_val.0.get_type().into_int_type(),
+                                    "cast_r")
+                                    .unwrap().as_basic_value_enum();
+                            }
+                        }
 
                         Some((self.builder.build_int_compare(
                             predicate,
@@ -264,18 +301,39 @@ impl<'ctx> CodeGen<'ctx> {
                 let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
 
                 let merge_block = self.context.append_basic_block(current_function, "merge");
-                let mut result_phi = None;
-
-                let mut prev_block = self.builder.get_insert_block().unwrap();
 
                 let mut branch_blocks = Vec::new();
                 let mut branch_values = Vec::new();
 
+                let else_block = else_body.as_ref().map(|_| {
+                    self.context.append_basic_block(current_function, "else")
+                });
+
+                // tbh i dont even understand what is get_insert_block() lmfao
+                // nayways this is for chaining condition branches
+                let mut next_check_block = self.builder.get_insert_block().unwrap();
+                let mut last_check_block = None;
+
                 for (i, branch) in branches.iter().enumerate() {
                     let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
-                    branch_blocks.push(then_block);
+                    // branch_blocks.push(then_block);
+                    let check_next_block = if i < branches.len() - 1 || else_block.is_some() {
+                        self.context.append_basic_block(current_function, &format!("check_next_{}", i))
+                    } else {
+                        // OLD CODE: merge_block
+                        // compared to this old code, we aint jumping straight to merge_block.
+                        // just make a last check
+                        let final_check_block = self.context.append_basic_block(current_function, &format!("final_check_{}", i));
+                        self.final_check_blocks.push(final_check_block);
+                        final_check_block
+                    };
 
-                    self.builder.position_at_end(prev_block);
+                    // position to current check block
+                    // but we gotta check if the check_next_block isnt equal to merge_block or not
+                    // this a guard to make sure random shit doesnt get thrown in merge_block
+                    if check_next_block != merge_block {
+                        self.builder.position_at_end(check_next_block);
+                    }
 
                     // evaluate condition
                     let cond_val = self.lower_expr_to_llvm(
@@ -289,13 +347,12 @@ impl<'ctx> CodeGen<'ctx> {
                     self.builder.build_conditional_branch(
                         cond_val.0.into_int_value(), 
                         then_block, 
-                        merge_block, // Supposed to be else_block, but its temporary here
+                        check_next_block
                     ).unwrap();
 
                     self.builder.position_at_end(then_block);
 
                     let mut last_expr_value = None;
-
                     for expr in &branch.body {
                         last_expr_value = self.lower_expr_to_llvm(
                             expr,
@@ -311,22 +368,22 @@ impl<'ctx> CodeGen<'ctx> {
                                                                                              // merge
                                                                                              // lol
                     if let Some(val) = last_expr_value {
+                        branch_blocks.push(then_block);
                         branch_values.push(val);
                     }
 
-                    prev_block = then_block;
+                    next_check_block = check_next_block;
                 }
 
-                if let Some(else_exprs) = else_body {
-                    let else_block = self.context.append_basic_block(current_function, "else");
-
-                    self.builder.position_at_end(prev_block);
-                    self.builder.build_unconditional_branch(else_block).unwrap();
+                if let (Some(else_exprs), Some(else_block)) = (else_body, else_block) {
+                    if let Some(prev_check_block) = last_check_block {
+                        self.builder.position_at_end(prev_check_block);
+                        self.builder.build_unconditional_branch(else_block).unwrap();
+                    }
 
                     self.builder.position_at_end(else_block);
 
                     let mut last_expr_value = None;
-
                     for expr in else_exprs {
                         last_expr_value = self.lower_expr_to_llvm(
                             expr,
@@ -340,10 +397,15 @@ impl<'ctx> CodeGen<'ctx> {
                     self.builder.build_unconditional_branch(merge_block).unwrap();
 
                     if let Some(val) = last_expr_value {
+                        branch_blocks.push(else_block);
                         branch_values.push(val);
                     }
-
-                    prev_block = else_block;
+                } else {
+                    // for when theres no else
+                    for final_block in self.final_check_blocks.drain(..) {
+                        self.builder.position_at_end(final_block);
+                        self.builder.build_unconditional_branch(merge_block).unwrap();
+                    }
                 }
 
                 self.builder.position_at_end(merge_block);
@@ -355,10 +417,10 @@ impl<'ctx> CodeGen<'ctx> {
                         phi.add_incoming(&[(&val.0, branch_blocks[i])]);
                     }
 
-                    result_phi = Some((phi.as_basic_value(), branch_values[0].1.clone()));
+                    Some((phi.as_basic_value(), branch_values[0].1.clone()))
+                } else {
+                    None
                 }
-
-                result_phi
             }
             Expr::Block { stmts, final_expr } => {
                 self.execute_every_stmt_in_code(stmts.to_vec(), discovered_modules, parsers, scope);

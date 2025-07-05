@@ -6,7 +6,7 @@ use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
 use kurai_types::{typ::Type, value::Value};
 
-use crate::{codegen::{CodeGen, VariableInfo}, kurai_panic, print_error, print_hint};
+use crate::{codegen::{passes::utils::basic_value_enum_to_string, CodeGen, VariableInfo}, kurai_panic, print_error, print_hint};
 use kurai_ast::stmt::Stmt;
 use kurai_ast::expr::Expr;
 
@@ -312,16 +312,7 @@ impl<'ctx> CodeGen<'ctx> {
                             let val = match raw_val {
                                 BasicValueEnum::IntValue(v) => v,
                                 other => { 
-                                    let variant = match other {
-                                        BasicValueEnum::IntValue(_) => "IntValue",
-                                        BasicValueEnum::FloatValue(_) => "FloatValue",
-                                        BasicValueEnum::PointerValue(_) => "PointerValue",
-                                        BasicValueEnum::StructValue(_) => "StructValue",
-                                        BasicValueEnum::ArrayValue(_) => "ArrayValue",
-                                        BasicValueEnum::VectorValue(_) => "VectorValue",
-                                        BasicValueEnum::ScalableVectorValue(_) => "ScalableVectorValue",
-                                    };
-
+                                    let variant = basic_value_enum_to_string(&other);
                                     print_error!(
                                         "Expected an `IntValue` for return type `i32`, but got `{}` instead.",
                                         variant,

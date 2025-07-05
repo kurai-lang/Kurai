@@ -1,4 +1,4 @@
-use inkwell::values::FunctionValue;
+use inkwell::{types::BasicTypeEnum, values::{BasicValueEnum, FunctionValue}};
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_ast::stmt::Stmt;
@@ -30,6 +30,33 @@ macro_rules! kurai_panic {
             std::process::exit(1);
         }
     };
+}
+
+
+pub fn basic_value_enum_to_string(value: &BasicValueEnum) -> String {
+    let res = match *value {
+        BasicValueEnum::IntValue(_) => "IntValue",
+        BasicValueEnum::FloatValue(_) => "FloatValue",
+        BasicValueEnum::PointerValue(_) => "PointerValue",
+        BasicValueEnum::StructValue(_) => "StructValue",
+        BasicValueEnum::ArrayValue(_) => "ArrayValue",
+        BasicValueEnum::VectorValue(_) => "VectorValue",
+        BasicValueEnum::ScalableVectorValue(_) => "ScalableVectorValue",
+    };
+    res.to_string()
+}
+
+pub fn basic_type_enum_to_string(typ: &BasicTypeEnum) -> String {
+    let res = match *typ {
+        BasicTypeEnum::ArrayType(_) => "ArrayType",
+        BasicTypeEnum::FloatType(_) => "FloatType",
+        BasicTypeEnum::IntType(_) => "IntType",
+        BasicTypeEnum::PointerType(_) => "PointerType",
+        BasicTypeEnum::StructType(_) => "StructType",
+        BasicTypeEnum::VectorType(_) => "VectorType",
+        BasicTypeEnum::ScalableVectorType(_) => "ScalableVectorType",
+    };
+    res.to_string()
 }
 
 impl<'ctx> CodeGen<'ctx> {

@@ -97,6 +97,23 @@ impl AttributeRegistry {
                     }
                 }
             });
+
+        // NOTE: PLANNING:
+        // #[raw] - raw memory, no protection. fully disables all safety checks 
+        // (pointer checks, null checks, casting checks, etc.)
+        // ----------------
+        // #[unchecked] - no runtime checks, for something like.. 
+        // `let x = 10 / 0`, division by zero. (i know, very unsafe)
+        // ----------------
+        // #[do_not_try_this_at_home] - same as raw but renamed for funny purpose xDD
+        // ----------------
+        // #[no_cast] - disables all implicit type promotion/casting (such as, `as`)
+        // ----------------
+        // #[no_mangle] - naturally, llvm ir will generate strange names. this attribute prevents
+        // strange naming and actually names the way the user wanted the specific function to be
+        // ----------------
+        // #[stack_only] - no heap, only stack memory. slow and predictable memory.
+        // ----------------
     }
 
     pub fn _load_attributes(&self, attributes: &[Attribute], stmt: &Stmt, codegen: &mut CodeGen) {
