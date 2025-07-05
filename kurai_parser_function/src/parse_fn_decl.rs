@@ -16,6 +16,12 @@ pub fn parse_fn_decl(
     scope: &mut Scope,
     attrs: Vec<Attribute>,
 ) -> Result<Stmt, String> {
+    let mut is_extern = false;
+
+    if eat(&Token::Extern, tokens, pos) {
+        is_extern = true;
+    }
+
     if !eat(&Token::Function, tokens, pos) {
         return Err("Expected keyword `fn`".to_string());
     }
@@ -56,9 +62,13 @@ pub fn parse_fn_decl(
                     }
 
                     let typ = match tokens.get(*pos) {
-                        Some(Token::Id(type_name)) => {
+                        // Some(Token::Id(type_name)) => {
+                        //     *pos += 1;
+                        //     type_name.clone()
+                        // }
+                        Some(Token::Type(typ)) => {
                             *pos += 1;
-                            type_name.clone()
+                            typ.clone()
                         }
                         _ => return Err(format!("Expected a type name after `:` in argument {}", name))
                     };
@@ -66,7 +76,7 @@ pub fn parse_fn_decl(
                     // name: type
                     args.push(TypedArg {
                         name,
-                        typ: Type::from_str(&typ).unwrap(),
+                        typ,
                         value: None,
                     });
 
@@ -92,7 +102,12 @@ pub fn parse_fn_decl(
     println!("{}: return type of function {} is {:?}", "debug".cyan().bold(), name, ret_type);
 
     let mut body = Vec::new();
-    if eat(&Token::OpenBracket, tokens, pos) {
+
+    if is_extern {
+        if !eat(&Token::Semicolon, tokens, pos) {
+            return Err("Expected `;` after extern function declaration".to_string());
+        }
+    } else if eat(&Token::OpenBracket, tokens, pos) {
         while *pos < tokens.len() {
             while let Some(token) = tokens.get(*pos) {
                 match token {
@@ -146,12 +161,12 @@ pub fn parse_fn_decl(
     } else {
         return Err("Expected an opening bracket".to_string());
     }
-
     Ok(Stmt::FnDecl { 
         name,
         args,
         body,
         attributes: attrs,
-        ret_type
+        ret_type,
+        is_extern
     })
 }

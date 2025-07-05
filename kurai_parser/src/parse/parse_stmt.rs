@@ -32,7 +32,7 @@ pub fn parse_stmt(
     // println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
     println!("{}: At parse_stmt entry: pos = {}, len = {}", "sanity check".cyan().bold(), *pos, tokens.len());
 
-    let attrs = if let Some(Token::Hash) = tokens.get(*pos) {
+    let mut attrs = if let Some(Token::Hash) = tokens.get(*pos) {
         parsers.fn_parser.parse_attrs(tokens, pos)?
     } else {
         Vec::new()
@@ -44,14 +44,11 @@ pub fn parse_stmt(
             // Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope),
 
             // NOTE: NEW ONES
-            Some(Token::Function) => parsers.fn_parser.parse_fn_decl(
-                tokens,
-                pos,
-                discovered_modules,
-                parsers,
-                scope,
-                attrs
-            ),
+            Some(Token::Function) | Some(Token::Extern) => {
+                let attrs_temp = attrs.clone();
+                attrs = Vec::new();
+                parsers.fn_parser.parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs_temp)
+            }
             Some(Token::Loop) => parsers.loop_parser.parse_for_loop(
                 tokens,
                 pos,

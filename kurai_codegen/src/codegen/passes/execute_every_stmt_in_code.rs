@@ -86,10 +86,10 @@ impl<'ctx> CodeGen<'ctx> {
                     //         }
                     //     }
                     // }
-                    #[cfg(debug_assertions)]
-                    println!("broken lol (nah i just commented legacy code)");
+                    // #[cfg(debug_assertions)]
+                    // println!("broken lol (nah i just commented legacy code)");
                 }
-                Stmt::FnDecl { name, args, body, attributes, ret_type } => {
+                Stmt::FnDecl { name, args, body, attributes, ret_type, is_extern } => {
                     // Map the argument types to LLVM types 
                     // remember, we need to speak LLVM IR language, not rust!
                     #[cfg(debug_assertions)]
@@ -99,7 +99,9 @@ impl<'ctx> CodeGen<'ctx> {
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ {
                             Type::I32 => self.context.i32_type().into(),
+                            Type::I64 => self.context.i64_type().into(),
                             Type::F32 => self.context.f32_type().into(),
+                            Type::F64 => self.context.f64_type().into(),
                             Type::Bool => self.context.bool_type().into(),
                             Type::Str => self.context.ptr_type(AddressSpace::default()).into(),
                             _ => panic!("Unknown type: {:?}", arg.typ),
@@ -115,6 +117,7 @@ impl<'ctx> CodeGen<'ctx> {
                     {
                         println!("Module: {:?}", self.module.lock().unwrap());
                         println!("creating function named: {}", &name);
+                        println!("name={}, is_extern={}", name, is_extern);
                     }
 
                     let fn_type = if *ret_type == Type::Void { 
@@ -130,7 +133,16 @@ impl<'ctx> CodeGen<'ctx> {
                             _ => panic!("Unsupported return type in fn_type gen"),
                         }
                     };
+
+                    println!("{}: parsed fn: {}, is_extern: {}", "debug".cyan().bold(), name, is_extern);
                     let function = self.module.lock().unwrap().add_function(name, fn_type, None);
+                    if *is_extern {
+                        #[cfg(debug_assertions)]
+                        println!("{}: skipping codegen for extern fn", "debug".cyan().bold());
+                        // return;
+                    }
+
+                    // everything below? non-extern functions
                     let entry = self.context.append_basic_block(function, "entry");
                     self.builder.position_at_end(entry);
 
@@ -382,6 +394,9 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.builder.build_return(Some(&final_val)).unwrap();
                 }
+            }
+
+            if let Stmt::FnDecl { ref name, is_extern, .. } = stmt {
             }
         }
     }

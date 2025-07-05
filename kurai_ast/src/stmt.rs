@@ -26,6 +26,7 @@ pub enum Stmt {
         body: Vec<Stmt>,
         attributes: Vec<Attribute>,
         ret_type: Type,
+        is_extern: bool,
     },
     Import {
         path: Vec<String>, // Originally String lol, its turned into vector to support "directory
@@ -89,8 +90,8 @@ impl fmt::Display for Stmt {
             Stmt::FnCall { name, args } => {
                         write!(f, "FnCall(name: {}, args: {:?})", name, args)
                     }
-            Stmt::FnDecl { name, args, body, attributes, ret_type } => {
-                        write!(f, "FnDecl(name: {}, args: {:?}, body: {:?}, attributes: {:?}, ret_type: {:?})", name, args, body, attributes, ret_type)
+            Stmt::FnDecl { name, args, body, attributes, ret_type, is_extern } => {
+                        write!(f, "FnDecl(name: {}, args: {:?}, body: {:?}, attributes: {:?}, ret_type: {:?}, is_extern: {})", name, args, body, attributes, ret_type, is_extern)
                     }
             Stmt::Import { path, nickname, is_glob } => {
                         if let Some(nickname) = nickname {

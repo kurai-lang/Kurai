@@ -238,7 +238,7 @@ impl<'ctx> CodeGen<'ctx> {
                 match name.as_str() {
                     "printf" => {
                         self.import_printf().unwrap();
-                        self.printf(&args, expected_type, discovered_modules, parsers, scope).unwrap();
+                        self.printf(args, expected_type, discovered_modules, parsers, scope).unwrap();
                         // return Some((self.context.i32_type().const_zero().into(), Type::Void));
                         None
                     }

@@ -32,14 +32,21 @@ fn main() {
     // "#.to_string();
 
     let code = r#"
-        fn test() void {
-            let x = 0;
-            let y = 0;
-            if x == 0 {
-                y = 2;
-            } else {
-                y = 1;
-            }
+        extern fn free_list_allocator_allocate(size: i64);
+
+        // fn test() void {
+        //     printf("hello");
+        //     let x = 0;
+        //     let y = 0;
+        //     if x == 0 {
+        //         y = 2;
+        //     } else {
+        //         y = 1;
+        //     }
+        // }
+        
+        fn main() void {
+            free_list_allocator_allocate(4);
         }
         "#.to_string();
 

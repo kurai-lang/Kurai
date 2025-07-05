@@ -53,6 +53,7 @@ pub enum Token {
     OpenSquareBracket,
     Comment,
     Return,
+    Extern,
 }
 
 impl Token {
@@ -213,6 +214,7 @@ impl Token {
                         "in" => tokens.push(Token::In),
                         "break" => tokens.push(Token::Break),
                         "return" => tokens.push(Token::Return),
+                        "extern" => tokens.push(Token::Extern),
 
                         // NOTE: Data types
                         "i8" => tokens.push(Token::Type(Type::I8)),

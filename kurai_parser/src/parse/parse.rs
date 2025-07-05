@@ -164,6 +164,10 @@ pub fn parse_out_vec_stmt(
     #[cfg(debug_assertions)]
     {
         println!("TOKENS: {:?}", tokens);
+
+        for stmt in &stmts {
+            println!("Parsed stmt: {:?}", stmt);
+        }
     }
     stmts
 }
