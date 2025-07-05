@@ -318,14 +318,16 @@ impl<'ctx> CodeGen<'ctx> {
                     let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
                     // branch_blocks.push(then_block);
                     let check_next_block = if i < branches.len() - 1 || else_block.is_some() {
-                        self.context.append_basic_block(current_function, &format!("check_next_{}", i))
+                        let b = self.context.append_basic_block(current_function, &format!("check_next_{}", i));
+                        last_check_block = Some(b);
+                        b
                     } else {
                         // OLD CODE: merge_block
                         // compared to this old code, we aint jumping straight to merge_block.
                         // just make a last check
-                        let final_check_block = self.context.append_basic_block(current_function, &format!("final_check_{}", i));
-                        self.final_check_blocks.push(final_check_block);
-                        final_check_block
+                        let b = self.context.append_basic_block(current_function, &format!("final_check_{}", i));
+                        self.final_check_blocks.push(b);
+                        b
                     };
 
                     // position to current check block
@@ -349,6 +351,11 @@ impl<'ctx> CodeGen<'ctx> {
                         then_block, 
                         check_next_block
                     ).unwrap();
+
+                    if let Some(prev_check_block) = last_check_block {
+                        self.builder.position_at_end(prev_check_block);
+                        self.builder.build_unconditional_branch(else_block.unwrap()).unwrap();
+                    }
 
                     self.builder.position_at_end(then_block);
 
