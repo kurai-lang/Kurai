@@ -1,5 +1,5 @@
 use colored::Colorize;
-use inkwell::{module::Linkage, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, IntPredicate};
+use inkwell::{basic_block::BasicBlock, module::Linkage, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, IntPredicate};
 
 use kurai_ast::expr::Expr;
 use kurai_binop::bin_op::BinOp;
@@ -9,7 +9,15 @@ use kurai_types::{typ::Type, value::Value};
 use crate::{codegen::{passes::utils::{basic_type_enum_to_string, basic_value_enum_to_string}, CodeGen}, kurai_panic, print_error};
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn lower_expr_to_llvm(&mut self, expr: &Expr, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<(BasicValueEnum<'ctx>, Type)> {
+    pub fn lower_expr_to_llvm(
+        &mut self,
+        expr: &Expr,
+        expected_type: Option<&Type>,
+        discovered_modules: &mut Vec<String>,
+        parsers: &GroupedParsers, 
+        scope: &mut Scope,
+        jump_from: Option<BasicBlock>
+    ) -> Option<(BasicValueEnum<'ctx>, Type)> {
         #[cfg(debug_assertions)]
         {
             println!("Lowering expr: {:?}", expr);
@@ -120,8 +128,8 @@ impl<'ctx> CodeGen<'ctx> {
                 #[cfg(debug_assertions)]
                 { println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
-                let mut left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), discovered_modules, parsers, scope)?;
-                let mut right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), discovered_modules, parsers, scope)?;
+                let mut left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), discovered_modules, parsers, scope, None)?;
+                let mut right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), discovered_modules, parsers, scope, None)?;
 
                 #[cfg(debug_assertions)]
                 { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
@@ -249,7 +257,7 @@ impl<'ctx> CodeGen<'ctx> {
                         if let Some(function) = function {
                             let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
                             for expr in args {
-                                let (compiled, _) = self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope)
+                                let (compiled, _) = self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope, None)
                                     .unwrap_or_else(|| { 
                                         print_error!("Failed to compile argument in call to function: {}", name.bold());
                                         kurai_panic!();
@@ -338,14 +346,12 @@ impl<'ctx> CodeGen<'ctx> {
                         fallback_block
                     };
 
-                    // evaluate condition
-                    let cond_val = self.lower_expr_to_llvm(
-                        &branch.condition,
-                        Some(&Type::Bool),
-                        discovered_modules,
-                        parsers,
-                        scope
-                    ).unwrap();
+                    if i == 0 {
+                        if let Some(jump_from_block) = jump_from {
+                            self.builder.position_at_end(jump_from_block);
+                            self.builder.build_unconditional_branch(check_next_block).unwrap();
+                        }
+                    }
 
                     // position to current check block
                     // but we gotta check if the check_next_block isnt equal to merge_block or not
@@ -353,6 +359,16 @@ impl<'ctx> CodeGen<'ctx> {
                     if !self.terminated_blocks.contains(&check_next_block)
                     && check_next_block != merge_block {
                         self.builder.position_at_end(check_next_block);
+
+                        // evaluate condition
+                        let cond_val = self.lower_expr_to_llvm(
+                            &branch.condition,
+                            Some(&Type::Bool),
+                            discovered_modules,
+                            parsers,
+                            scope,
+                            None
+                        ).unwrap();
 
                         if is_last_branch && has_else {
                             // last one gets else lol
@@ -384,7 +400,8 @@ impl<'ctx> CodeGen<'ctx> {
                             expected_type,
                             discovered_modules,
                             parsers,
-                            scope
+                            scope,
+                            None
                         );
                     }
 
@@ -418,7 +435,8 @@ impl<'ctx> CodeGen<'ctx> {
                             expected_type, 
                             discovered_modules,
                             parsers,
-                            scope
+                            scope,
+                            None
                         );
                     }
 
@@ -451,10 +469,10 @@ impl<'ctx> CodeGen<'ctx> {
                 }
             }
             Expr::Block { stmts, final_expr } => {
-                self.execute_every_stmt_in_code(stmts.to_vec(), discovered_modules, parsers, scope);
+                self.execute_every_stmt_in_code(stmts.to_vec(), discovered_modules, parsers, scope, None);
 
                 if let Some(expr) = final_expr {
-                    self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope)
+                    self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope, None)
                 } else {
                     // It returns nothing here lol
                     // it found no expr here remember?

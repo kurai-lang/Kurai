@@ -89,7 +89,8 @@ impl<'ctx> CodeGen<'ctx> {
             parsed_stmt,
             discovered_modules,
             parsers,
-            scope
+            scope,
+            None
         );
 
         // self.builder.build_call(
@@ -129,8 +130,14 @@ impl<'ctx> CodeGen<'ctx> {
     fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
         args.iter()
             .filter_map(|arg| {
-                self.lower_expr_to_llvm(arg, None, discovered_modules, parsers, scope)
-                    .map(|(val, _typ)| val)
+                self.lower_expr_to_llvm(
+                    arg,
+                    None,
+                    discovered_modules,
+                    parsers, 
+                    scope,
+                    None
+                ).map(|(val, _typ)| val)
             })
         .collect()
     }
@@ -187,8 +194,15 @@ impl<'ctx> CodeGen<'ctx> {
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
         for expr in args.iter() {
-            let (value, ty)= self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope).unwrap();
-            
+            let (value, ty)= self.lower_expr_to_llvm(
+                expr,
+                expected_type,
+                discovered_modules,
+                parsers,
+                scope,
+                None
+            ).unwrap();
+
             match ty {
                 Type::I64 => {
                     format.push_str("%ld");

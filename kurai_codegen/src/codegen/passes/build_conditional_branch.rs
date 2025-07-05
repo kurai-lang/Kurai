@@ -18,7 +18,7 @@ impl<'ctx> CodeGen<'ctx> {
         parsers: &GroupedParsers,
         scope: &mut Scope,
     ) -> BasicBlock<'ctx> {
-        let condition_value = self.lower_expr_to_llvm(condition_expr, None, discovered_modules, parsers, scope).unwrap();
+        let condition_value = self.lower_expr_to_llvm(condition_expr, None, discovered_modules, parsers, scope, None).unwrap();
 
         let condition = if condition_value.0.is_int_value() {
             let int_val = condition_value.0.into_int_value();
@@ -49,7 +49,8 @@ impl<'ctx> CodeGen<'ctx> {
             then_body.to_vec(),
             discovered_modules,
             parsers,
-            scope
+            scope,
+            None
         );
         self.builder.build_unconditional_branch(merge_block).unwrap();
 
@@ -60,7 +61,8 @@ impl<'ctx> CodeGen<'ctx> {
                 else_stmts.to_vec(),
                 discovered_modules,
                 parsers,
-                scope
+                scope,
+                None
             );
         }
         self.builder.build_unconditional_branch(merge_block).unwrap();

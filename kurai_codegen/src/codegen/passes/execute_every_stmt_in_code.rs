@@ -1,6 +1,6 @@
 
 use colored::Colorize;
-use inkwell::{types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
+use inkwell::{basic_block::{self, BasicBlock}, types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
@@ -17,6 +17,7 @@ impl<'ctx> CodeGen<'ctx> {
         discovered_modules: &mut Vec<String>, 
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        jump_from: Option<BasicBlock>,
     ) {
         for stmt in parsed_stmt {
             match &stmt {
@@ -47,7 +48,7 @@ impl<'ctx> CodeGen<'ctx> {
                     };
 
                     // now do mutable stuff after immutable borrow is over
-                    let (llvm_value, _)= self.lower_expr_to_llvm(value, None, discovered_modules,parsers, scope).unwrap();
+                    let (llvm_value, _)= self.lower_expr_to_llvm(value, None, discovered_modules,parsers, scope, None).unwrap();
                     self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
@@ -110,67 +111,68 @@ impl<'ctx> CodeGen<'ctx> {
                         println!("done");
                     }
 
+                    #[cfg(debug_assertions)]
                     {
-                        #[cfg(debug_assertions)]
-                        {
-                            println!("Module: {:?}", self.module.lock().unwrap());
-                            println!("creating function named: {}", &name);
-                        }
-
-                        let fn_type = if *ret_type == Type::Void { 
-                            self.context.void_type().fn_type(&arg_types, false)
-                        } else {
-                            let llvm_ret_type = ret_type.to_llvm_type(self.context).unwrap();
-                            #[cfg(debug_assertions)] { println!("{:?}", llvm_ret_type) }
-                            // let fn_type = self.context.i32_type().fn_type(&arg_types, false);
-                            match llvm_ret_type {
-                                BasicTypeEnum::IntType(int_type) => int_type.fn_type(&arg_types, false),
-                                BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&arg_types, false),
-                                BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&arg_types, false),
-                                _ => panic!("Unsupported return type in fn_type gen"),
-                            }
-                        };
-                        let function = self.module.lock().unwrap().add_function(name, fn_type, None);
-                        let basic_block = self.context.append_basic_block(function, "entry");
-                        self.builder.position_at_end(basic_block);
-
-                        self.current_fn_ret_type = ret_type.clone();
-
-                        self.attr_registry.register_all(Some(ret_type), discovered_modules, parsers);
-                        self.load_attributes(attributes, &stmt);
-
-                        #[cfg(debug_assertions)]
-                        {
-                            println!("done");
-                            println!("parsing the function's body");
-                        }
-                        for (i, arg) in args.iter().enumerate() {
-                            let llvm_arg = function.get_nth_param(i as u32).unwrap();//.into_pointer_value();
-                            let pointee_type = llvm_arg.get_type();
-                            let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
-
-                            println!("{:?}", pointee_type);
-                            println!("{:?}", var_type);
-                            println!("{:?}", llvm_arg.get_type());
-
-                            let alloca = self.builder.build_alloca(
-                                llvm_arg.get_type(),
-                                &arg.name,
-                            ).unwrap();
-
-                            self.builder.build_store(alloca, llvm_arg).unwrap();
-
-                            let var_info = VariableInfo {
-                                ptr_value: alloca,
-                                var_type,
-                            };
-                            self.variables.insert(arg.name.clone(), var_info);
-                        }
+                        println!("Module: {:?}", self.module.lock().unwrap());
+                        println!("creating function named: {}", &name);
                     }
+
+                    let fn_type = if *ret_type == Type::Void { 
+                        self.context.void_type().fn_type(&arg_types, false)
+                    } else {
+                        let llvm_ret_type = ret_type.to_llvm_type(self.context).unwrap();
+                        #[cfg(debug_assertions)] { println!("{:?}", llvm_ret_type) }
+                        // let fn_type = self.context.i32_type().fn_type(&arg_types, false);
+                        match llvm_ret_type {
+                            BasicTypeEnum::IntType(int_type) => int_type.fn_type(&arg_types, false),
+                            BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&arg_types, false),
+                            BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&arg_types, false),
+                            _ => panic!("Unsupported return type in fn_type gen"),
+                        }
+                    };
+                    let function = self.module.lock().unwrap().add_function(name, fn_type, None);
+                    let entry = self.context.append_basic_block(function, "entry");
+                    self.builder.position_at_end(entry);
+
+                    self.current_fn_ret_type = ret_type.clone();
+
+                    self.attr_registry.register_all(Some(ret_type), discovered_modules, parsers);
+                    self.load_attributes(attributes, &stmt);
+
+                    #[cfg(debug_assertions)] {
+                        println!("done");
+                        println!("parsing the function's body");
+                    }
+                    for (i, arg) in args.iter().enumerate() {
+                        let llvm_arg = function.get_nth_param(i as u32).unwrap();//.into_pointer_value();
+                        let pointee_type = llvm_arg.get_type();
+                        let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
+
+                        println!("{:?}", pointee_type);
+                        println!("{:?}", var_type);
+                        println!("{:?}", llvm_arg.get_type());
+
+                        let alloca = self.builder.build_alloca(
+                            llvm_arg.get_type(),
+                            &arg.name,
+                        ).unwrap();
+
+                        self.builder.build_store(alloca, llvm_arg).unwrap();
+
+                        let var_info = VariableInfo {
+                            ptr_value: alloca,
+                            var_type,
+                        };
+                        self.variables.insert(arg.name.clone(), var_info);
+                    }
+
                     self.execute_every_stmt_in_code(
                         body.to_vec(),
                         discovered_modules,
-                        parsers, scope);
+                        parsers,
+                        scope,
+                        Some(entry)
+                    );
 
                     #[cfg(debug_assertions)] { println!("self.current_fn_ret_type = {:?}", self.current_fn_ret_type); }
                     if *ret_type == Type::Void {
@@ -219,7 +221,8 @@ impl<'ctx> CodeGen<'ctx> {
                             stmts,
                             discovered_modules,
                             parsers,
-                            scope
+                            scope,
+                            None
                         );
                     } else {
                         #[cfg(debug_assertions)]
@@ -264,7 +267,8 @@ impl<'ctx> CodeGen<'ctx> {
                         body.to_vec(),
                         discovered_modules, 
                         parsers,
-                        scope
+                        scope,
+                        None
                     );
 
                     if self.builder.get_insert_block()
@@ -286,7 +290,14 @@ impl<'ctx> CodeGen<'ctx> {
                     // self.builder.position_at_end(unreachable_block);
                 }
                 Stmt::Expr(expr) => {
-                    if let Some(val) = self.lower_expr_to_llvm(expr, None, discovered_modules,parsers, scope) {
+                    if let Some(val) = self.lower_expr_to_llvm(
+                        expr,
+                        None,
+                        discovered_modules,
+                        parsers,
+                        scope,
+                        jump_from
+                    ) {
                         #[cfg(debug_assertions)]
                         println!("Expression result (ignored): {:?}", val);
                     }
@@ -296,7 +307,8 @@ impl<'ctx> CodeGen<'ctx> {
                         stmts.to_vec(),
                         discovered_modules, 
                         parsers,
-                        scope
+                        scope,
+                        None
                     );
                 }
                 Stmt::Return(expr) => {
@@ -305,7 +317,7 @@ impl<'ctx> CodeGen<'ctx> {
                         println!("{}: Current function return type is {:?}", "debug".cyan().bold(), ret_type);
                         println!("{}: Current expression is {:?}", "debug".cyan().bold(), expr);
                     }
-                    let (raw_val, _) = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type), discovered_modules,parsers, scope).unwrap();
+                    let (raw_val, _) = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type), discovered_modules,parsers, scope, None).unwrap();
 
                     let final_val = match ret_type {
                         Type::I32 => {
