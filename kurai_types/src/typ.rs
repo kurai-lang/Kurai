@@ -1,4 +1,4 @@
-use inkwell::{context::Context, types::{AnyType, BasicType, BasicTypeEnum, PointerType, VoidType}};
+use inkwell::{context::Context, types::{AnyType, BasicType, BasicTypeEnum, PointerType, VoidType}, values::BasicValueEnum};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
@@ -50,6 +50,30 @@ impl Type {
             }
 
             _ => None,
+        }
+    }
+
+    pub fn to_llvm_value<'ctx>(&self, ctx: &'ctx Context) -> BasicValueEnum<'ctx> {
+        match *self {
+            Type::I8 => ctx.i8_type().const_zero().into(),
+            Type::I16 => ctx.i16_type().const_zero().into(),
+            Type::I32 => ctx.i32_type().const_zero().into(),
+            Type::I64 => ctx.i64_type().const_zero().into(),
+            Type::I128 => ctx.i128_type().const_zero().into(),
+
+            Type::F16 => ctx.f16_type().const_zero().into(),
+            Type::F32 => ctx.f32_type().const_float(0.0).into(),
+            Type::F64 => ctx.f64_type().const_float(0.0).into(),
+            Type::F128 => ctx.f128_type().const_float(0.0).into(),
+
+            Type::Bool => ctx.bool_type().const_zero().into(),
+
+            Type::Ptr(_) | Type::Str => ctx
+                .ptr_type(inkwell::AddressSpace::default())
+                .const_null()
+                .into(),
+
+            _ => ctx.i64_type().const_zero().into(), // Fallback for unknowns
         }
     }
 

@@ -38,7 +38,10 @@ impl<'ctx> CodeGen<'ctx> {
                     };
 
                     let llvm_type = parsed_type.to_llvm_type(self.context) 
-                        .unwrap_or_else(|| panic!("Unsupported type {:?}", typ));
+                        .unwrap_or_else(|| {
+                            eprintln!("{}: falling back to i64 for unsupported type {:?}", "warn".yellow().bold(), parsed_type);
+                            self.context.i64_type().as_basic_type_enum()
+                        });
 
                     let alloca = self.builder.build_alloca(
                             llvm_type,
@@ -53,8 +56,16 @@ impl<'ctx> CodeGen<'ctx> {
                             discovered_modules,
                             parsers,
                             scope,
-                            None
-                        ).unwrap();
+                            None,
+                        ).unwrap_or_else(|| {
+                            eprintln!(
+                                "warn: failed to lower expr for '{}': falling back to default value",
+                                name
+                            );
+
+                            let fallback_val = parsed_type.to_llvm_value(self.context);
+                            (fallback_val, parsed_type.clone())
+                        });
 
                         self.builder.build_store(alloca, val).unwrap();
                     }
