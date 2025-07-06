@@ -223,6 +223,12 @@ impl Token {
                         "i64" => tokens.push(Token::Type(Type::I64)),
                         "i128" => tokens.push(Token::Type(Type::I128)),
 
+                        "u8" => tokens.push(Token::Type(Type::U8)),
+                        "u16" => tokens.push(Token::Type(Type::U16)),
+                        "u32" => tokens.push(Token::Type(Type::U32)),
+                        "u64" => tokens.push(Token::Type(Type::U64)),
+                        "u128" => tokens.push(Token::Type(Type::U128)),
+
                         "f32" => tokens.push(Token::Type(Type::F32)),
                         "f64" => tokens.push(Token::Type(Type::F64)),
                         "f128" => tokens.push(Token::Type(Type::F128)),

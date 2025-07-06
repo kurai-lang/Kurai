@@ -2,16 +2,25 @@ use inkwell::{context::Context, types::{AnyType, BasicType, BasicTypeEnum, Point
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+
     I8,
     I16,
     I32,
     I64,
     I128,
+
     F16,
     F32,
     F64,
     F128,
+
     Bool,
+
     Str,
     Unknown,
     Var,
@@ -22,11 +31,11 @@ pub enum Type {
 impl Type {
     pub fn to_llvm_type<'ctx>(&self, ctx: &'ctx Context) -> Option<BasicTypeEnum<'ctx>> {
         match *self {
-            Type::I8 => Some(ctx.i8_type().as_basic_type_enum()),
-            Type::I16 => Some(ctx.i16_type().as_basic_type_enum()),
-            Type::I32 => Some(ctx.i32_type().as_basic_type_enum()),
-            Type::I64 => Some(ctx.i64_type().as_basic_type_enum()),
-            Type::I128 => Some(ctx.i128_type().as_basic_type_enum()),
+            Type::I8 | Type::U8 => Some(ctx.i8_type().as_basic_type_enum()),
+            Type::I16 | Type::U16 => Some(ctx.i16_type().as_basic_type_enum()),
+            Type::I32 | Type::U32 => Some(ctx.i32_type().as_basic_type_enum()),
+            Type::I64 | Type::U64 => Some(ctx.i64_type().as_basic_type_enum()),
+            Type::I128 | Type::U128 => Some(ctx.i128_type().as_basic_type_enum()),
 
             Type::F16 => Some(ctx.f16_type().as_basic_type_enum()),
             Type::F32 => Some(ctx.f32_type().as_basic_type_enum()),
@@ -65,6 +74,13 @@ impl Type {
         }
 
         match s {
+            "u8" => Some(Type::U8),
+            "u16" => Some(Type::U16),
+            "u32" => Some(Type::U32),
+            "u64" => Some(Type::U64),
+            "u128" => Some(Type::U128),
+
+            "i8" => Some(Type::I8),
             "i16" => Some(Type::I16),
             "i32" => Some(Type::I32),
             "i64" => Some(Type::I64),
