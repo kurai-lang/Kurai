@@ -266,7 +266,11 @@ impl<'ctx> CodeGen<'ctx> {
                             }
                             let call = self.builder.build_call(function, &compiled_args, &name).unwrap();
 
-                            Some((call.try_as_basic_value().unwrap_left().as_basic_value_enum(), Type::Void))
+                            let ret_val = match call.try_as_basic_value() {
+                                inkwell::Either::Left(val) => Some(val),
+                                inkwell::Either::Right(_inst) => None,
+                            }?;
+                            Some((ret_val, Type::Void))
                         } else {
                             print_error!("Couldnt find function named {}", name.bold());
                             kurai_panic!();

@@ -71,17 +71,13 @@ pub fn parse_stmt(
             Some(Token::Import) => parsers.import_parser.parse_import_decl(tokens, pos, discovered_modules),
             Some(Token::For) => parsers.loop_parser.parse_for_loop(tokens, pos, discovered_modules, parsers, scope),
             Some(Token::Id(_)) => {
-                    // For functions from modules. like foo::bar()
-                    if let (Some(Token::Colon), Some(Token::Colon)) =
-                        (tokens.get(*pos + 1), tokens.get(*pos + 2))
-                    {
-                        return parsers.fn_parser.parse_fn_call(tokens, pos);
-                    }
-
                 match tokens.get(*pos + 1) {
-                    Some(Token::OpenParenthese) => parsers.fn_parser.parse_fn_call(tokens, pos),
                     Some(Token::Equal) => parse_var_assign(tokens, pos, discovered_modules, parsers, scope),
-                    _ => Err("Identifier expected, is this supposed to be a function call or variable assignment?".to_string())
+                    Some(Token::OpenParenthese) => {
+                        let expr = parsers.fn_parser.parse_fn_call(tokens, pos)?;
+                        Ok(Stmt::Expr(expr))
+                    }
+                    _ => Err("Unexpected token after identifier. Expected `=` or `(`.".into())
                 }
             }
             Some(Token::OpenBracket) => {

@@ -34,6 +34,12 @@ struct Cli {
 
     #[arg(long, action)]
     pub show_output_files: bool,
+
+    #[arg(short = 'L', long = "lib-dir", num_args = 1.., value_name = "DIR")]
+    pub lib_dirs: Vec<String>,
+
+    #[arg(short = 'l', long = "link-lib", num_args = 1.., value_name = "LIB")]
+    pub link_libs: Vec<String>,
 }
 
 fn main() {
@@ -154,13 +160,23 @@ fn main() {
         .status()
         .unwrap();
 
-    let status = Command::new("clang")
+    let mut binding = Command::new("clang");
+    let mut cmd = binding
         .arg(&output_path_opt_ll)
         .arg("-o")
-        .arg(&output_name)
+        .arg(&output_name);
         // .arg("-g")
-        .status()
-        .unwrap();
+
+        //lib_dirs, link_libs
+    for dir in &cli.lib_dirs {
+        cmd.arg(format!("-L{}", dir));
+    }
+
+    for lib in &cli.link_libs {
+        cmd.arg(format!("-l{}", lib));
+    }
+
+    let status = cmd.status().unwrap();
 
     let end_time = start_time.elapsed().as_secs_f64();
 

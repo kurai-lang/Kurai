@@ -6,7 +6,7 @@ use kurai_token::token::token::Token;
 use kurai_types::typ::Type;
 use kurai_types::value::Value;
 
-pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> {
+pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Expr, String> {
     let mut path = Vec::new();
 
     // step 1: parse full path, like foo::bar()
@@ -41,13 +41,13 @@ pub fn parse_fn_call(tokens: &[Token], pos: &mut usize) -> Result<Stmt, String> 
         return Err("Expected `;` after function call".to_string());
     }
 
-    Ok(Stmt::FnCall {
+    Ok(Expr::FnCall {
         name: path.join("::"),
         args,
     })
 }
 
-fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String> {
+fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<Expr>, String> {
     let mut args = Vec::new();
 
     if !eat(&Token::OpenParenthese, tokens, pos) {
@@ -57,35 +57,19 @@ fn parse_args(tokens: &[Token], pos: &mut usize) -> Result<Vec<TypedArg>, String
     loop {
         match tokens.get(*pos) {
             Some(Token::Number(v)) => {
-                args.push(TypedArg {
-                    name: "_".to_string(),
-                    typ: Type::I64,
-                    value: Some(Expr::Literal(Value::Int(*v))),
-                });
+                args.push(Expr::Literal(Value::Int(*v)));
                 *pos += 1;
             }
             Some(Token::Float(v)) => {
-                args.push(TypedArg {
-                    name: "_".to_string(),
-                    typ: Type::F64,
-                    value: Some(Expr::Literal(Value::Float(*v))),
-                });
+                args.push(Expr::Literal(Value::Float(*v)));
                 *pos += 1;
             }
             Some(Token::StringLiteral(s)) => {
-                args.push(TypedArg {
-                    name: "_".to_string(),
-                    typ: Type::Str,
-                    value: Some(Expr::Literal(Value::Str(s.clone()))),
-                });
+                args.push(Expr::Literal(Value::Str(s.clone())));
                 *pos += 1;
             }
             Some(Token::Id(id)) => {
-                args.push(TypedArg {
-                    name: id.to_string(),
-                    typ: Type::Var,
-                    value: Some(Expr::Id(id.clone())),
-                });
+                args.push(Expr::Id(id.clone()));
                 *pos += 1;
             }
             Some(Token::Comma) => {

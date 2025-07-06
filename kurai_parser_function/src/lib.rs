@@ -2,7 +2,7 @@ pub mod parse_fn_call;
 pub mod parse_fn_decl;
 pub mod parse_attrs;
 
-use kurai_ast::stmt::Stmt;
+use kurai_ast::{expr::Expr, stmt::Stmt};
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
 use kurai_parser::{FunctionParser, GroupedParsers};
@@ -24,7 +24,7 @@ impl FunctionParser for FunctionParserStruct {
         parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs)
     }
 
-    fn parse_fn_call(&self, tokens: &[kurai_token::token::token::Token], pos: &mut usize) -> Result<Stmt, String> {
+    fn parse_fn_call(&self, tokens: &[kurai_token::token::token::Token], pos: &mut usize) -> Result<Expr, String> {
         parse_fn_call(tokens, pos)
     }
 

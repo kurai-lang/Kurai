@@ -1,6 +1,6 @@
 
 use colored::Colorize;
-use inkwell::{basic_block::{self, BasicBlock}, types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
+use inkwell::{basic_block::{self, BasicBlock}, module::Linkage, types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
@@ -135,11 +135,14 @@ impl<'ctx> CodeGen<'ctx> {
                     };
 
                     println!("{}: parsed fn: {}, is_extern: {}", "debug".cyan().bold(), name, is_extern);
-                    let function = self.module.lock().unwrap().add_function(name, fn_type, None);
+                    let function = self.module.lock().unwrap().add_function(
+                        name,
+                        fn_type,
+                        Some(Linkage::External));
                     if *is_extern {
                         #[cfg(debug_assertions)]
                         println!("{}: skipping codegen for extern fn", "debug".cyan().bold());
-                        // return;
+                        continue;
                     }
 
                     // everything below? non-extern functions

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use kurai_attr::attribute::Attribute;
 use kurai_core::scope::Scope;
-use kurai_ast::stmt::Stmt;
+use kurai_ast::{expr::Expr, stmt::Stmt};
 use kurai_token::token::token::Token;
 
 pub mod parse;
@@ -89,7 +89,7 @@ pub trait FunctionParser {
         scope: &mut Scope,
         attrs: Vec<Attribute>,
     ) -> Result<Stmt, String>;
-    fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Stmt, String>;
+    fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Expr, String>;
     fn parse_attrs(&self, tokens: &[Token], pos: &mut usize) -> Result<Vec<Attribute>, String>;
 }
 
