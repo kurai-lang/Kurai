@@ -150,11 +150,16 @@ impl<'ctx> CodeGen<'ctx> {
                     }
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ {
-                            Type::I32 => self.context.i32_type().into(),
-                            Type::I64 => self.context.i64_type().into(),
+                            Type::I8 | Type::U8 => self.context.i8_type().into(),
+                            Type::I16 | Type::U16 => self.context.i16_type().into(),
+                            Type::I32 | Type::U32 => self.context.i32_type().into(),
+                            Type::I64 | Type::U64 => self.context.i64_type().into(),
+                            Type::I128 | Type::U128 => self.context.i128_type().into(),
 
+                            Type::F16 => self.context.f16_type().into(),
                             Type::F32 => self.context.f32_type().into(),
                             Type::F64 => self.context.f64_type().into(),
+                            Type::F128 => self.context.f128_type().into(),
 
                             Type::Bool => self.context.bool_type().into(),
 
