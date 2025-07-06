@@ -90,8 +90,17 @@ impl<'ctx> CodeGen<'ctx> {
                         }
                     };
 
-                    // now do mutable stuff after immutable borrow is over
-                    let (llvm_value, _)= self.lower_expr_to_llvm(value, None, discovered_modules,parsers, scope, None).unwrap();
+                    let (llvm_value, _) = self.lower_expr_to_llvm(
+                        value,
+                        None,
+                        discovered_modules,
+                        parsers,
+                        scope,
+                        None
+                    ).unwrap_or_else(||
+                        panic!("{}: tried to lower an invalid expression `{:?}` into LLVM IR",
+                        "internal error".red().bold(), value));
+
                     self.builder.build_store(var_ptr, llvm_value).unwrap();
                 }
                 Stmt::FnCall { name, args } => {
@@ -129,8 +138,8 @@ impl<'ctx> CodeGen<'ctx> {
                     //         }
                     //     }
                     // }
-                    // #[cfg(debug_assertions)]
-                    // println!("broken lol (nah i just commented legacy code)");
+                    #[cfg(debug_assertions)]
+                    println!("broken lol (nah i just commented legacy code)");
                 }
                 Stmt::FnDecl { name, args, body, attributes, ret_type, is_extern } => {
                     // Map the argument types to LLVM types 
