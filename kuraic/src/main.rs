@@ -1,5 +1,5 @@
 use clap::Parser;
-use colored::Colorize;
+use colored::{Colorize, CustomColor};
 // use bahasac::scope::Scope;
 // use bahasac::value::Value;
 use inkwell::context::Context;
@@ -170,10 +170,12 @@ fn main() {
         //lib_dirs, link_libs
     for dir in &cli.lib_dirs {
         cmd.arg(format!("-L{}", dir));
+        println!("{}{}{}: searching for libraries in: {}", "[".green(), "external library paths".green().bold(), "]".green(), dir);
     }
 
     for lib in &cli.link_libs {
         cmd.arg(format!("-l{}", lib));
+        println!("{}{}{}: linking external libraries: {}", "[".green(), "external libraries".green().bold(), "]".green(), lib);
     }
 
     let status = cmd.status().unwrap();

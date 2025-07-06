@@ -203,7 +203,7 @@ impl<'ctx> CodeGen<'ctx> {
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
         for expr in args.iter() {
-            let (value, ty)= self.lower_expr_to_llvm(
+            let (value, ty) = self.lower_expr_to_llvm(
                 expr,
                 expected_type,
                 discovered_modules,
@@ -222,7 +222,10 @@ impl<'ctx> CodeGen<'ctx> {
                 Type::Var => {
                     format.push_str("%s");
                 }
-                _ => panic!("UNSUPPORTED PRINTF ARG TYPE")
+                Type::Void => {
+                    format.push_str("%s");
+                }
+                _ => panic!("unsupported print arg type {:?}", ty)
             }
 
             final_args.push(value.into());
