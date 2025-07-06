@@ -1,6 +1,6 @@
 
 use colored::Colorize;
-use inkwell::{basic_block::{self, BasicBlock}, module::Linkage, types::{BasicMetadataTypeEnum, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
+use inkwell::{basic_block::{self, BasicBlock}, module::Linkage, types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
 use kurai_core::scope::Scope;
 use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
@@ -100,10 +100,17 @@ impl<'ctx> CodeGen<'ctx> {
                         match arg.typ {
                             Type::I32 => self.context.i32_type().into(),
                             Type::I64 => self.context.i64_type().into(),
+
                             Type::F32 => self.context.f32_type().into(),
                             Type::F64 => self.context.f64_type().into(),
+
                             Type::Bool => self.context.bool_type().into(),
+
                             Type::Str => self.context.ptr_type(AddressSpace::default()).into(),
+                            Type::Ptr(ref inner) => {
+                                let inner_ty = inner.to_llvm_type(self.context).unwrap();
+                                inner_ty.ptr_type(AddressSpace::default()).into()
+                            }
                             _ => panic!("Unknown type: {:?}", arg.typ),
                             }
                         }).collect();

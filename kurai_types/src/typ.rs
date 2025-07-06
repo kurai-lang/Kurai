@@ -16,6 +16,7 @@ pub enum Type {
     Unknown,
     Var,
     Void,
+    Ptr(Box<Type>),
 }
 
 impl Type {
@@ -34,6 +35,10 @@ impl Type {
 
             Type::Bool => Some(ctx.bool_type().as_basic_type_enum()),
             Type::Str => Some(ctx.ptr_type(inkwell::AddressSpace::default()).as_basic_type_enum()),
+            Type::Ptr(ref inner) => {
+                let inner_ty = inner.to_llvm_type(ctx)?;
+                Some(inner_ty.ptr_type(inkwell::AddressSpace::default()).as_basic_type_enum())
+            }
 
             _ => None,
         }
@@ -43,7 +48,6 @@ impl Type {
         if typ.is_int_type() {
             Some(Type::I32)
         } else if typ.is_float_type() {
-            // FIXME: i havent even implemented float datatype yet fr
             Some(Type::F32)
         } else if typ.is_pointer_type() {
             Some(Type::Str)
@@ -53,6 +57,13 @@ impl Type {
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
+        let s = s.trim();
+
+        // for pointers
+        if let Some(stripped) = s.strip_prefix('*') {
+            return Some(Type::Ptr(Box::new(Type::from_str(stripped)?)));
+        }
+
         match s {
             "i16" => Some(Type::I16),
             "i32" => Some(Type::I32),
