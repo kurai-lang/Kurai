@@ -1,9 +1,9 @@
 [package]
 name = "kurai_core"
-version = "0.4.6"
+version = "0.4.9"
 edition = "2024"
 
 [dependencies]
-kurai_ast = { version = "0.4.6", path = "../kurai_ast" }
-kurai_expr = { version = "0.4.6", path = "../kurai_expr" }
-kurai_types = { version = "0.4.6", path = "../kurai_types" }
+kurai_ast = { version = "0.4.9", path = "../kurai_ast" }
+kurai_expr = { version = "0.4.9", path = "../kurai_expr" }
+kurai_types = { version = "0.4.9", path = "../kurai_types" }

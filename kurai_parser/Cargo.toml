@@ -1,18 +1,18 @@
 [package]
 name = "kurai_parser"
-version = "0.4.6"
+version = "0.4.9"
 edition = "2024"
 
 [dependencies]
-kurai_binop = { version = "0.4.6", path = "../kurai_binop" }
-kurai_expr = { version = "0.4.6", path = "../kurai_expr" }
-kurai_token = { version = "0.4.6", path = "../kurai_token/" }
-kurai_stmt = { version = "0.4.6", path = "../kurai_stmt/" }
-kurai_types = { version = "0.4.6", path = "../kurai_types/" }
-kurai_typedArg = { version = "0.4.6", path = "../kurai_typedArg/" }
-kurai_core = { version = "0.4.6", path = "../kurai_core" }
+kurai_binop = { version = "0.4.9", path = "../kurai_binop" }
+kurai_expr = { version = "0.4.9", path = "../kurai_expr" }
+kurai_token = { version = "0.4.9", path = "../kurai_token/" }
+kurai_stmt = { version = "0.4.9", path = "../kurai_stmt/" }
+kurai_types = { version = "0.4.9", path = "../kurai_types/" }
+kurai_typedArg = { version = "0.4.9", path = "../kurai_typedArg/" }
+kurai_core = { version = "0.4.9", path = "../kurai_core" }
 colored = "3.0.0"
-kurai_attr = { version = "0.4.6", path = "../kurai_attr" }
-kurai_ast = { version = "0.4.6", path = "../kurai_ast" }
-# kurai_parser_stmt = { version = "0.4.6", path = "../kurai_parser_stmt" }
-# kurai_codegen = { version = "0.4.6", path = "../kurai_codegen/" }
+kurai_attr = { version = "0.4.9", path = "../kurai_attr" }
+kurai_ast = { version = "0.4.9", path = "../kurai_ast" }
+# kurai_parser_stmt = { version = "0.4.9", path = "../kurai_parser_stmt" }
+# kurai_codegen = { version = "0.4.9", path = "../kurai_codegen/" }
