@@ -90,14 +90,26 @@ pub fn parse_fn_decl(
         }
     }
 
+    let mut star_count = 0;
+    while let Some(Token::Star) = tokens.get(*pos) {
+        *pos += 1;
+        star_count += 1;
+        // NOTE: not yet bro
+        // ret_type = Type::Ptr(Box::new((ret_type)))
+    }
     #[cfg(debug_assertions)]
     println!("{}: parsing return type", "debug".cyan().bold());
-    let ret_type = if let Some(Token::Type(typ)) = tokens.get(*pos) {
-        *pos += 1;
-        typ.clone()
-    } else {
-        Type::Void
+    let mut ret_type = match tokens.get(*pos) {
+        Some(Token::Type(typ)) => {
+            *pos += 1;
+            typ.clone()
+        },
+        _ => Type::Void
     };
+
+    for _ in 0..star_count {
+        ret_type = Type::Ptr(Box::new(ret_type));
+    }
     #[cfg(debug_assertions)]
     println!("{}: return type of function {} is {:?}", "debug".cyan().bold(), name, ret_type);
 
