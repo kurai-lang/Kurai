@@ -86,7 +86,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let var_ptr = match self.variables.get(name.as_str()) {
                         Some(ptr) => ptr.ptr_value,
                         None => {
-                            panic!("{} Variable {} not found", "[ERROR]".red().bold(), name);
+                            panic!("{}: variable {} not found", "error".red().bold(), name);
                         }
                     };
 
