@@ -22,20 +22,37 @@ impl<'ctx> CodeGen<'ctx> {
         for stmt in parsed_stmt {
             match &stmt {
                 Stmt::VarDecl { name, typ, value } => {
-                    let i64_type = self.context.i64_type();
-                    let alloca = self.builder.build_alloca(i64_type, &name).unwrap();
+                    let llvm_type = Type::from_str(typ)
+                        .unwrap_or_else(|| panic!("Unsupported type {:?}", typ));
 
-                    if let Some(Expr::Literal(Value::Int(v))) = value {
-                        let init_val = i64_type.const_int(*v as u64, true);
-                        self.builder.build_store(alloca, init_val).unwrap();
-                        let v_pointer_val = alloca;
-                        let var_info = VariableInfo {
-                            ptr_value: v_pointer_val,
-                            var_type: Type::I64,
-                        };
+                    let alloca = self.builder.build_alloca(
+                            llvm_type.to_llvm_type(self.context).unwrap(),
+                            name
+                        )
+                        .unwrap();
 
-                        self.variables.insert(name.to_string(), var_info);
+                    if let Some(expr) = value {
+                        let (val, _) = self.lower_expr_to_llvm(
+                            expr,
+                            Some(&llvm_type),
+                            discovered_modules,
+                            parsers,
+                            scope,
+                            None
+                        ).unwrap();
+
+                        self.builder.build_store(alloca, val).unwrap();
                     }
+
+                    let variable_info = VariableInfo {
+                        ptr_value: alloca,
+                        var_type: llvm_type,
+                    };
+
+                    self.variables.insert(
+                        name.to_string(),
+                        variable_info,
+                    );
                 }
                 Stmt::Assign { name, value } => {
                     #[cfg(debug_assertions)]

@@ -46,7 +46,7 @@ fn main() {
         // }
         
         fn main() void {
-            free_list_allocator_allocate(4);
+            let x = free_list_allocator_allocate(4);
         }
         "#.to_string();
 
