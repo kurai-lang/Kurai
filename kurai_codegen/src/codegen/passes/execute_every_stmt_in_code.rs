@@ -187,14 +187,17 @@ impl<'ctx> CodeGen<'ctx> {
                     let fn_type = if *ret_type == Type::Void { 
                         self.context.void_type().fn_type(&arg_types, false)
                     } else {
-                        let llvm_ret_type = ret_type.to_llvm_type(self.context).unwrap();
+                        let llvm_ret_type = ret_type.to_llvm_type(self.context)
+                            .unwrap_or_else(|| 
+                                panic!("{}: failed to lower return type to LLVM IR type", "internal error".red().bold()));
+
                         #[cfg(debug_assertions)] { println!("{:?}", llvm_ret_type) }
                         // let fn_type = self.context.i32_type().fn_type(&arg_types, false);
                         match llvm_ret_type {
                             BasicTypeEnum::IntType(int_type) => int_type.fn_type(&arg_types, false),
                             BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&arg_types, false),
                             BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&arg_types, false),
-                            _ => panic!("Unsupported return type in fn_type gen"),
+                            _ => panic!("unsupported return type `{:?}` in fn_type gen", llvm_ret_type),
                         }
                     };
 
