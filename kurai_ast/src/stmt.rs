@@ -9,7 +9,7 @@ use crate::expr::Expr;
 pub enum Stmt {
     VarDecl { 
         name: String,
-        typ: String,
+        typ: Option<String>,
         value: Option<Expr>,
     },
     Assign {
@@ -81,7 +81,7 @@ impl fmt::Display for Stmt {
                             Some(v) => format!("{:?}", v),
                             None => "None".to_string(),
                         };
-                        write!(f, "VarDecl(name: {}, type: {}, value: {})", name, typ, value_str)
+                        write!(f, "VarDecl(name: {}, type: {:?}, value: {})", name, typ, value_str)
                     }
             Stmt::Assign { name, value } => {
                         let value_str = format!("{:?}", value);

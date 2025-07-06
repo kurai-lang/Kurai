@@ -6,7 +6,7 @@ use kurai_parser::GroupedParsers;
 use kurai_token::token::token::Token;
 use kurai_types::{typ::Type, value::Value};
 
-use crate::{codegen::{passes::utils::basic_value_enum_to_string, CodeGen, VariableInfo}, kurai_panic, print_error, print_hint};
+use crate::{codegen::{passes::utils::basic_value_enum_to_string, CodeGen, FunctionInfo, VariableInfo}, kurai_panic, print_error, print_hint};
 use kurai_ast::stmt::Stmt;
 use kurai_ast::expr::Expr;
 
@@ -22,11 +22,26 @@ impl<'ctx> CodeGen<'ctx> {
         for stmt in parsed_stmt {
             match &stmt {
                 Stmt::VarDecl { name, typ, value } => {
-                    let llvm_type = Type::from_str(typ)
+                    let parsed_type = match typ {
+                        Some(t) => Type::from_str(t).unwrap_or_else(|| panic!("Invalid type {:?}", typ)),
+                        None => {
+                            match value {
+                                Some(Expr::Literal(Value::Int(_))) => Type::I64,
+                                Some(Expr::Literal(Value::Bool(_))) => Type::Bool,
+                                Some(Expr::FnCall { name, .. }) => {
+                                    let fn_info = self.functions.get(name).expect("Function not found");
+                                    fn_info.ret_type.clone()
+                                }
+                                _ => panic!("Can't infer type of expr: {:?}", value),
+                            }
+                        }
+                    };
+
+                    let llvm_type = parsed_type.to_llvm_type(self.context) 
                         .unwrap_or_else(|| panic!("Unsupported type {:?}", typ));
 
                     let alloca = self.builder.build_alloca(
-                            llvm_type.to_llvm_type(self.context).unwrap(),
+                            llvm_type,
                             name
                         )
                         .unwrap();
@@ -34,7 +49,7 @@ impl<'ctx> CodeGen<'ctx> {
                     if let Some(expr) = value {
                         let (val, _) = self.lower_expr_to_llvm(
                             expr,
-                            Some(&llvm_type),
+                            Some(&parsed_type),
                             discovered_modules,
                             parsers,
                             scope,
@@ -46,7 +61,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     let variable_info = VariableInfo {
                         ptr_value: alloca,
-                        var_type: llvm_type,
+                        var_type: parsed_type,
                     };
 
                     self.variables.insert(
@@ -163,6 +178,14 @@ impl<'ctx> CodeGen<'ctx> {
                         name,
                         fn_type,
                         Some(Linkage::External));
+
+                    let function_info = FunctionInfo {
+                        ret_type: ret_type.clone(),
+                        args: args.to_vec(),
+                        is_extern: *is_extern,
+                    };
+                    self.functions.insert(name.to_string(), function_info);
+
                     if *is_extern {
                         #[cfg(debug_assertions)]
                         println!("{}: skipping codegen for extern fn", "debug".cyan().bold());

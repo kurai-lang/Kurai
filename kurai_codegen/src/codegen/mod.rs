@@ -27,6 +27,13 @@ pub struct VariableInfo<'ctx> {
     pub var_type: Type,
 }
 
+#[derive(Debug)]
+pub struct FunctionInfo {
+    pub ret_type: Type,
+    pub args: Vec<TypedArg>,
+    pub is_extern: bool,
+}
+
 // #[derive(Debug)]
 pub struct CodeGen<'ctx> {
     pub context: &'ctx Context,
@@ -39,6 +46,7 @@ pub struct CodeGen<'ctx> {
     pub loop_exit_stack: Vec<BasicBlock<'ctx>>,
     pub attr_registry: AttributeRegistry,
 
+    pub functions: HashMap<String, FunctionInfo>,
     pub inline_fns: HashSet<String>,
     pub current_fn_ret_type: Type,
 
@@ -66,6 +74,7 @@ impl<'ctx> CodeGen<'ctx> {
             loop_exit_stack: Vec::new(),
             attr_registry,
 
+            functions: HashMap::new(),
             inline_fns: HashSet::new(),
             current_fn_ret_type: Type::Void,
 

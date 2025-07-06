@@ -47,7 +47,7 @@ pub fn parse_for_loop(
                     // let i = <starting_num>;
                     Stmt::VarDecl {
                         name: id.clone(),
-                        typ: "int".to_string(),
+                        typ: Some("int".to_string()),
                         value: Some(Expr::Literal(Value::Int(*starting_num))),
                     },
                     // loop {}

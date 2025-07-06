@@ -46,7 +46,7 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mu
     // oh btw typ does nothing, at least for now 
     Ok(Stmt::VarDecl {
         name,
-        typ: "int".to_string(), 
+        typ: None, 
         value: expr,
     })
 }
