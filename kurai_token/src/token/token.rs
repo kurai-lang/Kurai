@@ -2,6 +2,8 @@ use std::{iter::Peekable, str::Chars};
 
 use kurai_types::typ::Type;
 
+use crate::token::spanned_token::SpannedToken;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Let,
@@ -59,42 +61,67 @@ pub enum Token {
 }
 
 fn advance(iter: &mut Peekable<Chars>, line: &mut usize, column: &mut usize) -> Option<char> {
-    let ch = iter.next()?;
+    let ch = iter.next().unwrap();
 
     match ch {
         '\n' => {
             *line += 1;
-            *column += 1;
+            *column = 1;
         }
-        _ => *column += 1,
+        _ => { 
+            *column += 1;
+        },
     }
 
     Some(ch)
 }
 
-impl Token {
-    pub fn tokenize(code: &str) -> Vec<Token> {
-        let mut tokens = Vec::new();
-        let mut current = String::new();
+fn spanned(token: Token, line: usize, column: usize, width: usize) -> SpannedToken {
+    SpannedToken { 
+        token,
+        line, 
+        column,
+        width,
+    }
+}
 
-        let mut line = 0;
-        let mut column = 0;
+impl Token {
+    pub fn tokenize(code: &str) -> (Vec<Token>, Vec<SpannedToken>) {
+        let mut tokens = Vec::new();
+        let mut spanned = Vec::new();
+
+        let mut current = String::new();
+        let mut line = 1;
+        let mut column = 1;
 
         let mut iter = code.chars().peekable();
 
         while let Some(ch) = advance(&mut iter, &mut line, &mut column) {
+            let start_line = line;
+            let start_column = column;
+
+            let mut push = |token: Token, width: usize| {
+                tokens.push(token.clone());
+                spanned.push(SpannedToken {
+                    token,
+                    line: start_line,
+                    column: start_column,
+                    width,
+                });
+            };
+
             match ch {
                 '=' => {
                     if let Some('=') = iter.peek() {
                         iter.next();
-                        tokens.push(Token::EqualEqual)
+                        push(Token::EqualEqual, 2);
                     } else {
-                        tokens.push(Token::Equal);
+                        push(Token::Equal, 1);
                     }
                 }
-                '+' => tokens.push(Token::Plus),
-                '-' => tokens.push(Token::Dash),
-                '*' => tokens.push(Token::Star),
+                '+' => push(Token::Plus, 1),
+                '-' => push(Token::Dash, 1),
+                '*' => push(Token::Star, 1),
                 '/' => {
                     if let Some('/') = iter.peek() {
                         iter.next();
@@ -105,25 +132,27 @@ impl Token {
                             iter.next();
                         }
                     } else {
-                        tokens.push(Token::Slash);
+                        push(Token::Slash, 1);
                     }
                 }
-                ';' => tokens.push(Token::Semicolon),
-                ':' => tokens.push(Token::Colon),
+                ';' => push(Token::Semicolon, 1),
+                ':' => push(Token::Colon, 1),
                 '!' => {
                     if let Some('=') = iter.peek() {
                         iter.next();
-                        tokens.push(Token::BangEqual);
+                        push(Token::BangEqual, 2);
                     } else {
-                        tokens.push(Token::Bang)
+                        push(Token::Bang, 1);
                     }
                 }
-                '\'' => tokens.push(Token::Quote),
+                '\'' => push(Token::Quote, 1),
                 '"' => {
                     let mut string_literal = String::new();
+                    let mut width = 1; // for the opening quote
 
                     while let Some(&next_char) = iter.peek() {
-                        if next_char == '"' { // Another quote found? welp, thats the ending
+                        width += 1;
+                        if next_char == '"' {
                             iter.next();
                             break;
                         } else {
@@ -132,48 +161,50 @@ impl Token {
                         }
                     }
 
-                    tokens.push(Token::StringLiteral(string_literal));
+                    width += 1; // for the closing quote
+                    push(Token::StringLiteral(string_literal), width);
                 }
-                '(' => tokens.push(Token::OpenParenthese),
-                ')' => tokens.push(Token::CloseParenthese),
-                '{' => tokens.push(Token::OpenBracket),
-                '}' => tokens.push(Token::CloseBracket),
-                '[' => tokens.push(Token::OpenSquareBracket),
-                ']' => tokens.push(Token::CloseSquareBracket),
-                ',' => tokens.push(Token::Comma),
-                '#' => tokens.push(Token::Hash),
+                '(' => push(Token::OpenParenthese, 1),
+                ')' => push(Token::CloseParenthese, 1),
+                '{' => push(Token::OpenBracket, 1),
+                '}' => push(Token::CloseBracket, 1),
+                '[' => push(Token::OpenSquareBracket, 1),
+                ']' => push(Token::CloseSquareBracket, 1),
+                ',' => push(Token::Comma, 1),
+                '#' => push(Token::Hash, 1),
                 '<' => {
                     if let Some('=') = iter.peek() {
                         iter.next();
-                        tokens.push(Token::LessEqual);
+                        push(Token::LessEqual, 2);
                     } else {
-                        tokens.push(Token::Less);
+                        push(Token::Less, 1);
                     }
                 }
                 '>' => {
                     if let Some('=') = iter.peek() {
                         iter.next();
-                        tokens.push(Token::GreaterEqual);
+                        push(Token::GreaterEqual, 2);
                     } else {
-                        tokens.push(Token::Greater);
+                        push(Token::Greater, 1);
                     }
                 }
                 '.' => {
                     if let Some('.') = iter.peek() {
                         iter.next();
-                        tokens.push(Token::Range);
+                        push(Token::Range, 2);
                     } else {
-                        tokens.push(Token::Dot);
+                        push(Token::Dot, 1);
                     }
                 }
                 '0'..='9' => {
                     current.push(ch);
                     let mut is_float = false;
+                    let mut width = 1;
 
                     while let Some(&next_ch) = iter.peek() {
-                        #[allow(warnings)]
                         if next_ch.is_digit(10) {
                             current.push(iter.next().unwrap());
+                            width += 1;
                         } else if next_ch == '.' {
                             let mut clone = iter.clone();
                             clone.next();
@@ -181,10 +212,12 @@ impl Token {
                                 if after_dot.is_digit(10) {
                                     is_float = true;
                                     current.push(iter.next().unwrap());
+                                    width += 1;
 
                                     while let Some(&float_ch) = iter.peek() {
                                         if float_ch.is_digit(10) {
                                             current.push(iter.next().unwrap());
+                                            width += 1;
                                         } else {
                                             break;
                                         }
@@ -201,72 +234,67 @@ impl Token {
                     }
 
                     if is_float {
-                        tokens.push(Token::Float(current.parse::<f64>().unwrap()));
+                        push(Token::Float(current.parse::<f64>().unwrap()), width);
                     } else {
-                        tokens.push(Token::Number(current.parse::<i64>().unwrap()));
+                        push(Token::Number(current.parse::<i64>().unwrap()), width);
                     }
-                    current.clear(); // Reset for next token
+                    current.clear();
                 }
                 'a'..='z' | 'A'..='Z' | '_' => {
                     current.push(ch);
+                    let mut width = 1;
+
                     while let Some(&next_ch) = iter.peek() {
-                        if next_ch.is_alphanumeric() || next_ch == '_'{
+                        if next_ch.is_alphanumeric() || next_ch == '_' {
                             current.push(iter.next().unwrap());
+                            width += 1;
                         } else {
                             break;
                         }
                     }
 
-                    // keywords i guess
-                    match current.as_str() {
-                        "let" => tokens.push(Token::Let),
-                        "fn" => tokens.push(Token::Function),
-                        "use" => tokens.push(Token::Import),
-                        "as" => tokens.push(Token::As),
-                        "if" => tokens.push(Token::If),
-                        "else" => tokens.push(Token::Else),
-                        "true" => tokens.push(Token::Bool(true)),
-                        "false" => tokens.push(Token::Bool(false)),
-                        "for" => tokens.push(Token::For),
-                        "loop" => tokens.push(Token::Loop),
-                        "while" => tokens.push(Token::While),
-                        "in" => tokens.push(Token::In),
-                        "break" => tokens.push(Token::Break),
-                        "return" => tokens.push(Token::Return),
-                        "extern" => tokens.push(Token::Extern),
+                    let token = match current.as_str() {
+                        "let" => Token::Let,
+                        "fn" => Token::Function,
+                        "use" => Token::Import,
+                        "as" => Token::As,
+                        "if" => Token::If,
+                        "else" => Token::Else,
+                        "true" => Token::Bool(true),
+                        "false" => Token::Bool(false),
+                        "for" => Token::For,
+                        "loop" => Token::Loop,
+                        "while" => Token::While,
+                        "in" => Token::In,
+                        "break" => Token::Break,
+                        "return" => Token::Return,
+                        "extern" => Token::Extern,
+                        "i8" => Token::Type(Type::I8),
+                        "i16" => Token::Type(Type::I16),
+                        "i32" => Token::Type(Type::I32),
+                        "i64" => Token::Type(Type::I64),
+                        "i128" => Token::Type(Type::I128),
+                        "u8" => Token::Type(Type::U8),
+                        "u16" => Token::Type(Type::U16),
+                        "u32" => Token::Type(Type::U32),
+                        "u64" => Token::Type(Type::U64),
+                        "u128" => Token::Type(Type::U128),
+                        "f32" => Token::Type(Type::F32),
+                        "f64" => Token::Type(Type::F64),
+                        "f128" => Token::Type(Type::F128),
+                        "bool" => Token::Type(Type::Bool),
+                        "void" => Token::Type(Type::Void),
+                        _ => Token::Id(current.clone()),
+                    };
 
-                        // NOTE: Data types
-                        "i8" => tokens.push(Token::Type(Type::I8)),
-                        "i16" => tokens.push(Token::Type(Type::I16)),
-                        "i32" => tokens.push(Token::Type(Type::I32)),
-                        "i64" => tokens.push(Token::Type(Type::I64)),
-                        "i128" => tokens.push(Token::Type(Type::I128)),
-
-                        "u8" => tokens.push(Token::Type(Type::U8)),
-                        "u16" => tokens.push(Token::Type(Type::U16)),
-                        "u32" => tokens.push(Token::Type(Type::U32)),
-                        "u64" => tokens.push(Token::Type(Type::U64)),
-                        "u128" => tokens.push(Token::Type(Type::U128)),
-
-                        "f32" => tokens.push(Token::Type(Type::F32)),
-                        "f64" => tokens.push(Token::Type(Type::F64)),
-                        "f128" => tokens.push(Token::Type(Type::F128)),
-
-                        "bool" => tokens.push(Token::Type(Type::Bool)),
-                        "void" => tokens.push(Token::Type(Type::Void)),
-                        _ => tokens.push(Token::Id(current.clone())),
-                    }
+                    push(token, width);
                     current.clear();
                 }
                 ' ' | '\n' | '\t' => {}, // skip whitespace
-                _ => {
-                    // unknown char? throw hands (or error)
-                    panic!("Unexpected character {}", ch);
-                }
+                _ => panic!("Unexpected character {}", ch),
             }
         }
 
-        // if it was `int `
-        tokens
+        (tokens, spanned)
     }
 }
