@@ -1,3 +1,5 @@
+use kurai_token::token::{spanned_token::SpannedToken, token::Token};
+
 pub mod utils;
 pub mod parse;
 pub mod instr;
@@ -8,3 +10,8 @@ pub mod parse_expr;
 pub mod parse_block;
 pub mod parse_stmt;
 pub mod parse_return;
+
+pub struct Parser {
+    pub tokens: Vec<Token>,
+    pub spanned_tokens: Vec<SpannedToken>,
+}

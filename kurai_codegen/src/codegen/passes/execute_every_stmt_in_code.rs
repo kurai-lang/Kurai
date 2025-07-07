@@ -286,7 +286,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let path_str = format!("{}.kurai", key);
                     let code = std::fs::read_to_string(&path_str)
                         .unwrap_or_else(|_| panic!("Failed to load module {}", path_str));
-                    let tokens = Token::tokenize(&code);
+                    let (tokens, _) = Token::tokenize(&code);
 
                     let mut pos = 0;
                     let mut stmts = Vec::new();

@@ -61,7 +61,7 @@ pub enum Token {
 }
 
 fn advance(iter: &mut Peekable<Chars>, line: &mut usize, column: &mut usize) -> Option<char> {
-    let ch = iter.next().unwrap();
+    let ch = iter.next()?;
 
     match ch {
         '\n' => {
@@ -74,15 +74,6 @@ fn advance(iter: &mut Peekable<Chars>, line: &mut usize, column: &mut usize) -> 
     }
 
     Some(ch)
-}
-
-fn spanned(token: Token, line: usize, column: usize, width: usize) -> SpannedToken {
-    SpannedToken { 
-        token,
-        line, 
-        column,
-        width,
-    }
 }
 
 impl Token {

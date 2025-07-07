@@ -10,7 +10,8 @@ use kurai_token::eat::eat;
 
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::parse_if_else::parse_if_else;
-use crate::parse::parse_stmt::parse_stmt;
+use crate::parse;
+use crate::parse::Parser;
 use crate::GroupedParsers;
 
 pub fn parse_expr(
@@ -164,7 +165,8 @@ pub fn parse_out_vec_stmt(
     let mut stmts = Vec::new();
 
     while let Some(token) = tokens.get(pos) {
-        match parse_stmt(
+        match Parser::parse_stmt(
+                todo!(),
             tokens,
             &mut pos,
             discovered_modules, 

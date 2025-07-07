@@ -60,7 +60,7 @@ fn main() {
     );
 
     let mut scope = Scope::new();
-    let tokens = Token::tokenize(code.as_str());
+    let (tokens, _) = Token::tokenize(code.as_str());
 
     println!("{:?}", tokens);
 
