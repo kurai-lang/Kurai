@@ -26,18 +26,15 @@ use crate::{parse::{parse_expr::parse_arithmetic::parse_arithmetic, parse_return
 impl Parser {
     pub fn parse_stmt(
         &self,
-        tokens: &[Token],
-        pos: &mut usize,
-        discovered_modules: &mut Vec<String>,
-        parsers: &GroupedParsers,
-        scope: &mut Scope,
-        src: &str,
     ) -> Result<Stmt, String> {
+        let tokens = self.tokens.as_slice();
+        let mut pos = &mut self.pos;
+
         // println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
         println!("{}: At parse_stmt entry: pos = {}, len = {}", "sanity check".cyan().bold(), *pos, tokens.len());
 
         let mut attrs = if let Some(Token::Hash) = tokens.get(*pos) {
-            parsers.fn_parser.parse_attrs(tokens, pos)?
+            self.parse_attrs()?
         } else {
             Vec::new()
         };
@@ -51,7 +48,7 @@ impl Parser {
                 Some(Token::Function) | Some(Token::Extern) => {
                     let attrs_temp = attrs.clone();
                     attrs = Vec::new();
-                    parsers.fn_parser.parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs_temp, src)
+                    self.parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs_temp, src)
                 }
                 Some(Token::Loop) => parsers.loop_parser.parse_for_loop(
                     tokens,

@@ -4,46 +4,43 @@ use kurai_ast::expr::Expr;
 use kurai_core::scope::Scope;
 use kurai_token::token::token::Token;
 
-use crate::{parse::parse::parse_expr, GroupedParsers};
+use crate::parse::Parser;
 
-pub fn parse_arithmetic(
-    tokens: &[Token], 
-    pos: &mut usize, 
-    min_prec: u8, 
-    discovered_modules: &mut Vec<String>, 
-    parsers: &GroupedParsers, 
-    scope: &mut Scope,
-    src: &str,
-) -> Option<Expr> {
-    if let Some(mut left) = parse_expr(tokens, pos, false, discovered_modules, parsers, scope, src) {
-        #[cfg(debug_assertions)]
-        { println!("{}: {:?}", "[parse_arithmetic()]".green().bold(), left); }
+impl Parser {
+    pub fn parse_arithmetic(
+        &mut self,
+        min_prec: u8, 
+    ) -> Option<Expr> {
+        if let Some(mut left) = self.parse_expr(true) {
+            #[cfg(debug_assertions)]
+            { println!("{}: {:?}", "[parse_arithmetic()]".green().bold(), left); }
 
-        loop {
-            // Format of op: (Operation, precedence)
-            let op = match tokens.get(*pos)? {
-                Token::Plus => (BinOp::Add, 1),
-                Token::Dash => (BinOp::Sub, 1),
-                Token::Star => (BinOp::Mul, 2),
-                Token::Slash => (BinOp::Div, 2),
-                _ => break,
-            };
+            loop {
+                // Format of op: (Operation, precedence)
+                let op = match self.tokens.get(self.pos)? {
+                    Token::Plus => (BinOp::Add, 1),
+                    Token::Dash => (BinOp::Sub, 1),
+                    Token::Star => (BinOp::Mul, 2),
+                    Token::Slash => (BinOp::Div, 2),
+                    _ => break,
+                };
 
-            if op.1 < min_prec {
-                break;
+                if op.1 < min_prec {
+                    break;
+                }
+
+                self.pos += 1;
+
+                let right = self.parse_arithmetic(op.1+1).unwrap();
+
+                left = Expr::Binary { 
+                    op: op.0, 
+                    left: Box::new(left), 
+                    right: Box::new(right),
+                };
             }
 
-            *pos += 1;
-
-            let right = parse_arithmetic(tokens, pos, op.1+1, discovered_modules, parsers, scope, src).unwrap();
-
-            left = Expr::Binary { 
-                op: op.0, 
-                left: Box::new(left), 
-                right: Box::new(right),
-            };
-        }
-
-        Some(left)
-    } else { None }
+            Some(left)
+        } else { None }
+    }
 }

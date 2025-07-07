@@ -1,3 +1,4 @@
+use kurai_core::scope::Scope;
 use kurai_token::token::{spanned_token::SpannedToken, token::Token};
 
 pub mod utils;
@@ -10,8 +11,26 @@ pub mod parse_expr;
 pub mod parse_block;
 pub mod parse_stmt;
 pub mod parse_return;
+pub mod parse_function;
 
 pub struct Parser {
     pub tokens: Vec<Token>,
     pub spanned_tokens: Vec<SpannedToken>,
+    pub pos: usize,
+
+    pub scope: Scope,
+    pub src: String,
+}
+
+impl Parser {
+    pub fn new(&self) -> Self {
+        Self {
+            tokens: Vec::new(),
+            spanned_tokens: Vec::new(),
+            pos: 0,
+
+            scope: Scope::new(),
+            src: String::new(),
+        }
+    }
 }
