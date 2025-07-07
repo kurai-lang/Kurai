@@ -22,7 +22,8 @@ impl ImportParser for ImportParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_imported_file(tokens, pos, discovered_modules, parsers, scope)
+        parse_imported_file(tokens, pos, discovered_modules, parsers, scope, src)
     }
 }

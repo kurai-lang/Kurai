@@ -15,6 +15,7 @@ pub fn parse_fn_decl(
     parsers: &GroupedParsers,
     scope: &mut Scope,
     attrs: Vec<Attribute>,
+    src: &str,
 ) -> Result<Stmt, String> {
     let mut is_extern = false;
 
@@ -137,7 +138,8 @@ pub fn parse_fn_decl(
                         pos,
                         discovered_modules, 
                         parsers,
-                        scope
+                        scope,
+                        src,
                     ) {
                         Ok(stmt) => {
                             if *pos == old_pos {

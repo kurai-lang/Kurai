@@ -1,6 +1,6 @@
 use kurai_types::typ::Type;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Let,
     If,

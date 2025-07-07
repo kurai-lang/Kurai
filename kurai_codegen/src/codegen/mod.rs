@@ -52,10 +52,12 @@ pub struct CodeGen<'ctx> {
 
     pub final_check_blocks: Vec<BasicBlock<'ctx>>,
     terminated_blocks: HashSet<BasicBlock<'ctx>>,
+
+    pub src: &'ctx str,
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn new(context: &'ctx Context) -> Self {
+    pub fn new(context: &'ctx Context, src: &'ctx str) -> Self {
         let builder = context.create_builder();
         let module = Arc::new(Mutex::new(context.create_module("main_module")));
         let variables = HashMap::new();
@@ -80,6 +82,8 @@ impl<'ctx> CodeGen<'ctx> {
 
             final_check_blocks: Vec::new(),
             terminated_blocks: HashSet::new(),
+
+            src
             // context: &'ctx Context
         }
     }

@@ -13,14 +13,22 @@ use crate::parse::parse_if_else::parse_if_else;
 use crate::parse::parse_stmt::parse_stmt;
 use crate::GroupedParsers;
 
-pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<Expr> {
+pub fn parse_expr(
+    tokens: &[Token], 
+    pos: &mut usize,
+    in_condition: bool,
+    discovered_modules: &mut Vec<String>, 
+    parsers: &GroupedParsers, 
+    scope: &mut Scope,
+    src: &str,
+) -> Option<Expr> {
     // parse_equal(tokens, pos)
     // match tokens.get(*pos) {
     //     Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
     //     _ => None
     // };
     let mut left = match tokens.get(*pos)? {
-        Token::If => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
+        Token::If => parse_if_else(tokens, pos, discovered_modules, parsers, scope, src).ok(),
         Token::Number(v) => {
             *pos += 1;
             Some(Expr::Literal(Value::Int(*v)))
@@ -45,7 +53,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discove
             if eat(&Token::OpenParenthese, tokens, pos) {
                 let mut args = Vec::new();
                 while !eat(&Token::CloseParenthese, tokens, pos) {
-                    if let Some(arg) = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope) {
+                    if let Some(arg) = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src) {
                         args.push(arg);
                         eat(&Token::Comma, tokens, pos);
                     } else {
@@ -63,7 +71,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discove
         Token::OpenParenthese => {
             println!("yay");
             *pos += 1;
-            let expr = match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope) {
+            let expr = match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src) {
                 Some(e) => e,
                 None => {
                     panic!("Failed to parse expression inside parentheses at pos {pos}");
@@ -106,7 +114,7 @@ pub fn parse_expr(tokens: &[Token], pos: &mut usize, in_condition: bool, discove
             *pos += 1;
 
             let right_start = *pos;
-            let right = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope)?;
+            let right = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src)?;
             if *pos == right_start {
                 return None;
             }
@@ -125,12 +133,18 @@ pub fn parse_typed_arg(tokens: &[Token], pos: &mut usize) -> Option<TypedArg> {
     todo!()
 }
 
-pub fn parse_out_vec_expr(tokens: &[Token], discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<Vec<Expr>, String> {
+pub fn parse_out_vec_expr(
+    tokens: &[Token],
+    discovered_modules: &mut Vec<String>,
+    parsers: &GroupedParsers,
+    scope: &mut Scope, 
+    src: &str
+) -> Result<Vec<Expr>, String> {
     let mut pos = 0;
     let mut exprs = Vec::new();
 
     while pos < tokens.len() {
-        if let Some(expr) = parse_expr(tokens, &mut pos, false, discovered_modules, parsers, scope) {
+        if let Some(expr) = parse_expr(tokens, &mut pos, false, discovered_modules, parsers, scope, src) {
             exprs.push(expr);
             if eat(&Token::Comma, tokens, &mut pos) { continue; }
         }
@@ -144,6 +158,7 @@ pub fn parse_out_vec_stmt(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Vec<Stmt> {
     let mut pos = 0;
     let mut stmts = Vec::new();
@@ -154,7 +169,8 @@ pub fn parse_out_vec_stmt(
             &mut pos,
             discovered_modules, 
             parsers,
-            scope
+            scope,
+            src,
         ) {
             Ok(stmt) => stmts.push(stmt),
             Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", token, e, tokens)

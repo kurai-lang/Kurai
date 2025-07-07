@@ -20,8 +20,9 @@ impl FunctionParser for FunctionParserStruct {
         parsers: &GroupedParsers,
         scope: &mut Scope,
         attrs: Vec<Attribute>,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs)
+        parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs, src)
     }
 
     fn parse_fn_call(&self, tokens: &[kurai_token::token::token::Token], pos: &mut usize) -> Result<Expr, String> {

@@ -1,5 +1,8 @@
 use colored::Colorize;
 use kurai_core::scope::Scope;
+use kurai_error::error::{report_error, Error};
+use kurai_error::error_kind::{ErrorKind, ParseErrorKind};
+use kurai_error::span::Span;
 use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 use kurai_ast::stmt::Stmt;
@@ -7,7 +10,14 @@ use kurai_ast::stmt::Stmt;
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::GroupedParsers;
 
-pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<Stmt, String> {
+pub fn parse_var_decl(
+    tokens: &[Token],
+    pos: &mut usize,
+    discovered_modules: &mut Vec<String>,
+    parsers: &GroupedParsers,
+    scope: &mut Scope,
+    src: &str,
+) -> Result<Stmt, String> {
     if !eat(&Token::Let, tokens, pos) {
         return Err("Expected keyword `let`".to_string());
     }
@@ -21,12 +31,19 @@ pub fn parse_var_decl(tokens: &[Token], pos: &mut usize, discovered_modules: &mu
     };
 
     if !eat(&Token::Equal, tokens, pos) {
-        return Err(format!("Expected an equal sign after `{}`", name));
+        // return Err(format!("Expected an equal sign after `{}`", name));
+        let span = Span::new("dummy.kurai").with_range(2).with_width(3).with_line_column(15, 5);
+        let src_line = src.lines().nth(span.line - 1).unwrap_or("");
+        let err = Error::new(ErrorKind::Parse {
+            kind: ParseErrorKind::ExpectedToken(format!("Expected an equal sign after `{}`", name)),
+            span
+        });
+        report_error(&err, src_line);
     }
 
     #[cfg(debug_assertions)]
     println!("{}: parsing expressions", "debug".cyan().bold());
-    let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope);
+    let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src);
     #[cfg(debug_assertions)]
     println!("{}: parsing expressions successful", "debug".cyan().bold());
     // let expr = parse_expr(tokens, pos, true, discovered_modules, parsers, scope);

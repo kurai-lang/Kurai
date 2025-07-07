@@ -7,7 +7,14 @@ use kurai_ast::stmt::Stmt;
 use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::GroupedParsers;
 
-pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<Stmt, String> {
+pub fn parse_var_assign(
+    tokens: &[Token], 
+    pos: &mut usize, 
+    discovered_modules: &mut Vec<String>,
+    parsers: &GroupedParsers, 
+    scope: &mut Scope,
+    src: &str,
+) -> Result<Stmt, String> {
     if let Some(Token::Id(id)) = tokens.get(*pos) {
         *pos += 1;
 
@@ -32,7 +39,7 @@ pub fn parse_var_assign(tokens: &[Token], pos: &mut usize, discovered_modules: &
         //     _ => return Err(format!("Unsupported value: {:?}", tokens.get(*pos)))
         // };
 
-        let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope);
+        let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src);
         let value = &expr.unwrap();
 
         #[cfg(debug_assertions)]

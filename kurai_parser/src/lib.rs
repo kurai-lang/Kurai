@@ -16,6 +16,7 @@ pub trait ImportParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String>;
 }
 
@@ -27,6 +28,7 @@ pub trait StmtParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String>;
 }
 
@@ -38,6 +40,7 @@ pub trait BlockParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Vec<Stmt>, String>;
 
     fn parse_block_stmt(
@@ -47,6 +50,7 @@ pub trait BlockParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String>;
 }
 
@@ -58,6 +62,7 @@ pub trait LoopParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String>;
 
     fn parse_for_loop(
@@ -67,6 +72,7 @@ pub trait LoopParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String>;
 
     fn parse_while_loop(
@@ -76,6 +82,7 @@ pub trait LoopParser {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String>;
 }
 
@@ -88,6 +95,7 @@ pub trait FunctionParser {
         parsers: &GroupedParsers,
         scope: &mut Scope,
         attrs: Vec<Attribute>,
+        src: &str,
     ) -> Result<Stmt, String>;
     fn parse_fn_call(&self, tokens: &[Token], pos: &mut usize) -> Result<Expr, String>;
     fn parse_attrs(&self, tokens: &[Token], pos: &mut usize) -> Result<Vec<Attribute>, String>;

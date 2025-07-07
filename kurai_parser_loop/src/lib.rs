@@ -20,8 +20,9 @@ impl BlockParser for BlockParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Vec<Stmt>, String> {
-        parse_block(tokens, pos, discovered_modules, parsers, scope)
+        parse_block(tokens, pos, discovered_modules, parsers, scope, src)
     }
 
     fn parse_block_stmt(
@@ -31,8 +32,9 @@ impl BlockParser for BlockParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_block_stmt(tokens, pos, discovered_modules, parsers, scope)
+        parse_block_stmt(tokens, pos, discovered_modules, parsers, scope, src)
     }
 }
 
@@ -45,8 +47,9 @@ impl LoopParser for LoopParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_loop(tokens, pos, discovered_modules, parsers, scope)
+        parse_loop(tokens, pos, discovered_modules, parsers, scope, src)
     }
 
     fn parse_for_loop(
@@ -56,8 +59,9 @@ impl LoopParser for LoopParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_for_loop(tokens, pos, discovered_modules, parsers, scope)
+        parse_for_loop(tokens, pos, discovered_modules, parsers, scope, src)
     }
 
     fn parse_while_loop(
@@ -67,7 +71,8 @@ impl LoopParser for LoopParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_while_loop(tokens, pos, discovered_modules, parsers, scope)
+        parse_while_loop(tokens, pos, discovered_modules, parsers, scope, src)
     }
 }

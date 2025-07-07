@@ -14,6 +14,7 @@ pub fn parse_if_else(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Expr, String> {
     #[cfg(debug_assertions)]
     println!("{}: parsing if/else expression", "debug".cyan().bold());
@@ -27,7 +28,7 @@ pub fn parse_if_else(
         #[cfg(debug_assertions)]
         println!("{}: parsing conditions", "debug".cyan().bold());
 
-        let cond = parse_expr(tokens, pos, true, discovered_modules, parsers, scope)
+        let cond = parse_expr(tokens, pos, true, discovered_modules, parsers, scope, src)
             .ok_or_else(|| panic!("Failed to parse expression inside `if (...)` at token {}", pos)).unwrap();
 
         if !eat(&Token::CloseParenthese, tokens, pos) {
@@ -38,7 +39,7 @@ pub fn parse_if_else(
     } else {
         #[cfg(debug_assertions)]
         println!("{}: parsing conditions", "debug".cyan().bold());
-        parse_expr(tokens, pos, true, discovered_modules, parsers, scope)
+        parse_expr(tokens, pos, true, discovered_modules, parsers, scope, src)
             .ok_or_else(|| panic!("Failed to parse expression after `if` at token {}", pos)).unwrap()
     };
 
@@ -58,6 +59,7 @@ pub fn parse_if_else(
         discovered_modules,
         parsers,
         scope,
+        src,
     )?;
     #[cfg(debug_assertions)]
     println!("{}: parsing then branch successful. then_branch: {:?}", "debug".cyan().bold(), then_branch);
@@ -79,6 +81,7 @@ pub fn parse_if_else(
             discovered_modules,
             parsers,
             scope,
+            src
         )?)
     } else {
         None

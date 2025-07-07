@@ -46,7 +46,7 @@ fn main() {
         // }
 
         fn main() void {
-            let x = free_list_allocator_allocate(4);
+            let x 
         }
         "#.to_string();
 
@@ -70,10 +70,11 @@ fn main() {
         &mut discovered_modules,
         &parsers,
         &mut scope,
+        &code,
     );
     println!("{:?}", parsed_stmt_vec);
-    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope);
-    let mut codegen = CodeGen::new(&context);
+    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope, &code);
+    let mut codegen = CodeGen::new(&context, &code);
 
     let mut discovered_modules = Vec::new();
 

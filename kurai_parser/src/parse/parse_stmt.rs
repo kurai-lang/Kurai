@@ -17,8 +17,9 @@ impl StmtParser for StmtParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
-        parse_stmt(tokens, pos, discovered_modules, parsers, scope)
+        parse_stmt(tokens, pos, discovered_modules, parsers, scope, src)
     }
 }
 
@@ -28,6 +29,7 @@ pub fn parse_stmt(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Stmt, String> {
     // println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
     println!("{}: At parse_stmt entry: pos = {}, len = {}", "sanity check".cyan().bold(), *pos, tokens.len());
@@ -47,16 +49,17 @@ pub fn parse_stmt(
             Some(Token::Function) | Some(Token::Extern) => {
                 let attrs_temp = attrs.clone();
                 attrs = Vec::new();
-                parsers.fn_parser.parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs_temp)
+                parsers.fn_parser.parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs_temp, src)
             }
             Some(Token::Loop) => parsers.loop_parser.parse_for_loop(
                 tokens,
                 pos,
                 discovered_modules,
                 parsers,
-                scope
+                scope,
+                src
             ),
-            Some(Token::While) => parsers.loop_parser.parse_while_loop(tokens, pos, discovered_modules, parsers, scope),
+            Some(Token::While) => parsers.loop_parser.parse_while_loop(tokens, pos, discovered_modules, parsers, scope, src),
             Some(Token::Break) => {
                 *pos += 1;
                 if !eat(&Token::Semicolon, tokens, pos) {
@@ -66,13 +69,13 @@ pub fn parse_stmt(
                 *pos += 1;
                 Ok(Stmt::Break)
             }
-            Some(Token::Return) => parse_return(tokens, pos, discovered_modules, parsers, scope),
-            Some(Token::Let) => parse_var_decl(tokens, pos, discovered_modules, parsers, scope),
+            Some(Token::Return) => parse_return(tokens, pos, discovered_modules, parsers, scope, src),
+            Some(Token::Let) => parse_var_decl(tokens, pos, discovered_modules, parsers, scope, src),
             Some(Token::Import) => parsers.import_parser.parse_import_decl(tokens, pos, discovered_modules),
-            Some(Token::For) => parsers.loop_parser.parse_for_loop(tokens, pos, discovered_modules, parsers, scope),
+            Some(Token::For) => parsers.loop_parser.parse_for_loop(tokens, pos, discovered_modules, parsers, scope, src),
             Some(Token::Id(_)) => {
                 match tokens.get(*pos + 1) {
-                    Some(Token::Equal) => parse_var_assign(tokens, pos, discovered_modules, parsers, scope),
+                    Some(Token::Equal) => parse_var_assign(tokens, pos, discovered_modules, parsers, scope, src),
                     Some(Token::OpenParenthese) => {
                         let expr = parsers.fn_parser.parse_fn_call(tokens, pos)?;
                         Ok(Stmt::Expr(expr))
@@ -83,12 +86,12 @@ pub fn parse_stmt(
             Some(Token::OpenBracket) => {
                 #[cfg(debug_assertions)]
                 { println!("{}: encountered an opening bracket `{{`", "debug".cyan().bold()); }
-                let stmts = parsers.block_parser.parse_block(tokens, pos, discovered_modules, parsers, scope)?;
+                let stmts = parsers.block_parser.parse_block(tokens, pos, discovered_modules, parsers, scope, src)?;
                 Ok(Stmt::Block(stmts))
             }
             _ => {
                 let start_pos = *pos;
-                match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope) {
+                match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src) {
                     Some(Expr::FnCall { name, args }) if *pos > start_pos => {
                         let typed_args = args
                             .into_iter()

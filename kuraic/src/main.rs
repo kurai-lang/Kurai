@@ -106,9 +106,10 @@ fn main() {
         &mut discovered_modules,
         &parsers,
         &mut scope,
+        &code,
     );
-    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope);
-    let mut codegen = CodeGen::new(&context);
+    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope, &code);
+    let mut codegen = CodeGen::new(&context, &code);
     // codegen.printf("hi");
 
     // pub fn generate_code(&self, parsed_stmt: Vec<Stmt>, context: &'ctx Context, builder: &Builder, module: &mut Module<'ctx>)

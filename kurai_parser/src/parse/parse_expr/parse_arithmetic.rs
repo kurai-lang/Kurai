@@ -6,8 +6,16 @@ use kurai_token::token::token::Token;
 
 use crate::{parse::parse::parse_expr, GroupedParsers};
 
-pub fn parse_arithmetic(tokens: &[Token], pos: &mut usize, min_prec: u8, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Option<Expr> {
-    if let Some(mut left) = parse_expr(tokens, pos, false, discovered_modules, parsers, scope) {
+pub fn parse_arithmetic(
+    tokens: &[Token], 
+    pos: &mut usize, 
+    min_prec: u8, 
+    discovered_modules: &mut Vec<String>, 
+    parsers: &GroupedParsers, 
+    scope: &mut Scope,
+    src: &str,
+) -> Option<Expr> {
+    if let Some(mut left) = parse_expr(tokens, pos, false, discovered_modules, parsers, scope, src) {
         #[cfg(debug_assertions)]
         { println!("{}: {:?}", "[parse_arithmetic()]".green().bold(), left); }
 
@@ -27,7 +35,7 @@ pub fn parse_arithmetic(tokens: &[Token], pos: &mut usize, min_prec: u8, discove
 
             *pos += 1;
 
-            let right = parse_arithmetic(tokens, pos, op.1+1, discovered_modules, parsers, scope).unwrap();
+            let right = parse_arithmetic(tokens, pos, op.1+1, discovered_modules, parsers, scope, src).unwrap();
 
             left = Expr::Binary { 
                 op: op.0, 

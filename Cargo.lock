@@ -223,6 +223,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "kurai_error"
+version = "0.4.9"
+dependencies = [
+ "colored",
+ "kurai_token",
+ "kurai_types",
+]
+
+[[package]]
 name = "kurai_expr"
 version = "0.4.9"
 dependencies = [
@@ -239,6 +248,7 @@ dependencies = [
  "kurai_attr",
  "kurai_binop",
  "kurai_core",
+ "kurai_error",
  "kurai_expr",
  "kurai_stmt",
  "kurai_token",

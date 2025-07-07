@@ -9,6 +9,7 @@ pub fn parse_loop(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Stmt, String> {
     if !eat(&Token::Loop, tokens, pos) {
         return Err("Expected `loop`".to_string());
@@ -23,7 +24,8 @@ pub fn parse_loop(
         pos,
         discovered_modules,
         parsers,
-        scope
+        scope,
+        src,
     )?;
     // *pos += 1;
 

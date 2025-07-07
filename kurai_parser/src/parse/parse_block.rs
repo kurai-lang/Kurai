@@ -15,13 +15,15 @@ impl BlockParser for BlockParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Vec<Stmt>, String> {
         parse_block(
             tokens,
             pos,
             discovered_modules,
             parsers,
-            scope
+            scope,
+            src
         )
     }
 
@@ -32,13 +34,15 @@ impl BlockParser for BlockParserStruct {
         discovered_modules: &mut Vec<String>,
         parsers: &GroupedParsers,
         scope: &mut Scope,
+        src: &str,
     ) -> Result<Stmt, String> {
         parse_block_stmt(
             tokens,
             pos,
             discovered_modules,
             parsers,
-            scope
+            scope,
+            src
         )
     }
 }
@@ -49,6 +53,7 @@ pub fn parse_block(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Vec<Stmt>, String> {
     if !eat(&Token::OpenBracket, tokens, pos) {
         return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(*pos)));
@@ -78,6 +83,7 @@ pub fn parse_block(
                     discovered_modules,
                     parsers,
                     scope,
+                    src,
                 )?;
 
                 stmts.push(stmt);
@@ -99,6 +105,7 @@ pub fn parse_expr_block(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Vec<Expr>, String> {
     if !eat(&Token::OpenBracket, tokens, pos) {
         return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(*pos)));
@@ -134,7 +141,7 @@ pub fn parse_expr_block(
                     println!("{}: parsing statements", "debug".cyan().bold());
                 }
                 let old_pos = *pos;
-                let stmt = parse_stmt(tokens, pos, discovered_modules, parsers, scope).unwrap();
+                let stmt = parse_stmt(tokens, pos, discovered_modules, parsers, scope, src).unwrap();
                 match stmt {
                     Stmt::Expr(expr) => {
                         #[cfg(debug_assertions)]
@@ -162,7 +169,8 @@ pub fn parse_block_stmt(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Stmt, String> {
-    parse_block(tokens, pos, discovered_modules, parsers,scope)
+    parse_block(tokens, pos, discovered_modules, parsers, scope, src)
         .map(Stmt::Block)
 }

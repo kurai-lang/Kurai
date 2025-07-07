@@ -10,6 +10,7 @@ pub fn parse_while_loop(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Stmt, String> {
     if !eat(&Token::While, tokens, pos) {    
         return Err("Expected `while`".to_string());
@@ -20,7 +21,7 @@ pub fn parse_while_loop(
     // }
 
     println!("parsing conditions...");
-    let condition = parse_expr(tokens, pos, true, discovered_modules, parsers, scope)
+    let condition = parse_expr(tokens, pos, true, discovered_modules, parsers, scope, src)
         .ok_or_else(|| format!("Failed to parse expression inside `while (...)` at token {}", pos))?;
     println!("parsing conditions succeed");
 
@@ -34,6 +35,7 @@ pub fn parse_while_loop(
         discovered_modules,
         parsers,
         scope,
+        src,
     )?;
 
     Ok(Stmt::Block(vec![

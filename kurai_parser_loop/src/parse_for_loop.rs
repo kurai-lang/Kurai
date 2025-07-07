@@ -11,6 +11,7 @@ pub fn parse_for_loop(
     discovered_modules: &mut Vec<String>,
     parsers: &GroupedParsers,
     scope: &mut Scope,
+    src: &str,
 ) -> Result<Stmt, String> {
     if !eat(&Token::For, tokens, pos) {
         return Err("Expected `for`".to_string());
@@ -39,6 +40,7 @@ pub fn parse_for_loop(
                     discovered_modules,
                     parsers,
                     scope,
+                    src,
                 )?;
 
                 let id = var_name.to_string();

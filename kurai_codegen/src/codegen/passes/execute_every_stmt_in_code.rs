@@ -297,7 +297,8 @@ impl<'ctx> CodeGen<'ctx> {
                             &mut pos,
                             discovered_modules,
                             parsers,
-                            scope
+                            scope,
+                            self.src
                         ) {
                             Ok(stmt) => stmts.push(stmt),
                             Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
