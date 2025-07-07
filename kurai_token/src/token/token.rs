@@ -1,3 +1,5 @@
+use std::{iter::Peekable, str::Chars};
+
 use kurai_types::typ::Type;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -56,14 +58,31 @@ pub enum Token {
     Extern,
 }
 
+fn advance(iter: &mut Peekable<Chars>, line: &mut usize, column: &mut usize) -> Option<char> {
+    let ch = iter.next()?;
+
+    match ch {
+        '\n' => {
+            *line += 1;
+            *column += 1;
+        }
+        _ => *column += 1,
+    }
+
+    Some(ch)
+}
+
 impl Token {
     pub fn tokenize(code: &str) -> Vec<Token> {
         let mut tokens = Vec::new();
         let mut current = String::new();
 
+        let mut line = 0;
+        let mut column = 0;
+
         let mut iter = code.chars().peekable();
 
-        while let Some(ch) = iter.next() {
+        while let Some(ch) = advance(&mut iter, &mut line, &mut column) {
             match ch {
                 '=' => {
                     if let Some('=') = iter.peek() {
