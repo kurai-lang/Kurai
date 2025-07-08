@@ -4,48 +4,46 @@ use kurai_token::eat::eat;
 use kurai_token::token::token::Token;
 use kurai_ast::stmt::Stmt;
 
-use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
-use crate::GroupedParsers;
+use crate::parse::Parser;
 
-pub fn parse_var_assign(
-    tokens: &[Token], 
-    pos: &mut usize, 
-    discovered_modules: &mut Vec<String>,
-    parsers: &GroupedParsers, 
-    scope: &mut Scope,
-    src: &str,
-) -> Result<Stmt, String> {
-    if let Some(Token::Id(id)) = tokens.get(*pos) {
-        *pos += 1;
+impl Parser {
+    pub fn parse_var_assign(
+        &mut self,
+    ) -> Result<Stmt, String> {
+        let id = match self.tokens.get(self.pos) {
+            Some(Token::Id(id)) => id.clone(),
+            _ => return Err("Where identifier".to_string()),
+        };
+        self.pos += 1;
 
-        if !eat(&Token::Equal, tokens, pos) {
+        if !eat(&Token::Equal, &self.tokens, &mut self.pos) {
             return Err(format!("Expected an equal sign `=` after `{}`", id));
         }
 
-        // let value: Option<Value> = match tokens.get(*pos) {
+        // let value: Option<Value> = match self.tokens.get(*self.pos) {
         //     Some(Token::Number(v)) => {
-        //         *pos += 1;
+        //         *self.pos += 1;
         //         // Lets use .into() cuz im too lazy to use Some()
         //         Value::Int(*v).into()
         //     }
         //     Some(Token::Float(v)) => {
-        //         *pos += 1;
+        //         *self.pos += 1;
         //         Value::Float(*v as f64).into()
         //     }
         //     Some(Token::Id(id)) => {
-        //         *pos += 1;
+        //         *self.pos += 1;
         //         Value::Str(id.clone()).into()
         //     }
-        //     _ => return Err(format!("Unsupported value: {:?}", tokens.get(*pos)))
+        //     _ => return Err(format!("Unsupported value: {:?}", self.tokens.get(*self.pos)))
         // };
 
-        let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src);
+        let expr = self.parse_arithmetic(0);
         let value = &expr.unwrap();
 
         #[cfg(debug_assertions)]
         { println!("{} name = {}, value = {:?}", "[parse_var_assign()]".green().bold(), id.clone(), value); }
 
-        if !eat(&Token::Semicolon, tokens, pos) {
+        if !eat(&Token::Semicolon, &self.tokens, &mut self.pos) {
             return Err(format!("Expected a semicolon `;` after `{:?}`", value));
         }
 
@@ -53,7 +51,5 @@ pub fn parse_var_assign(
             name: id.to_string(),
             value: value.clone(),
         })
-    } else {
-        return Err("Where identifier".to_string());
     }
 }

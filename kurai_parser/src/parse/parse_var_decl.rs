@@ -7,36 +7,28 @@ use kurai_token::token::token::Token;
 use kurai_token::eat::eat;
 use kurai_ast::stmt::Stmt;
 
-use crate::parse::parse_expr::parse_arithmetic::parse_arithmetic;
 use crate::parse::Parser;
-use crate::GroupedParsers;
 
 impl Parser {
     pub fn parse_var_decl(
-        &self,
-        tokens: &[Token],
-        pos: &mut usize,
-        discovered_modules: &mut Vec<String>,
-        parsers: &GroupedParsers,
-        scope: &mut Scope,
-        src: &str,
+        &mut self,
     ) -> Result<Stmt, String> {
-        if !eat(&Token::Let, tokens, pos) {
+        if !eat(&Token::Let, &self.tokens, &mut self.pos) {
             return Err("Expected keyword `let`".to_string());
         }
 
-        let name = match tokens.get(*pos) {
+        let name = match self.tokens.get(self.pos) {
             Some(Token::Id(name)) => {
-                *pos += 1;
+                self.pos += 1;
                 name.clone()
             }
             _ => return Err("Expected an identifier name after keyword `let`".to_string()),
         };
 
-        if !eat(&Token::Equal, tokens, pos) {
+        if !eat(&Token::Equal, &self.tokens, &mut self.pos) {
             // return Err(format!("Expected an equal sign after `{}`", name));
             let span = Span::new("dummy.kurai").with_range(2).with_width(3).with_line_column(15, 5);
-            let src_line = src.lines().nth(span.line - 1).unwrap_or("");
+            let src_line = self.src.lines().nth(span.line - 1).unwrap_or("");
             let err = Error::new(ErrorKind::Parse {
                 kind: ParseErrorKind::ExpectedToken(format!("Expected an equal sign `=` after `{}`", name)),
                 span
@@ -46,19 +38,19 @@ impl Parser {
 
         #[cfg(debug_assertions)]
         println!("{}: parsing expressions", "debug".cyan().bold());
-        let expr = parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src).unwrap();
+        let expr = self.parse_arithmetic(0).unwrap();
         #[cfg(debug_assertions)]
         println!("{}: parsing expressions successful", "debug".cyan().bold());
         // let expr = parse_expr(tokens, pos, true, discovered_modules, parsers, scope);
-        scope.0.insert(name.clone(), expr.clone());
+        self.scope.0.insert(name.clone(), expr.clone());
         // *pos += 1;
 
         // No semicolon, no ending
         // no ending, no food
         // no food, ded
         #[cfg(debug_assertions)]
-        println!("{}: current token is {:?}", "debug".cyan().bold(), tokens.get(*pos));
-        if !eat(&Token::Semicolon, tokens, pos) {
+        println!("{}: current token is {:?}", "debug".cyan().bold(), self.tokens.get(self.pos));
+        if !eat(&Token::Semicolon, &self.tokens, &mut self.pos) {
             return Err("Expected a semicolon after expr".to_string());
         }
 

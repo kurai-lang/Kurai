@@ -12,6 +12,7 @@ pub mod parse_block;
 pub mod parse_stmt;
 pub mod parse_return;
 pub mod parse_function;
+pub mod parse_loop;
 
 pub struct Parser {
     pub tokens: Vec<Token>,

@@ -48,16 +48,9 @@ impl Parser {
                 Some(Token::Function) | Some(Token::Extern) => {
                     let attrs_temp = attrs.clone();
                     attrs = Vec::new();
-                    self.parse_fn_decl(tokens, pos, discovered_modules, parsers, scope, attrs_temp, src)
+                    self.parse_fn_decl(attrs_temp)
                 }
-                Some(Token::Loop) => parsers.loop_parser.parse_for_loop(
-                    tokens,
-                    pos,
-                    discovered_modules,
-                    parsers,
-                    scope,
-                    src
-                ),
+                Some(Token::Loop) => self.parse_for_loop(),
                 Some(Token::While) => parsers.loop_parser.parse_while_loop(tokens, pos, discovered_modules, parsers, scope, src),
                 Some(Token::Break) => {
                     *pos += 1;
