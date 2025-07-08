@@ -2,7 +2,7 @@
 use colored::Colorize;
 use inkwell::{basic_block::{self, BasicBlock}, module::Linkage, types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
 use kurai_core::scope::Scope;
-use kurai_parser::GroupedParsers;
+
 use kurai_token::token::token::Token;
 use kurai_types::{typ::Type, value::Value};
 
@@ -15,7 +15,7 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         parsed_stmt: Vec<Stmt>, 
         discovered_modules: &mut Vec<String>, 
-        parsers: &GroupedParsers,
+        
         scope: &mut Scope,
         jump_from: Option<BasicBlock>,
     ) {

@@ -1,6 +1,6 @@
 use inkwell::{types::BasicTypeEnum, values::{BasicValueEnum, FunctionValue}};
 use kurai_core::scope::Scope;
-use kurai_parser::GroupedParsers;
+
 use kurai_ast::stmt::Stmt;
 
 use crate::codegen::CodeGen;
@@ -64,7 +64,7 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         name: &str,
         discovered_modules: &mut Vec<String>,
-        parsers: &GroupedParsers,
+        
         scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         if let Some((modname, funcname)) = Self::split_module_function_name(name) {
@@ -95,7 +95,7 @@ impl<'ctx> CodeGen<'ctx> {
         modname: &str,
         funcname: &str,
         discovered_modules: &mut Vec<String>,
-        parsers: &GroupedParsers,
+        
         scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         let mod_stmts = self.loaded_modules.get(modname)?;

@@ -6,7 +6,7 @@ pub mod value;
 
 use colored::Colorize;
 use kurai_core::scope::Scope;
-use kurai_parser::GroupedParsers;
+
 use kurai_types::{typ::Type, value::Value};
 use kurai_ast::expr::Expr;
 use kurai_ast::stmt::Stmt;
@@ -92,7 +92,7 @@ impl<'ctx> CodeGen<'ctx> {
         parsed_stmt: Vec<Stmt>,
         exprs: Vec<Expr>, 
         discovered_modules: &mut Vec<String>, 
-        parsers: &GroupedParsers,
+        
         scope: &mut Scope,
     ) {
         // WARNING: nothing lol ,just for fun
@@ -140,7 +140,7 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
+    fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>,  scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
         args.iter()
             .filter_map(|arg| {
                 self.lower_expr_to_llvm(
@@ -200,7 +200,7 @@ impl<'ctx> CodeGen<'ctx> {
     //     }
     // }
 
-    pub fn printf(&mut self, args: &Vec<Expr>, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers, scope: &mut Scope) -> Result<(), String>{
+    pub fn printf(&mut self, args: &Vec<Expr>, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>,  scope: &mut Scope) -> Result<(), String>{
         let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
         let mut format = String::new();

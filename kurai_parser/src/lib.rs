@@ -14,7 +14,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String>;
@@ -26,7 +26,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String>;
@@ -38,7 +38,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Vec<Stmt>, String>;
@@ -48,7 +48,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String>;
@@ -60,7 +60,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String>;
@@ -70,7 +70,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String>;
@@ -80,7 +80,7 @@ pub mod parse;
 //         tokens: &[kurai_token::token::token::Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String>;
@@ -92,7 +92,7 @@ pub mod parse;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         attrs: Vec<Attribute>,
 //         src: &str,

@@ -143,22 +143,23 @@ impl Parser {
         &mut self,
     ) -> Vec<Stmt> {
         let mut stmts = Vec::new();
-
-        let tokens = self.tokens.as_slice();
-
         self.pos = 0;
-        let mut pos = self.pos;
 
-        while let Some(token) = tokens.get(pos) {
+        loop {
+            let token = match self.tokens.get(self.pos).cloned() {
+                Some(t) => t,
+                None => break
+            };
+
             match self.parse_stmt() {
                 Ok(stmt) => stmts.push(stmt),
-                Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", token, e, tokens)
+                Err(e) => panic!("Parse error at token {:?}: {}\n {:?}", token, e, self.tokens)
             }
         }
 
         #[cfg(debug_assertions)]
         {
-            println!("TOKENS: {:?}", tokens);
+            println!("TOKENS: {:?}", self.tokens);
 
             for stmt in &stmts {
                 println!("Parsed stmt: {:?}", stmt);

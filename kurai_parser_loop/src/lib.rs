@@ -18,7 +18,7 @@
 //         tokens: &[kurai_token::token::token::Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Vec<Stmt>, String> {
@@ -30,7 +30,7 @@
 //         tokens: &[kurai_token::token::token::Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String> {
@@ -45,7 +45,7 @@
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String> {
@@ -57,7 +57,7 @@
 //         tokens: &[kurai_token::token::token::Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String> {
@@ -69,7 +69,7 @@
 //         tokens: &[kurai_token::token::token::Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String> {

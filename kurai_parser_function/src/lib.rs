@@ -17,7 +17,7 @@
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         attrs: Vec<Attribute>,
 //         src: &str,

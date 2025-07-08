@@ -14,7 +14,7 @@ use crate::parse::Parser;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Vec<Stmt>, String> {
@@ -33,7 +33,7 @@ use crate::parse::Parser;
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String> {
@@ -52,15 +52,13 @@ impl Parser {
     pub fn parse_block(
         &mut self,
     ) -> Result<Vec<Stmt>, String> {
-        let tokens = self.tokens.as_slice();
-
-        if !eat(&Token::OpenBracket, tokens, &mut self.pos) {
-            return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(self.pos)));
+        if !eat(&Token::OpenBracket, &self.tokens, &mut self.pos) {
+            return Err(format!("Expected `{{` at start of block, found {:?}", self.tokens.get(self.pos)));
         }
 
         let mut stmts = Vec::new();
-        while self.pos < tokens.len() {
-            match tokens.get(self.pos) {
+        while self.pos < self.tokens.len() {
+            match self.tokens.get(self.pos) {
                 Some(Token::CloseBracket) => {
                     #[cfg(debug_assertions)]
                     println!("{}: closing bracket detected, bumping self.pos", "debug".cyan().bold());
@@ -74,7 +72,7 @@ impl Parser {
                 }
                 Some(_) => {
                     #[cfg(debug_assertions)]
-                    { println!(">> calling parse_stmt at pos {}: {:?}", self.pos, tokens.get(self.pos)); }
+                    { println!(">> calling parse_stmt at pos {}: {:?}", self.pos, self.tokens.get(self.pos)); }
 
                     let stmt = self.parse_stmt()?;
 
@@ -94,16 +92,14 @@ impl Parser {
     pub fn parse_expr_block(
         &mut self,
     ) -> Result<Vec<Expr>, String> {
-        let tokens = self.tokens.as_slice();
-
-        if !eat(&Token::OpenBracket, tokens, &mut self.pos) {
-            return Err(format!("Expected `{{` at start of block, found {:?}", tokens.get(self.pos)));
+        if !eat(&Token::OpenBracket, &self.tokens, &mut self.pos) {
+            return Err(format!("Expected `{{` at start of block, found {:?}", self.tokens.get(self.pos)));
         }
 
         let mut stmts: Vec<Stmt> = Vec::new();
         let mut final_expr: Option<Box<Expr>> = None;
 
-        while let Some(token) = tokens.get(self.pos) {
+        while let Some(token) = self.tokens.get(self.pos) {
             match token {
                 Token::CloseBracket => {
                     #[cfg(debug_assertions)]
@@ -126,7 +122,7 @@ impl Parser {
                 _ => {
                     #[cfg(debug_assertions)]
                     { 
-                        println!("{}: calling parse_expr_block at pos {}: {:?}", "debug".cyan().bold(), self.pos, tokens.get(self.pos)); 
+                        println!("{}: calling parse_expr_block at pos {}: {:?}", "debug".cyan().bold(), self.pos, self.tokens.get(self.pos)); 
                         println!("{}: parsing statements", "debug".cyan().bold());
                     }
                     let old_pos = self.pos;
@@ -141,7 +137,7 @@ impl Parser {
                     }
 
                     if self.pos == old_pos {
-                        return Err(format!("⚠️ parse_stmt made no progress at pos = {}, token = {:?}", self.pos, token));
+                        return Err(format!("⚠️ parse_stmt made no progress at pos = {}, token = {:?}", self.pos, self.tokens.get(self.pos)));
                     }
                 }
             }

@@ -4,7 +4,7 @@ use inkwell::{basic_block::BasicBlock, module::Linkage, values::{BasicMetadataVa
 use kurai_ast::expr::Expr;
 use kurai_binop::bin_op::BinOp;
 use kurai_core::scope::Scope;
-use kurai_parser::GroupedParsers;
+
 use kurai_types::{typ::Type, value::Value};
 use crate::{codegen::{passes::utils::{basic_type_enum_to_string, basic_value_enum_to_string}, CodeGen}, kurai_panic, print_error};
 
@@ -14,7 +14,7 @@ impl<'ctx> CodeGen<'ctx> {
         expr: &Expr,
         expected_type: Option<&Type>,
         discovered_modules: &mut Vec<String>,
-        parsers: &GroupedParsers, 
+         
         scope: &mut Scope,
         jump_from: Option<BasicBlock>
     ) -> Option<(BasicValueEnum<'ctx>, Type)> {

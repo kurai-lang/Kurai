@@ -13,6 +13,7 @@ pub mod parse_stmt;
 pub mod parse_return;
 pub mod parse_function;
 pub mod parse_loop;
+pub mod parse_import;
 
 pub struct Parser {
     pub tokens: Vec<Token>,
@@ -21,6 +22,8 @@ pub struct Parser {
 
     pub scope: Scope,
     pub src: String,
+
+    pub discovered_modules: Vec<String>,
 }
 
 impl Parser {
@@ -32,6 +35,8 @@ impl Parser {
 
             scope: Scope::new(),
             src: String::new(),
+
+            discovered_modules: Vec::new(),
         }
     }
 }

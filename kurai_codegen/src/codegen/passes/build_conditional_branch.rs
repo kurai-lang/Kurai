@@ -1,7 +1,7 @@
 use inkwell::{basic_block::BasicBlock, values::FunctionValue};
 
 use kurai_core::scope::Scope;
-use kurai_parser::GroupedParsers;
+
 use kurai_ast::stmt::Stmt;
 use kurai_ast::expr::Expr;
 use crate::codegen::CodeGen;
@@ -15,7 +15,7 @@ impl<'ctx> CodeGen<'ctx> {
         else_body: &Option<Vec<Stmt>>,
         discovered_modules: &mut Vec<String>,
         block_suffix: &str,
-        parsers: &GroupedParsers,
+        
         scope: &mut Scope,
     ) -> BasicBlock<'ctx> {
         let condition_value = self.lower_expr_to_llvm(condition_expr, None, discovered_modules, parsers, scope, None).unwrap();

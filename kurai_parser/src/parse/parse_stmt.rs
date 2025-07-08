@@ -1,12 +1,11 @@
 use colored::Colorize;
-use kurai_core::scope::Scope;
 use kurai_ast::expr::Expr;
 use kurai_ast::stmt::Stmt;
 use kurai_token::{eat::eat, token::token::Token};
 use kurai_ast::typedArg::TypedArg;
 use kurai_types::typ::Type;
 
-use crate::{parse::{parse_expr::parse_arithmetic::parse_arithmetic, parse_return::parse_return, parse_var_assign::parse_var_assign, Parser}, BlockParser, FunctionParser, GroupedParsers, ImportParser, LoopParser, StmtParser};
+use crate::parse::Parser;
 
 // pub struct StmtParserStruct;
 // impl StmtParser for StmtParserStruct {
@@ -15,7 +14,7 @@ use crate::{parse::{parse_expr::parse_arithmetic::parse_arithmetic, parse_return
 //         tokens: &[Token],
 //         pos: &mut usize,
 //         discovered_modules: &mut Vec<String>,
-//         parsers: &GroupedParsers,
+//         
 //         scope: &mut Scope,
 //         src: &str,
 //     ) -> Result<Stmt, String> {
@@ -25,22 +24,19 @@ use crate::{parse::{parse_expr::parse_arithmetic::parse_arithmetic, parse_return
 
 impl Parser {
     pub fn parse_stmt(
-        &self,
+        &mut self,
     ) -> Result<Stmt, String> {
-        let tokens = self.tokens.as_slice();
-        let mut pos = &mut self.pos;
-
         // println!("[parse_stmt] Entering at pos = {}, token = {:?}", *pos, tokens.get(*pos));
-        println!("{}: At parse_stmt entry: pos = {}, len = {}", "sanity check".cyan().bold(), *pos, tokens.len());
+        println!("{}: At parse_stmt entry: pos = {}, len = {}", "sanity check".cyan().bold(), self.pos, self.tokens.len());
 
-        let mut attrs = if let Some(Token::Hash) = tokens.get(*pos) {
+        let mut attrs = if let Some(Token::Hash) = self.tokens.get(self.pos) {
             self.parse_attrs()?
         } else {
             Vec::new()
         };
 
-        if *pos < tokens.len() {
-            match tokens.get(*pos) {
+        if self.pos < self.tokens.len() {
+            match self.tokens.get(self.pos) {
                 // NOTE: OLD STATEMENT FUNCTIONS
                 // Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope),
 
@@ -51,25 +47,25 @@ impl Parser {
                     self.parse_fn_decl(attrs_temp)
                 }
                 Some(Token::Loop) => self.parse_for_loop(),
-                Some(Token::While) => parsers.loop_parser.parse_while_loop(tokens, pos, discovered_modules, parsers, scope, src),
+                Some(Token::While) => self.parse_while_loop(),
                 Some(Token::Break) => {
-                    *pos += 1;
-                    if !eat(&Token::Semicolon, tokens, pos) {
+                    self.pos += 1;
+                    if !eat(&Token::Semicolon, &self.tokens, &mut self.pos) {
                         return Err("Expected ';' after `break`".to_string());
                     }
 
-                    *pos += 1;
+                    self.pos += 1;
                     Ok(Stmt::Break)
                 }
-                Some(Token::Return) => parse_return(tokens, pos, discovered_modules, parsers, scope, src),
-                Some(Token::Let) => self.parse_var_decl(tokens, pos, discovered_modules, parsers, scope, src),
-                Some(Token::Import) => parsers.import_parser.parse_import_decl(tokens, pos, discovered_modules),
-                Some(Token::For) => parsers.loop_parser.parse_for_loop(tokens, pos, discovered_modules, parsers, scope, src),
+                Some(Token::Return) => self.parse_return(),
+                Some(Token::Let) => self.parse_var_decl(),
+                Some(Token::Import) => self.parse_import_decl(),
+                Some(Token::For) => self.parse_for_loop(),
                 Some(Token::Id(_)) => {
-                    match tokens.get(*pos + 1) {
-                        Some(Token::Equal) => parse_var_assign(tokens, pos, discovered_modules, parsers, scope, src),
+                    match self.tokens.get(self.pos + 1) {
+                        Some(Token::Equal) => self.parse_var_assign(),
                         Some(Token::OpenParenthese) => {
-                            let expr = parsers.fn_parser.parse_fn_call(tokens, pos)?;
+                            let expr = self.parse_fn_call()?;
                             Ok(Stmt::Expr(expr))
                         }
                         _ => Err("Unexpected token after identifier. Expected `=` or `(`.".into())
@@ -78,13 +74,13 @@ impl Parser {
                 Some(Token::OpenBracket) => {
                     #[cfg(debug_assertions)]
                     { println!("{}: encountered an opening bracket `{{`", "debug".cyan().bold()); }
-                    let stmts = parsers.block_parser.parse_block(tokens, pos, discovered_modules, parsers, scope, src)?;
+                    let stmts = self.parse_block()?;
                     Ok(Stmt::Block(stmts))
                 }
                 _ => {
-                    let start_pos = *pos;
-                    match parse_arithmetic(tokens, pos, 0, discovered_modules, parsers, scope, src) {
-                        Some(Expr::FnCall { name, args }) if *pos > start_pos => {
+                    let start_pos = self.pos;
+                    match self.parse_arithmetic(0) {
+                        Some(Expr::FnCall { name, args }) if self.pos > start_pos => {
                             let typed_args = args
                                 .into_iter()
                                 .map(|arg| TypedArg {
@@ -96,11 +92,11 @@ impl Parser {
 
                             Ok(Stmt::FnCall { name, args: typed_args })
                         }
-                        Some(expr) if *pos > start_pos => Ok(Stmt::Expr(expr)),
+                        Some(expr) if self.pos > start_pos => Ok(Stmt::Expr(expr)),
                         _ => Err(format!(
                             "Invalid statement or no progress at pos {}: {:?}",
-                            pos,
-                            tokens.get(*pos)
+                            self.pos,
+                            self.tokens.get(self.pos)
                         )),
                     }
                 }
