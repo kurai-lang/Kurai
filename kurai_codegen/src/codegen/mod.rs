@@ -97,14 +97,14 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         parsed_stmt: Vec<Stmt>,
         exprs: Vec<Expr>,
-        parser: &mut Parser,
     ) {
         // WARNING: nothing lol ,just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
+        let mut parser = Rc::clone(&self.parser);
         self.execute_every_stmt_in_code(
             parsed_stmt,
-            parser,
+            &mut parser.borrow_mut(),
             None
         );
 

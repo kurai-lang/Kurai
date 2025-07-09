@@ -119,11 +119,9 @@ impl<'ctx> CodeGen<'ctx> {
                     funcname, modname);
             }
 
-            let mut parser = Rc::clone(&self.parser);
             self.generate_code(
                 vec![stmt.clone()], 
                 vec![],
-                &mut parser.borrow_mut(),
             );
         }
         // try again after compiling

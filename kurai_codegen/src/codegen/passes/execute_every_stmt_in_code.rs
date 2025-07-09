@@ -307,7 +307,6 @@ impl<'ctx> CodeGen<'ctx> {
                         self.generate_code(
                             stmts,
                             vec![], 
-                            parser,
                         );
                     }
 

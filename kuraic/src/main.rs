@@ -4,13 +4,8 @@ use colored::{Colorize, CustomColor};
 // use bahasac::value::Value;
 use inkwell::context::Context;
 use kurai_codegen::codegen::CodeGen;
-use kurai_parser::parse::parse::{parse_out_vec_expr, parse_out_vec_stmt};
-use kurai_parser::parse::parse_stmt::StmtParserStruct;
 
-use kurai_parser_function::FunctionParserStruct;
-use kurai_parser_import_decl::ImportParserStruct;
-use kurai_parser_loop::LoopParserStruct;
-use kurai_parser_loop::BlockParserStruct;
+use kurai_parser::parse::Parser as KuraiParser;
 use kurai_token::token::token::Token;
 use kurai_core::scope::Scope;
 use std::fs::{self, remove_file, File};
@@ -70,13 +65,7 @@ fn main() {
     }));
 
     let context = Context::create();
-    let parsers = GroupedParsers::new(
-        Arc::new(StmtParserStruct),
-        Arc::new(FunctionParserStruct),
-        Arc::new(ImportParserStruct),
-        Arc::new(BlockParserStruct),
-        Arc::new(LoopParserStruct),
-    );
+    let mut parser = KuraiParser::new();
 
     let mut code = String::new();
 
@@ -101,15 +90,9 @@ fn main() {
 
     let tokens = Token::tokenize(code.as_str());
     let mut discovered_modules: Vec<String> = Vec::new();
-    let parsed_stmt_vec = parse_out_vec_stmt(
-        &tokens,
-        &mut discovered_modules,
-        &parsers,
-        &mut scope,
-        &code,
-    );
-    let parsed_expr_vec = parse_out_vec_expr(&tokens, &mut discovered_modules, &parsers, &mut scope, &code);
-    let mut codegen = CodeGen::new(&context, &code);
+    let parsed_stmt_vec = parser.parse_out_vec_stmt();
+    let parsed_expr_vec = parser.parse_out_vec_expr();
+    let mut codegen = CodeGen::new(&context, &code, parser);
     // codegen.printf("hi");
 
     // pub fn generate_code(&self, parsed_stmt: Vec<Stmt>, context: &'ctx Context, builder: &Builder, module: &mut Module<'ctx>)
@@ -123,9 +106,6 @@ fn main() {
     codegen.generate_code(
         parsed_stmt_vec,
         parsed_expr_vec.unwrap(), 
-        &mut discovered_modules,
-        &parsers,
-        &mut scope,
     );
     let result = codegen.show_result(); //result returns String
 

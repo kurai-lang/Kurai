@@ -28,7 +28,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(&self) -> Self {
+    pub fn new() -> Self {
         Self {
             tokens: Vec::new(),
             spanned_tokens: Vec::new(),
