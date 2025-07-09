@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use inkwell::{types::BasicTypeEnum, values::{BasicValueEnum, FunctionValue}};
 use kurai_core::scope::Scope;
 
@@ -117,11 +119,11 @@ impl<'ctx> CodeGen<'ctx> {
                     funcname, modname);
             }
 
+            let mut parser = Rc::clone(&self.parser);
             self.generate_code(
                 vec![stmt.clone()], 
                 vec![],
-                discovered_modules,
-                scope
+                &mut parser.borrow_mut(),
             );
         }
         // try again after compiling
