@@ -51,7 +51,7 @@ impl<'ctx> CodeGen<'ctx> {
                         let (val, _) = self.lower_expr_to_llvm(
                             expr,
                             Some(&parsed_type),
-                            &parser,
+                            parser,
                             None,
                         ).unwrap_or_else(|| {
                             eprintln!(
@@ -89,7 +89,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let (llvm_value, _) = self.lower_expr_to_llvm(
                         value,
                         None,
-                        &parser,
+                        parser,
                         None
                     ).unwrap_or_else(||
                         panic!("{}: tried to lower an invalid expression `{:?}` into LLVM IR",
@@ -307,8 +307,7 @@ impl<'ctx> CodeGen<'ctx> {
                         self.generate_code(
                             stmts,
                             vec![], 
-                            &mut parser.discovered_modules, 
-                            &mut parser.scope
+                            parser,
                         );
                     }
 
@@ -364,7 +363,7 @@ impl<'ctx> CodeGen<'ctx> {
                     if let Some(val) = self.lower_expr_to_llvm(
                         expr,
                         None,
-                        &parser,
+                        parser,
                         jump_from
                     ) {
                         #[cfg(debug_assertions)]
@@ -387,7 +386,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let (raw_val, _) = self.lower_expr_to_llvm(
                         expr.as_ref().unwrap(), 
                         Some(&ret_type),
-                        &parser,
+                        parser,
                         None
                     ).unwrap();
 

@@ -7,6 +7,7 @@ pub mod value;
 use colored::Colorize;
 use kurai_core::scope::Scope;
 
+use kurai_parser::parse::Parser;
 use kurai_types::{typ::Type, value::Value};
 use kurai_ast::expr::Expr;
 use kurai_ast::stmt::Stmt;
@@ -14,7 +15,7 @@ use kurai_ast::typedArg::TypedArg;
 use inkwell::{
     basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
-use std::{collections::{HashMap, HashSet}, sync::atomic::{AtomicUsize, Ordering}};
+use std::{cell::{Ref, RefCell}, collections::{HashMap, HashSet}, rc::Rc, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
 
 use crate::{codegen::passes::lower_expr_to_llvm, registry::registry::AttributeRegistry};
@@ -54,10 +55,12 @@ pub struct CodeGen<'ctx> {
     terminated_blocks: HashSet<BasicBlock<'ctx>>,
 
     pub src: &'ctx str,
+
+    pub parser: Rc<RefCell<Parser>>,
 }
 
 impl<'ctx> CodeGen<'ctx> {
-    pub fn new(context: &'ctx Context, src: &'ctx str) -> Self {
+    pub fn new(context: &'ctx Context, src: &'ctx str, parser: Parser) -> Self {
         let builder = context.create_builder();
         let module = Arc::new(Mutex::new(context.create_module("main_module")));
         let variables = HashMap::new();
@@ -65,6 +68,8 @@ impl<'ctx> CodeGen<'ctx> {
         let attr_registry = AttributeRegistry {
             handlers: HashMap::new(),
         };
+        let parser = RefCell::new(parser);
+        let parser = Rc::new(parser);
         Self {
             context,
             builder,
@@ -83,26 +88,23 @@ impl<'ctx> CodeGen<'ctx> {
             final_check_blocks: Vec::new(),
             terminated_blocks: HashSet::new(),
 
-            src
+            src,
+            parser
             // context: &'ctx Context
         }
     }
     pub fn generate_code(
         &mut self,
         parsed_stmt: Vec<Stmt>,
-        exprs: Vec<Expr>, 
-        discovered_modules: &mut Vec<String>, 
-        
-        scope: &mut Scope,
+        exprs: Vec<Expr>,
+        parser: &mut Parser,
     ) {
         // WARNING: nothing lol ,just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
 
         self.execute_every_stmt_in_code(
             parsed_stmt,
-            discovered_modules,
-            parsers,
-            scope,
+            parser,
             None
         );
 
@@ -140,15 +142,14 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>,  scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
+    fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>, scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
+        let mut parser = Rc::clone(&self.parser);
         args.iter()
             .filter_map(|arg| {
                 self.lower_expr_to_llvm(
                     arg,
                     None,
-                    discovered_modules,
-                    parsers, 
-                    scope,
+                    &mut parser.borrow_mut(),
                     None
                 ).map(|(val, _typ)| val)
             })
@@ -206,13 +207,12 @@ impl<'ctx> CodeGen<'ctx> {
         let mut format = String::new();
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
+        let mut parser = Rc::clone(&self.parser);
         for expr in args.iter() {
             let (value, ty) = self.lower_expr_to_llvm(
                 expr,
                 expected_type,
-                discovered_modules,
-                parsers,
-                scope,
+                &mut parser.borrow_mut(),
                 None
             ).unwrap();
 
@@ -243,7 +243,7 @@ impl<'ctx> CodeGen<'ctx> {
             .as_basic_value_enum();
         // let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
         {
-            let compiled_args = self.printf_format(&args, discovered_modules, parsers, scope);
+            let compiled_args = self.printf_format(&args, discovered_modules, scope);
             final_args.extend(
                 compiled_args
                     .clone()

@@ -15,6 +15,7 @@ pub mod parse_function;
 pub mod parse_loop;
 pub mod parse_import;
 
+#[derive(Default)]
 pub struct Parser {
     pub tokens: Vec<Token>,
     pub spanned_tokens: Vec<SpannedToken>,
