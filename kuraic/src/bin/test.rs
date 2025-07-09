@@ -27,7 +27,7 @@ fn main() {
     // "#.to_string();
 
     let code = r#"
-        extern fn free_list_allocator_allocate(size: i64) *u8;
+        // extern fn free_list_allocator_allocate(size: i64) *u8;
 
         // fn test() void {
         //     printf("hello");
