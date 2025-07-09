@@ -1,8 +1,8 @@
 
 use colored::Colorize;
-use inkwell::{basic_block::{self, BasicBlock}, module::Linkage, types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, AddressSpace};
-use kurai_core::scope::Scope;
+use inkwell::{basic_block::BasicBlock, module::Linkage, types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum}, values::{BasicValue, BasicValueEnum}, AddressSpace};
 
+use kurai_parser::parse::Parser;
 use kurai_token::token::token::Token;
 use kurai_types::{typ::Type, value::Value};
 
@@ -13,13 +13,11 @@ use kurai_ast::expr::Expr;
 impl<'ctx> CodeGen<'ctx> {
     pub fn execute_every_stmt_in_code(
         &mut self,
-        parsed_stmt: Vec<Stmt>, 
-        discovered_modules: &mut Vec<String>, 
-        
-        scope: &mut Scope,
+        stmts: Vec<Stmt>, 
+        parser: &mut Parser,
         jump_from: Option<BasicBlock>,
     ) {
-        for stmt in parsed_stmt {
+        for stmt in stmts {
             match &stmt {
                 Stmt::VarDecl { name, typ, value } => {
                     let parsed_type = match typ {
@@ -53,9 +51,8 @@ impl<'ctx> CodeGen<'ctx> {
                         let (val, _) = self.lower_expr_to_llvm(
                             expr,
                             Some(&parsed_type),
-                            discovered_modules,
-                            parsers,
-                            scope,
+                            &mut parser.discovered_modules,
+                            &mut parser.scope,
                             None,
                         ).unwrap_or_else(|| {
                             eprintln!(
@@ -93,9 +90,8 @@ impl<'ctx> CodeGen<'ctx> {
                     let (llvm_value, _) = self.lower_expr_to_llvm(
                         value,
                         None,
-                        discovered_modules,
-                        parsers,
-                        scope,
+                        &mut parser.discovered_modules,
+                        &mut parser.scope,
                         None
                     ).unwrap_or_else(||
                         panic!("{}: tried to lower an invalid expression `{:?}` into LLVM IR",
@@ -226,7 +222,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.current_fn_ret_type = ret_type.clone();
 
-                    self.attr_registry.register_all(Some(ret_type), discovered_modules, parsers);
+                    self.attr_registry.register_all(Some(ret_type), &mut parser.discovered_modules);
                     self.load_attributes(attributes, &stmt);
 
                     #[cfg(debug_assertions)] {
@@ -258,9 +254,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.execute_every_stmt_in_code(
                         body.to_vec(),
-                        discovered_modules,
-                        parsers,
-                        scope,
+                        parser,
                         Some(entry)
                     );
 
@@ -292,14 +286,7 @@ impl<'ctx> CodeGen<'ctx> {
                     let mut stmts = Vec::new();
 
                     while pos < tokens.len() {
-                        match parsers.import_parser.parse_imported_file(
-                            &tokens,
-                            &mut pos,
-                            discovered_modules,
-                            parsers,
-                            scope,
-                            self.src
-                        ) {
+                        match parser.parse_imported_file() {
                             Ok(stmt) => stmts.push(stmt),
                             Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
                         }
@@ -310,9 +297,7 @@ impl<'ctx> CodeGen<'ctx> {
                     if *is_glob {
                         self.execute_every_stmt_in_code(
                             stmts,
-                            discovered_modules,
-                            parsers,
-                            scope,
+                            parser,
                             None
                         );
                     } else {
@@ -324,9 +309,8 @@ impl<'ctx> CodeGen<'ctx> {
                         self.generate_code(
                             stmts,
                             vec![], 
-                            discovered_modules, 
-                            parsers,
-                            scope
+                            &mut parser.discovered_modules, 
+                            &mut parser.scope
                         );
                     }
 
@@ -356,9 +340,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.execute_every_stmt_in_code(
                         body.to_vec(),
-                        discovered_modules, 
-                        parsers,
-                        scope,
+                        parser,
                         None
                     );
 
@@ -384,9 +366,8 @@ impl<'ctx> CodeGen<'ctx> {
                     if let Some(val) = self.lower_expr_to_llvm(
                         expr,
                         None,
-                        discovered_modules,
-                        parsers,
-                        scope,
+                        &mut parser.discovered_modules,
+                        &mut parser.scope,
                         jump_from
                     ) {
                         #[cfg(debug_assertions)]
@@ -396,9 +377,7 @@ impl<'ctx> CodeGen<'ctx> {
                 Stmt::Block(stmts) => {
                     self.execute_every_stmt_in_code(
                         stmts.to_vec(),
-                        discovered_modules, 
-                        parsers,
-                        scope,
+                        parser,
                         None
                     );
                 }
@@ -408,7 +387,13 @@ impl<'ctx> CodeGen<'ctx> {
                         println!("{}: Current function return type is {:?}", "debug".cyan().bold(), ret_type);
                         println!("{}: Current expression is {:?}", "debug".cyan().bold(), expr);
                     }
-                    let (raw_val, _) = self.lower_expr_to_llvm(expr.as_ref().unwrap(), Some(&ret_type), discovered_modules,parsers, scope, None).unwrap();
+                    let (raw_val, _) = self.lower_expr_to_llvm(
+                        expr.as_ref().unwrap(), 
+                        Some(&ret_type),
+                        &mut parser.discovered_modules,
+                        &mut parser.scope,
+                        None
+                    ).unwrap();
 
                     let final_val = match ret_type {
                         Type::I32 => {

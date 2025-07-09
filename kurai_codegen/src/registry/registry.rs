@@ -56,12 +56,10 @@ impl AttributeRegistry {
         self.handlers.insert(name.to_string(), AttributeHandler::new(handler));
     }
 
-    pub fn register_all(&mut self, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>, parsers: &GroupedParsers) {
+    pub fn register_all(&mut self, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>) {
         let scope = Arc::new(RwLock::new(Scope::new()));
         let scope = Arc::clone(&scope);
         let expected_type = expected_type.cloned(); // Option<Type>, not Option<&Type>
-        let parsers = Arc::new(parsers.clone());   // or manually clone/own them
-        let parsers_ref = Arc::clone(&parsers);
 
         self.register(
             "test", 
@@ -74,7 +72,6 @@ impl AttributeRegistry {
             ctx.printf(&vec![Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string()))],
                 expected_type.as_ref(),
                 &mut discovered_modules,
-                &*parsers_ref,
                 &mut *scope_ref
             ).unwrap();
         });
