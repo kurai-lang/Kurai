@@ -40,4 +40,14 @@ impl Parser {
             discovered_modules: Vec::new(),
         }
     }
+
+    pub fn with_tokens(&self, src: &str) -> Self {
+        let (tokens, spanned_tokens) = Token::tokenize(src);
+        Self {
+            tokens,
+            spanned_tokens,
+            src: src.to_string(),
+            ..Default::default()
+        }
+    }
 }

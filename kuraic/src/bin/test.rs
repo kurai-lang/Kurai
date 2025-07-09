@@ -46,12 +46,9 @@ fn main() {
         "#.to_string();
 
     let context = Context::create();
-    let mut parser = Parser::new();
+    let mut parser = Parser::new().with_tokens(code.as_str());
 
     let mut scope = Scope::new();
-    let (tokens, _) = Token::tokenize(code.as_str());
-
-    println!("{:?}", tokens);
 
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parser.parse_out_vec_stmt();
