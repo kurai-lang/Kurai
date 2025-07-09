@@ -64,7 +64,6 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         name: &str,
         discovered_modules: &mut Vec<String>,
-        
         scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         if let Some((modname, funcname)) = Self::split_module_function_name(name) {
@@ -73,7 +72,6 @@ impl<'ctx> CodeGen<'ctx> {
                 modname,
                 funcname,
                 discovered_modules,
-                parsers,
                 scope
             )
         } else {
@@ -123,7 +121,6 @@ impl<'ctx> CodeGen<'ctx> {
                 vec![stmt.clone()], 
                 vec![],
                 discovered_modules,
-                parsers,
                 scope
             );
         }

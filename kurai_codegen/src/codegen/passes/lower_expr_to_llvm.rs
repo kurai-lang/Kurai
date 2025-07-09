@@ -3,8 +3,8 @@ use inkwell::{basic_block::BasicBlock, module::Linkage, values::{BasicMetadataVa
 
 use kurai_ast::expr::Expr;
 use kurai_binop::bin_op::BinOp;
-use kurai_core::scope::Scope;
 
+use kurai_parser::parse::Parser;
 use kurai_types::{typ::Type, value::Value};
 use crate::{codegen::{passes::utils::{basic_type_enum_to_string, basic_value_enum_to_string}, CodeGen}, kurai_panic, print_error};
 
@@ -13,9 +13,7 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         expr: &Expr,
         expected_type: Option<&Type>,
-        discovered_modules: &mut Vec<String>,
-         
-        scope: &mut Scope,
+        parser: &mut Parser,
         jump_from: Option<BasicBlock>
     ) -> Option<(BasicValueEnum<'ctx>, Type)> {
         #[cfg(debug_assertions)]
@@ -128,8 +126,8 @@ impl<'ctx> CodeGen<'ctx> {
                 #[cfg(debug_assertions)]
                 { println!("{:?}", op);
                 println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
-                let mut left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), discovered_modules, parsers, scope, None)?;
-                let mut right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), discovered_modules, parsers, scope, None)?;
+                let mut left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), parser, None)?;
+                let mut right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), parser, None)?;
 
                 #[cfg(debug_assertions)]
                 { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
@@ -238,7 +236,7 @@ impl<'ctx> CodeGen<'ctx> {
                 match name.as_str() {
                     "printf" => {
                         self.import_printf().unwrap();
-                        self.printf(args, expected_type, discovered_modules, parsers, scope).unwrap();
+                        self.printf(args, expected_type, &mut parser.discovered_modules, &mut parser.scope).unwrap();
                         // return Some((self.context.i32_type().const_zero().into(), Type::Void));
                         None
                     }
@@ -246,9 +244,8 @@ impl<'ctx> CodeGen<'ctx> {
                         let function = if name.contains("::") {
                             self.get_or_compile_function(
                                 name.as_str(),
-                                discovered_modules,
-                                parsers,
-                                scope
+                                &mut parser.discovered_modules,
+                                &mut parser.scope
                             )
                         } else {
                             self.module.lock().unwrap().get_function(&name)
@@ -257,7 +254,7 @@ impl<'ctx> CodeGen<'ctx> {
                         if let Some(function) = function {
                             let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
                             for expr in args {
-                                let (compiled, _) = self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope, None)
+                                let (compiled, _) = self.lower_expr_to_llvm(expr, expected_type, parser, None)
                                     .unwrap_or_else(|| { 
                                         print_error!("Failed to compile argument in call to function: {}", name.bold());
                                         kurai_panic!();
@@ -368,9 +365,7 @@ impl<'ctx> CodeGen<'ctx> {
                         let cond_val = self.lower_expr_to_llvm(
                             &branch.condition,
                             Some(&Type::Bool),
-                            discovered_modules,
-                            parsers,
-                            scope,
+                            parser,
                             None
                         ).unwrap();
 
@@ -402,9 +397,7 @@ impl<'ctx> CodeGen<'ctx> {
                         last_expr_value = self.lower_expr_to_llvm(
                             expr,
                             expected_type,
-                            discovered_modules,
-                            parsers,
-                            scope,
+                            parser,
                             None
                         );
                     }
@@ -436,10 +429,8 @@ impl<'ctx> CodeGen<'ctx> {
                     for expr in else_exprs {
                         last_expr_value = self.lower_expr_to_llvm(
                             expr,
-                            expected_type, 
-                            discovered_modules,
-                            parsers,
-                            scope,
+                            expected_type,
+                            parser,
                             None
                         );
                     }
@@ -473,10 +464,10 @@ impl<'ctx> CodeGen<'ctx> {
                 }
             }
             Expr::Block { stmts, final_expr } => {
-                self.execute_every_stmt_in_code(stmts.to_vec(), discovered_modules, parsers, scope, None);
+                self.execute_every_stmt_in_code(stmts.to_vec(), parser, None);
 
                 if let Some(expr) = final_expr {
-                    self.lower_expr_to_llvm(expr, expected_type, discovered_modules, parsers, scope, None)
+                    self.lower_expr_to_llvm(expr, expected_type, parser, None)
                 } else {
                     // It returns nothing here lol
                     // it found no expr here remember?
