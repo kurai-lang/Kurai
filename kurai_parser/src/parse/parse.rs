@@ -126,13 +126,13 @@ impl Parser {
     pub fn parse_out_vec_expr(
         &mut self,
     ) -> Result<Vec<Expr>, String> {
-        let mut pos = 0;
+        // let mut pos = 0;
         let mut exprs = Vec::new();
 
-        while pos < self.tokens.len() {
+        while self.pos < self.tokens.len() {
             if let Some(expr) = self.parse_expr(false) {
                 exprs.push(expr);
-                if eat(&Token::Comma, &self.tokens, &mut pos) { continue; }
+                if eat(&Token::Comma, &self.tokens, &mut self.pos) { continue; }
             }
         }
 
@@ -143,7 +143,7 @@ impl Parser {
         &mut self,
     ) -> Vec<Stmt> {
         let mut stmts = Vec::new();
-        self.pos = 0;
+        // self.pos = 0;
 
         loop {
             let token = match self.tokens.get(self.pos).cloned() {
@@ -157,8 +157,7 @@ impl Parser {
             }
         }
 
-        #[cfg(debug_assertions)]
-        {
+        #[cfg(debug_assertions)] {
             println!("TOKENS: {:?}", self.tokens);
 
             for stmt in &stmts {

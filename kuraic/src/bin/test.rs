@@ -52,7 +52,7 @@ fn main() {
 
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parser.parse_out_vec_stmt();
-    println!("{:?}", parsed_stmt_vec);
+    // println!("{:?}", parsed_stmt_vec);
     let parsed_expr_vec = parser.parse_out_vec_expr();
     let mut codegen = CodeGen::new(&context, &code, parser);
 

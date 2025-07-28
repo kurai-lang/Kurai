@@ -136,12 +136,10 @@ impl<'ctx> CodeGen<'ctx> {
                     println!("broken lol (nah i just commented legacy code)");
                 }
                 Stmt::FnDecl { name, args, body, attributes, ret_type, is_extern } => {
+                    #[cfg(debug_assertions)] { println!("converting args to llvm args types"); }
+
                     // Map the argument types to LLVM types 
                     // remember, we need to speak LLVM IR language, not rust!
-                    #[cfg(debug_assertions)]
-                    {
-                        println!("converting args to llvm args types");
-                    }
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ {
                             Type::I8 | Type::U8 => self.context.i8_type().into(),
@@ -166,13 +164,9 @@ impl<'ctx> CodeGen<'ctx> {
                             }
                         }).collect();
 
-                    #[cfg(debug_assertions)]
-                    {
-                        println!("done");
-                    }
+                    #[cfg(debug_assertions)] { println!("done"); }
 
-                    #[cfg(debug_assertions)]
-                    {
+                    #[cfg(debug_assertions)] {
                         println!("Module: {:?}", self.module.lock().unwrap());
                         println!("creating function named: {}", &name);
                         println!("name={}, is_extern={}", name, is_extern);
@@ -454,8 +448,8 @@ impl<'ctx> CodeGen<'ctx> {
                 }
             }
 
-            if let Stmt::FnDecl { ref name, is_extern, .. } = stmt {
-            }
+            // if let Stmt::FnDecl { ref name, is_extern, .. } = stmt {
+            // }
         }
     }
 }
