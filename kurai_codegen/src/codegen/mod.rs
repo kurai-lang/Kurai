@@ -67,9 +67,14 @@ impl<'ctx> CodeGen<'ctx> {
         let loaded_modules = HashMap::new();
         let attr_registry = AttributeRegistry {
             handlers: HashMap::new(),
+            parser: parser.clone(),
         };
-        let parser = RefCell::new(parser);
-        let parser = Rc::new(parser);
+        // dang.. this straight up looks like attribute has its own parser
+        // and this main codegen has its own parser too
+
+        let refcell_parser = RefCell::new(parser);
+        let parser = Rc::new(refcell_parser);
+
         Self {
             context,
             builder,
@@ -93,14 +98,19 @@ impl<'ctx> CodeGen<'ctx> {
             // context: &'ctx Context
         }
     }
+
+    pub fn init(mut self) -> Self {
+        self.import_printf().unwrap();
+        self
+    }
+
     pub fn generate_code(
         &mut self,
         parsed_stmt: Vec<Stmt>,
         exprs: Vec<Expr>,
     ) {
-        // WARNING: nothing lol ,just for fun
+        // nothing lol, just for fun
         // self.import_printf().expect("Couldnt import printf for unknown reasons");
-
         let mut parser = Rc::clone(&self.parser);
         self.execute_every_stmt_in_code(
             parsed_stmt,
@@ -142,126 +152,77 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn printf_format(&mut self, args: &Vec<Expr>, discovered_modules: &mut Vec<String>, scope: &mut Scope) -> Vec<BasicValueEnum<'ctx>> {
-        let mut parser = Rc::clone(&self.parser);
-        args.iter()
-            .filter_map(|arg| {
-                self.lower_expr_to_llvm(
-                    arg,
-                    None,
-                    &mut parser.borrow_mut(),
-                    None
-                ).map(|(val, _typ)| val)
-            })
-        .collect()
+    fn printf_format(&mut self, args: &Vec<Expr>, parser: &mut Parser, format: &mut String) -> Vec<BasicValueEnum<'ctx>> {
+        let mut values = Vec::new();
+
+        args.iter().for_each(|arg| {
+            self.lower_expr_to_llvm(
+                arg,
+                None,
+                parser,
+                None
+            ).map(|(val, ty)| {
+                values.push(val);
+                match ty {
+                    Type::I64 => format.push_str("%ld"),
+                    Type::Str | Type::Var | Type::Void => format.push_str("%s"),
+                    _ => panic!("unsupported print arg type {:?}", ty)
+                }
+            });
+        });
+
+        values
     }
 
-    // fn compile_int(&self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-    //     match &arg.value {
-    //         Some(Expr::Literal(Value::Int(v))) => {
-    //             let int_val = self.context.i64_type().const_int(*v as u64, true);
-    //
-    //             Some(int_val.into())
-    //         }
-    //         _ => None
-    //     }
-    // }
-    //
-    // fn compile_str(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-    //     match &arg.value {
-    //         Some(Expr::Literal(Value::Str(s))) => {
-    //             let global_str = self
-    //                 .builder.build_global_string_ptr(s, &format!("str_{}", self.string_counter));
-    //
-    //             self.string_counter += 1;
-    //             Some(global_str.unwrap().as_basic_value_enum())
-    //         }
-    //         _ => {
-    //             None
-    //         }
-    //     }
-    // }
-    //
-    // fn compile_id(&mut self, arg: &TypedArg) -> Option<BasicValueEnum<'ctx>> {
-    //     let var_info = self.variables.get(&arg.name).unwrap();
-    //     let llvm_type = var_info.var_type.to_llvm_type(self.context).unwrap();
-    //
-    //     match arg.typ {
-    //         Type::Str => Some(var_info.ptr_value.as_basic_value_enum()), // just return the
-    //                                                                           // pointer as it is
-    //                                                                           // lmfao
-    //         _ => {
-    //             let loaded_val = self.builder.build_load(
-    //                 llvm_type,
-    //                 var_info.ptr_value,
-    //                 "loaded_id"
-    //             ).unwrap();
-    //             Some(loaded_val.as_basic_value_enum())
-    //         }
-    //     }
-    // }
-
-    pub fn printf(&mut self, args: &Vec<Expr>, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>,  scope: &mut Scope) -> Result<(), String>{
+    pub fn printf(&mut self, args: &Vec<Expr>, expected_type: Option<&Type>, parser: &mut Parser) -> Result<(), String>{
         let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
         let mut format = String::new();
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
-        let mut parser = Rc::clone(&self.parser);
-        for expr in args.iter() {
-            let (value, ty) = self.lower_expr_to_llvm(
-                expr,
-                expected_type,
-                &mut parser.borrow_mut(),
-                None
-            ).unwrap();
+        // for expr in args.iter() {
+        //     let (value, ty) = { 
+        //         self
+        //             .lower_expr_to_llvm(expr, expected_type, parser, None)
+        //             .unwrap()
+        //     };
+        //
+        //     match ty {
+        //         Type::I64 => format.push_str("%ld"),
+        //         Type::Str | Type::Var | Type::Void => format.push_str("%s"),
+        //         _ => panic!("unsupported print arg type {:?}", ty)
+        //     }
+        //
+        //     final_args.push(value.into());
+        // }
 
-            match ty {
-                Type::I64 => {
-                    format.push_str("%ld");
-                }
-                Type::Str => {
-                    format.push_str("%s");
-                }
-                Type::Var => {
-                    format.push_str("%s");
-                }
-                Type::Void => {
-                    format.push_str("%s");
-                }
-                _ => panic!("unsupported print arg type {:?}", ty)
-            }
-
-            final_args.push(value.into());
-        }
-        format.push('\n');
+        let compiled_args = self.printf_format(&args, parser, &mut format);
 
         let format_str = self.builder
             .build_global_string_ptr(&format, &format!("fmt_{}", id))
             .map_err(|e| format!("Error building global string pointer: {:?}", e))?
             .as_pointer_value()
             .as_basic_value_enum();
-        // let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
-        {
-            let compiled_args = self.printf_format(&args, discovered_modules, scope);
-            final_args.extend(
-                compiled_args
-                    .clone()
-                    .into_iter()
-                    .map(|arg| Into::<BasicMetadataValueEnum>::into(arg))
-            );
 
-            #[cfg(debug_assertions)]
-            {
-                println!("Compiled args: {:?}", compiled_args.len());
-            }
-        }
+        #[cfg(debug_assertions)]
+        println!("Compiled args: {:?}", compiled_args.len());
 
-        let module = self.module.lock().unwrap();
+        let module = self.module
+            .lock()
+            .unwrap();
 
         final_args.insert(0, format_str.into());
 
-        let printf_fn = module.get_function("printf").expect("printf isnt defined. Did you mean to import printf?");
+        final_args.extend(
+            compiled_args
+                .into_iter()
+                .map(|arg| Into::<BasicMetadataValueEnum>::into(arg))
+        );
+
+        let printf_fn = module
+            .get_function("printf")
+            .expect("printf isnt defined. Did you mean to import printf?");
+
         self.builder.
             build_call(printf_fn, &final_args, &format!("printf_call_{}", id))
             .unwrap();
@@ -271,9 +232,7 @@ impl<'ctx> CodeGen<'ctx> {
 
     pub fn import_printf(&mut self) -> Result<(), String> {
         #[cfg(debug_assertions)]
-        {
-            println!("printf imported!");
-        }
+        println!("printf imported!");
 
         let module = self.module.lock().unwrap();
 

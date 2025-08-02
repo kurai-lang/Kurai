@@ -29,32 +29,30 @@ fn main() {
     let code = r#"
         // extern fn free_list_allocator_allocate(size: i64) *u8;
 
-        // fn test() void {
-        //     printf("hello");
-        //     let x = 0;
-        //     let y = 0;
-        //     if x == 0 {
-        //         y = 2;
-        //     } else {
-        //         y = 1;
-        //     }
-        // }
-
-        fn main() void {
-            let x  = 7;
+        #[test]
+        fn test() void {
+            printf("hello");
+            let x = 0;
+            let y = 0;
+            if x == 0 {
+                y = 2;
+            } else {
+                y = 1;
+            }
         }
+
+        // fn main() void {
+        //     let x = 7;
+        // }
         "#.to_string();
 
     let context = Context::create();
     let mut parser = Parser::new().with_tokens(code.as_str());
 
-    let mut scope = Scope::new();
-
-    let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parser.parse_out_vec_stmt();
     // println!("{:?}", parsed_stmt_vec);
     let parsed_expr_vec = parser.parse_out_vec_expr();
-    let mut codegen = CodeGen::new(&context, &code, parser);
+    let mut codegen = CodeGen::new(&context, &code, parser).init();
 
     // let mut discovered_modules = Vec::new();
 

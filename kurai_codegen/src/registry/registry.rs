@@ -1,13 +1,12 @@
-use core::fmt;
-use std::{borrow::Borrow, cell::RefCell, collections::HashMap, mem, rc::Rc, sync::{Arc, Mutex, RwLock}};
+use std::{cell::RefCell, collections::HashMap, mem, rc::Rc, sync::{Arc, RwLock}};
 
 use inkwell::attributes::AttributeLoc;
 use kurai_attr::attribute::Attribute;
 use kurai_ast::expr::Expr;
 use kurai_ast::stmt::Stmt;
-use kurai_ast::typedArg::TypedArg;
 use kurai_core::scope::Scope;
 
+use kurai_parser::parse::Parser;
 use kurai_types::{typ::Type, value::Value};
 
 use crate::codegen::CodeGen;
@@ -23,6 +22,7 @@ pub trait AttributeHandlerClone: Send + Sync {
     fn clone_box(&self) -> Box<dyn AttributeHandlerClone>;
 }
 
+// Clonin
 impl<T> AttributeHandlerClone for T
 where
     T: Fn(&str, &Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
@@ -45,6 +45,7 @@ impl Clone for Box<dyn AttributeHandlerClone> {
 #[derive(Default, Clone)]
 pub struct AttributeRegistry {
     pub handlers: HashMap<String, AttributeHandler>,
+    pub parser: Parser,
 }
 
 impl AttributeRegistry {
@@ -61,18 +62,19 @@ impl AttributeRegistry {
         let scope = Arc::clone(&scope);
         let expected_type = expected_type.cloned(); // Option<Type>, not Option<&Type>
 
+        let parser = Arc::new(RwLock::new(Parser::new()));
+        let parser_ref = parser.clone();
+
         self.register(
             "test", 
             move |attr_name, _, ctx| {
             // let mut local_modules: Vec<String> = vec![];
             let mut scope_ref = scope.write().unwrap();
-            let mut discovered_modules = vec![]; // empty or cloned vec
+            // let mut discovered_modules = vec![]; // empty or cloned vec
 
-            ctx.import_printf().unwrap();
             ctx.printf(&vec![Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string()))],
                 expected_type.as_ref(),
-                &mut discovered_modules,
-                &mut *scope_ref
+                &mut parser_ref.write().unwrap()
             ).unwrap();
         });
 

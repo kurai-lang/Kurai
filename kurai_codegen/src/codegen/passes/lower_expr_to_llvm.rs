@@ -17,9 +17,8 @@ impl<'ctx> CodeGen<'ctx> {
         jump_from: Option<BasicBlock>
     ) -> Option<(BasicValueEnum<'ctx>, Type)> {
         #[cfg(debug_assertions)]
-        {
-            println!("Lowering expr: {:?}", expr);
-        }
+        println!("Lowering expr: {:?}", expr);
+
         match expr {
             Expr::Literal(value) => match value {
                 Value::Int(v) => {
@@ -235,9 +234,7 @@ impl<'ctx> CodeGen<'ctx> {
             Expr::FnCall { name, args } => {
                 match name.as_str() {
                     "printf" => {
-                        self.import_printf().unwrap();
-                        self.printf(args, expected_type, &mut parser.discovered_modules, &mut parser.scope).unwrap();
-                        // return Some((self.context.i32_type().const_zero().into(), Type::Void));
+                        self.printf(args, expected_type, parser).unwrap();
                         None
                     }
                     _ => {

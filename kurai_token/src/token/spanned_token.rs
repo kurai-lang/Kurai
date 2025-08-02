@@ -1,6 +1,6 @@
 use crate::token::token::Token;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SpannedToken {
     pub token: Token,
     pub line: usize,

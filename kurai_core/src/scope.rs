@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use kurai_ast::expr::Expr;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Scope(pub HashMap<String, Expr>);
 
 impl Scope {

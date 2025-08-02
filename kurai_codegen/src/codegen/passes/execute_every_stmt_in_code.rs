@@ -42,10 +42,9 @@ impl<'ctx> CodeGen<'ctx> {
                         });
 
                     let alloca = self.builder.build_alloca(
-                            llvm_type,
-                            name
-                        )
-                        .unwrap();
+                        llvm_type,
+                        name
+                    ).unwrap();
 
                     if let Some(expr) = value {
                         let (val, _) = self.lower_expr_to_llvm(
@@ -63,7 +62,8 @@ impl<'ctx> CodeGen<'ctx> {
                             (fallback_val, parsed_type.clone())
                         });
 
-                        self.builder.build_store(alloca, val).unwrap();
+                        self.builder.build_store(alloca, val).unwrap()
+                        .set_alignment(8).unwrap();
                     }
 
                     let variable_info = VariableInfo {
