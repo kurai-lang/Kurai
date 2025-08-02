@@ -53,7 +53,7 @@ impl Type {
         }
     }
 
-    pub fn to_llvm_value<'ctx>(&self, ctx: &'ctx Context) -> BasicValueEnum<'ctx> {
+    pub fn to_llvm_value_zero<'ctx>(&self, ctx: &'ctx Context) -> BasicValueEnum<'ctx> {
         match *self {
             Type::I8 => ctx.i8_type().const_zero().into(),
             Type::I16 => ctx.i16_type().const_zero().into(),

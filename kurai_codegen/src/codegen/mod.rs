@@ -180,26 +180,10 @@ impl<'ctx> CodeGen<'ctx> {
         let mut format = String::new();
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
-        // for expr in args.iter() {
-        //     let (value, ty) = { 
-        //         self
-        //             .lower_expr_to_llvm(expr, expected_type, parser, None)
-        //             .unwrap()
-        //     };
-        //
-        //     match ty {
-        //         Type::I64 => format.push_str("%ld"),
-        //         Type::Str | Type::Var | Type::Void => format.push_str("%s"),
-        //         _ => panic!("unsupported print arg type {:?}", ty)
-        //     }
-        //
-        //     final_args.push(value.into());
-        // }
-
-        let compiled_args = self.printf_format(&args, parser, &mut format);
+        let compiled_args = self.printf_format(args, parser, &mut format);
 
         let format_str = self.builder
-            .build_global_string_ptr(&format, &format!("fmt_{}", id))
+            .build_global_string_ptr(&format, &format!("fmt_{id}"))
             .map_err(|e| format!("Error building global string pointer: {:?}", e))?
             .as_pointer_value()
             .as_basic_value_enum();

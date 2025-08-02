@@ -58,7 +58,7 @@ impl<'ctx> CodeGen<'ctx> {
                                 name
                             );
 
-                            let fallback_val = parsed_type.to_llvm_value(self.context);
+                            let fallback_val = parsed_type.to_llvm_value_zero(self.context);
                             (fallback_val, parsed_type.clone())
                         });
 
@@ -383,66 +383,7 @@ impl<'ctx> CodeGen<'ctx> {
                         None
                     ).unwrap();
 
-                    let final_val = match ret_type {
-                        Type::I32 => {
-                            let val = match raw_val {
-                                BasicValueEnum::IntValue(v) => v,
-                                other => { 
-                                    let variant = basic_value_enum_to_string(&other);
-                                    print_error!(
-                                        "Expected an `IntValue` for return type `i32`, but got `{}` instead.",
-                                        variant,
-                                    );
-
-                                    print_hint!("Maybe try checking your return statement, and your function return type");
-                                    kurai_panic!();
-                                }
-                            };
-                            let val = if val.get_type() != self.context.i32_type() {
-                                self.builder.build_int_cast(
-                                    val, self.context.i32_type(),
-                                    "ret_cast"
-                                ).unwrap()
-                            } else { val };
-                            val.as_basic_value_enum()
-                        }
-                        Type::I64 => {
-                            let val = raw_val.into_int_value();
-                            let val = if val.get_type() != self.context.i64_type() {
-                                self.builder.build_int_cast(
-                                    val, self.context.i64_type(),
-                                    "ret_cast"
-                                ).unwrap()
-                            } else { val };
-                            val.as_basic_value_enum()
-                        }
-                        Type::F32 => {
-                            let val = raw_val.into_float_value();
-                            let val = if val.get_type() != self.context.f32_type() {
-                                self.builder.build_float_cast(
-                                    val, self.context.f32_type(),
-                                    "ret_cast"
-                                ).unwrap()
-                            } else { val };
-                            val.as_basic_value_enum()
-                        }
-                        Type::F64 => {
-                            let val = raw_val.into_float_value();
-                            let val = if val.get_type() != self.context.f64_type() {
-                                self.builder.build_float_cast(
-                                    val, self.context.f64_type(),
-                                    "ret_cast"
-                                ).unwrap()
-                            } else { val };
-                            val.as_basic_value_enum()
-                        }
-                        Type::Void => {
-                            panic!("Tried to return a value from a function that returns void");
-                        }
-                        _ => {
-                            panic!("Unsupported return type: {:?}", ret_type);
-                        }
-                    };
+                    let final_val = self.to_llvm_value(ret_type, raw_val);
 
                     self.builder.build_return(Some(&final_val)).unwrap();
                 }
@@ -452,4 +393,68 @@ impl<'ctx> CodeGen<'ctx> {
             // }
         }
     }
+
+    fn to_llvm_value(&mut self, ret_type: Type, value: BasicValueEnum<'ctx>) -> BasicValueEnum<'ctx>{
+        match ret_type {
+            Type::I32 => {
+                let val = match value {
+                    BasicValueEnum::IntValue(v) => v,
+                    other => {
+                        let variant = basic_value_enum_to_string(&other);
+                        print_error!(
+                            "Expected an `IntValue` for return type `i32`, but got `{}` instead.",
+                            variant,
+                        );
+
+                        print_hint!("Maybe try checking your return statement, and your function return type");
+                        kurai_panic!();
+                    }
+                };
+                let val = if val.get_type() != self.context.i32_type() {
+                    self.builder.build_int_cast(
+                        val, self.context.i32_type(),
+                        "ret_cast"
+                    ).unwrap()
+                } else { val };
+                val.as_basic_value_enum()
+            }
+            Type::I64 => {
+                let val = value.into_int_value();
+                let val = if val.get_type() != self.context.i64_type() {
+                    self.builder.build_int_cast(
+                        val, self.context.i64_type(),
+                        "ret_cast"
+                    ).unwrap()
+                } else { val };
+                val.as_basic_value_enum()
+            }
+            Type::F32 => {
+                let val = value.into_float_value();
+                let val = if val.get_type() != self.context.f32_type() {
+                    self.builder.build_float_cast(
+                        val, self.context.f32_type(),
+                        "ret_cast"
+                    ).unwrap()
+                } else { val };
+                val.as_basic_value_enum()
+            }
+            Type::F64 => {
+                let val = value.into_float_value();
+                let val = if val.get_type() != self.context.f64_type() {
+                    self.builder.build_float_cast(
+                        val, self.context.f64_type(),
+                        "ret_cast"
+                    ).unwrap()
+                } else { val };
+                val.as_basic_value_enum()
+            }
+            Type::Void => {
+                panic!("Tried to return a value from a function that returns void");
+            }
+            _ => {
+                panic!("Unsupported return type: {:?}", ret_type);
+            }
+        }
+    }
 }
+
