@@ -1,4 +1,3 @@
-
 use colored::Colorize;
 use inkwell::{basic_block::BasicBlock, module::Linkage, types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum}, values::{BasicValue, BasicValueEnum}, AddressSpace};
 
@@ -10,6 +9,54 @@ use crate::{codegen::{passes::utils::basic_value_enum_to_string, CodeGen, Functi
 use kurai_ast::stmt::Stmt;
 use kurai_ast::expr::Expr;
 
+fn infer_int_type(value: i64) -> Type {
+    let min_i8 = i8::MIN as i64;
+    let max_i8 = i8::MAX as i64;
+    let min_i16 = i16::MIN as i64;
+    let max_i16 = i16::MAX as i64;
+    let min_i32 = i32::MIN as i64;
+    let max_i32 = i32::MAX as i64;
+
+    if (value >= min_i8) && (value <= max_i8)   { return Type::I8;  }
+    if (value >= min_i16) && (value <= max_i16) { return Type::I16; }
+    if (value >= min_i32) && (value <= max_i32) { Type::I32         }
+    else { Type::I64 }
+}
+
+fn infer_float_type(value: f64) -> Type {
+    let min_f32 = f32::MIN as f64;
+    let max_f32 = f32::MAX as f64;
+    // let min_f64 = f64::MIN as f64;
+    // let max_f64 = f64::MAX as f64;
+
+    if (value >= min_f32) && (value <= max_f32) { Type::F32 }
+    else { Type::F64 }
+}
+
+fn infer_alignment_int_type(value: i64) -> i64 {
+    let min_i8 = i8::MIN as i64;
+    let max_i8 = i8::MAX as i64;
+    let min_i16 = i16::MIN as i64;
+    let max_i16 = i16::MAX as i64;
+    let min_i32 = i32::MIN as i64;
+    let max_i32 = i32::MAX as i64;
+
+    if (value >= min_i8) && (value <= max_i8)   { return 1; }
+    if (value >= min_i16) && (value <= max_i16) { return 2; }
+    if (value >= min_i32) && (value <= max_i32) { 4         }
+    else { 8 }
+}
+
+fn infer_alignment_float_type(value: f64) -> i64 {
+    let min_f32 = f32::MIN as f64;
+    let max_f32 = f32::MAX as f64;
+    // let min_f64 = f64::MIN as f64;
+    // let max_f64 = f64::MAX as f64;
+
+    if (value >= min_f32) && (value <= max_f32) { 4 }
+    else { 8 }
+}
+
 impl<'ctx> CodeGen<'ctx> {
     pub fn execute_every_stmt_in_code(
         &mut self,
@@ -20,17 +67,20 @@ impl<'ctx> CodeGen<'ctx> {
         for stmt in stmts {
             match &stmt {
                 Stmt::VarDecl { name, typ, value } => {
+                    // checks type from string,
+                    // if not found then check the value's type itself
                     let parsed_type = match typ {
                         Some(t) => Type::from_str(t).unwrap_or_else(|| panic!("Invalid type {:?}", typ)),
                         None => {
                             match value {
-                                Some(Expr::Literal(Value::Int(_))) => Type::I64,
+                                Some(Expr::Literal(Value::Int(v))) => infer_int_type(*v),
+                                Some(Expr::Literal(Value::Float(v))) => infer_float_type(*v),
                                 Some(Expr::Literal(Value::Bool(_))) => Type::Bool,
                                 Some(Expr::FnCall { name, .. }) => {
                                     let fn_info = self.functions.get(name).expect("Function not found");
                                     fn_info.ret_type.clone()
                                 }
-                                _ => panic!("Can't infer type of expr: {:?}", value),
+                                _ => panic!("Can't infer type of expr: {value:?}"),
                             }
                         }
                     };
@@ -62,8 +112,21 @@ impl<'ctx> CodeGen<'ctx> {
                             (fallback_val, parsed_type.clone())
                         });
 
-                        self.builder.build_store(alloca, val).unwrap()
-                        .set_alignment(8).unwrap();
+                        if val.is_int_value() {
+                            let raw_val = val.into_int_value().get_sign_extended_constant().unwrap();
+                            let alignment_val = infer_alignment_int_type(raw_val);
+
+                            self.builder.build_store(alloca, val).unwrap()
+                                .set_alignment(alignment_val.try_into().unwrap());
+                        } else if val.is_float_value() {
+                            let raw_val = val.into_float_value().get_constant().unwrap().0;
+                            let alignment_val = infer_alignment_float_type(raw_val);
+
+                            self.builder.build_store(alloca, val).unwrap()
+                                .set_alignment(alignment_val.try_into().unwrap());
+                        } else {
+                            panic!("I DONT KNOW?!?!")
+                        }
                     }
 
                     let variable_info = VariableInfo {
@@ -78,7 +141,7 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::Assign { name, value } => {
                     #[cfg(debug_assertions)]
-                    { println!("Assign value AST: {:?}", value); }
+                    println!("Assign value AST: {:?}", value);
                     let var_ptr = match self.variables.get(name.as_str()) {
                         Some(ptr) => ptr.ptr_value,
                         None => {
@@ -95,7 +158,21 @@ impl<'ctx> CodeGen<'ctx> {
                         panic!("{}: tried to lower an invalid expression `{:?}` into LLVM IR",
                         "internal error".red().bold(), value));
 
-                    self.builder.build_store(var_ptr, llvm_value).unwrap();
+                    if llvm_value.is_int_value() {
+                        let raw_val = llvm_value.into_int_value().get_sign_extended_constant().unwrap();
+                        let alignment_val = infer_alignment_int_type(raw_val);
+
+                        self.builder.build_store(var_ptr, llvm_value).unwrap()
+                            .set_alignment(alignment_val.try_into().unwrap());
+                    } else if llvm_value.is_float_value() {
+                        let raw_val = llvm_value.into_float_value().get_constant().unwrap().0;
+                        let alignment_val = infer_alignment_float_type(raw_val);
+
+                        self.builder.build_store(var_ptr, llvm_value).unwrap()
+                            .set_alignment(alignment_val.try_into().unwrap());
+                    } else {
+                        panic!("I DONT KNOW?!?!")
+                    }
                 }
                 Stmt::FnCall { name, args } => {
                     // match name.as_str() {

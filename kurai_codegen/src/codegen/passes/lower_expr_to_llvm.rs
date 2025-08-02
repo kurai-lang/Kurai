@@ -41,23 +41,16 @@ impl<'ctx> CodeGen<'ctx> {
                         _ => Some((
                             self.context.i64_type().const_int(*v as u64, true).into(),
                             Type::I64)), // <- DEFAULT TYPE
-                        // _ => panic!("invalid expected type for int literal")
                     }
                 }
                 Value::Float(v) => {
                     match expected_type {
-                        Some(Type::F16) => Some((
-                            self.context.f16_type().const_float(*v).into(),
-                            Type::F16)),
                         Some(Type::F32) => Some((
                             self.context.f32_type().const_float(*v).into(),
                             Type::F32)),
                         Some(Type::F64) => Some((
                             self.context.f64_type().const_float(*v).into(),
                             Type::F64)),
-                        Some(Type::F128) => Some((
-                            self.context.f128_type().const_float(*v).into(),
-                            Type::F128)),
                         _ => Some((
                             self.context.f64_type().const_float(*v).into(),
                             Type::F64)), // <- DEFAULT TYPE
