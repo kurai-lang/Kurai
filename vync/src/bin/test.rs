@@ -29,8 +29,7 @@ fn main() {
     let code = r#"
         // extern fn free_list_allocator_allocate(size: i64) *u8;
 
-        #[test]
-        #[inline]
+        # test, inline
         fn test() void {
             printf("hello");
             let x = 0;
@@ -62,6 +61,6 @@ fn main() {
         parsed_expr_vec.unwrap(), 
     );
 
-    println!("{}", codegen.module.lock().unwrap().print_to_string().to_string().red());
-    println!("{}", codegen.show_result());
+    println!("{}", codegen.module.lock().unwrap().print_to_string().to_string());
+    // println!("{}", codegen.show_result());
 }

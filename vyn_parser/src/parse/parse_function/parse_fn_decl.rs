@@ -47,10 +47,6 @@ impl Parser {
                         self.pos += 1;
                         break;
                     }
-                    // Some(Token::If) => {
-                    //     let expr = parse_if_else(tokens, pos, discovered_modules, parsers, scope)?;
-                    //     return Ok(Stmt::Expr(expr)); // wrap it in a Stmt!
-                    // }
                     Token::Id(arg_name) => {
                         let name = arg_name.clone();
                         self.pos += 1;
@@ -60,10 +56,6 @@ impl Parser {
                         }
 
                         let typ = match self.tokens.get(self.pos) {
-                            // Some(Token::Id(type_name)) => {
-                            //     *pos += 1;
-                            //     type_name.clone()
-                            // }
                             Some(Token::Type(typ)) => {
                                 self.pos += 1;
                                 typ.clone()

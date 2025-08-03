@@ -7,34 +7,34 @@ impl Parser {
     pub fn parse_attrs(&mut self) -> Result<Vec<Attribute>, String> {
         let mut attrs = Vec::new();
 
-        while let Some(Token::Hash) = self.tokens.get(self.pos) {
-            self.pos += 1;
-
-            if !eat(&Token::OpenSquareBracket, &self.tokens, &mut self.pos) {
-                return Err("Expected `[` after `#` in attribute".to_string());
-            }
-
-            let attr_name = match self.tokens.get(self.pos) {
-                Some(Token::Id(name)) => {
+        while let Some(token) = self.tokens.get(self.pos) {
+            match token {
+                Token::Hash => {
                     self.pos += 1;
-                    name.clone()
                 }
-                _ => return Err("Expected attribute".to_string())
+                Token::Id(attr_name) => {
+                    let name = attr_name.clone();
+                    self.pos += 1;
+
+                    // attribute args
+                    let mut args = Vec::new();
+                    self.parse_attr_args(&mut args).unwrap();
+
+                    if args.is_empty() {
+                        attrs.push(Attribute::Simple(name));
+                    } else {
+                        attrs.push(Attribute::WithArgs { name, args });
+                    }
+                }
+                Token::Comma => {
+                    self.pos += 1;
+                }
+                Token::Function => {
+                    break;
+                }
+                _ => return Err(
+                    format!("Invalid token `{:?}` inside attribute declaration", token))
             };
-
-            // attribute args
-            let mut args = Vec::new();
-            self.parse_attr_args(&mut args).unwrap();
-
-            if !eat(&Token::CloseSquareBracket, &self.tokens, &mut self.pos) {
-                return Err("Expecetd `]` to close attribute".to_string());
-            }
-
-            if args.is_empty() {
-                attrs.push(Attribute::Simple(attr_name));
-            } else {
-                attrs.push(Attribute::WithArgs { name: attr_name, args });
-            }
         }
 
         Ok(attrs)
@@ -71,6 +71,7 @@ impl Parser {
                     None => return Err("Unexpected end in attribute args".to_string())
                 }
 
+                // i assume this just eats comma for no reason?
                 eat(&Token::Comma, &self.tokens, &mut self.pos);
             }
         }
