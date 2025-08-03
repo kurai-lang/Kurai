@@ -1,0 +1,8 @@
+[package]
+name = "vyn_expr"
+version = "0.4.9"
+edition = "2024"
+
+[dependencies]
+vyn_types = { version = "0.4.9", path = "../vyn_types/" }
+vyn_binop = { version = "0.4.9", path = "../vyn_binop/" }

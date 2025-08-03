@@ -1,0 +1,17 @@
+[package]
+name = "vync"
+version = "0.4.9"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.32", features = ["derive"] }
+colored = "3.0.0"
+inkwell = { version = "0.6.0", features = ["llvm18-1"]}
+vyn_codegen = { version = "0.4.9", path = "../vyn_codegen" }
+vyn_core = { version = "0.4.9", path = "../vyn_core" }
+vyn_parser = { version = "0.4.9", path = "../vyn_parser" }
+vyn_parser_function = { version = "0.4.9", path = "../vyn_parser_function" }
+vyn_parser_import_decl = { version = "0.4.9", path = "../vyn_parser_import_decl" }
+vyn_parser_loop = { version = "0.4.9", path = "../vyn_parser_loop" }
+vyn_stdlib = { version = "0.4.9", path = "../vyn_stdlib" }
+vyn_token = { version = "0.4.9", path = "../vyn_token" }

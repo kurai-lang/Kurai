@@ -1,0 +1,14 @@
+[package]
+name = "vyn_parser_loop"
+version = "0.4.9"
+edition = "2024"
+
+[dependencies]
+vyn_ast = { version = "0.4.9", path = "../vyn_ast" }
+vyn_binop = { version = "0.4.9", path = "../vyn_binop" }
+vyn_core = { version = "0.4.9", path = "../vyn_core" }
+vyn_expr = { version = "0.4.9", path = "../vyn_expr" }
+vyn_parser = { version = "0.4.9", path = "../vyn_parser" }
+vyn_stmt = { version = "0.4.9", path = "../vyn_stmt" }
+vyn_token = { version = "0.4.9", path = "../vyn_token" }
+vyn_types = { version = "0.4.9", path = "../vyn_types" }

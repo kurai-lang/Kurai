@@ -1,0 +1,9 @@
+[package]
+name = "vyn_token"
+version = "0.4.9"
+edition = "2024"
+
+[dependencies]
+vyn_ast = { version = "0.4.9", path = "../vyn_ast" }
+vyn_stmt = { version = "0.4.9", path = "../vyn_stmt/" }
+vyn_types = { version = "0.4.9", path = "../vyn_types" }

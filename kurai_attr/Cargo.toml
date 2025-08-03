@@ -1,7 +1,0 @@
-[package]
-name = "kurai_attr"
-version = "0.4.9"
-edition = "2024"
-
-[dependencies]
-kurai_types = { version = "0.4.9", path = "../kurai_types" }

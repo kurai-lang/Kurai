@@ -1,0 +1,22 @@
+[package]
+name = "vyn_codegen"
+version = "0.4.9"
+edition = "2024"
+
+[dependencies]
+colored = "3.0.0"
+inkwell = { version = "0.6.0", features = ["llvm18-1"] }
+vyn_types = { version = "0.4.9", path = "../vyn_types/" }
+vyn_stmt = { version = "0.4.9", path = "../vyn_stmt/" }
+vyn_expr = { version = "0.4.9", path = "../vyn_expr" }
+vyn_binop = { version = "0.4.9", path = "../vyn_binop/" }
+vyn_codegen_traits = { version = "0.4.9", path = "../vyn_codegen_traits/" }
+vyn_token = { version = "0.4.9", path = "../vyn_token/" }
+vyn_parser_import_file = { version = "0.4.9", path = "../vyn_parser_import_file/" }
+vyn_parser = { version = "0.4.9", path = "../vyn_parser" }
+vyn_core = { version = "0.4.9", path = "../vyn_core" }
+vyn_attr = { version = "0.4.9", path = "../vyn_attr" }
+vyn_ast = { version = "0.4.9", path = "../vyn_ast" }
+vyn_typedArg = { version = "0.4.9", path = "../vyn_typedArg" }
+# vyn_core = { version = "0.4.9", path = "../vyn_core" }
+# vyn_stdlib = { version = "0.4.9", path = "../vyn_stdlib" }

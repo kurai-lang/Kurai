@@ -1,0 +1,11 @@
+[package]
+name = "vyn_parser_import_file"
+version = "0.4.9"
+edition = "2024"
+
+[dependencies]
+vyn_ast = { version = "0.4.9", path = "../vyn_ast" }
+vyn_core = { version = "0.4.9", path = "../vyn_core" }
+vyn_parser = { version = "0.4.9", path = "../vyn_parser" }
+vyn_stmt = { version = "0.4.9", path = "../vyn_stmt" }
+vyn_token = { version = "0.4.9", path = "../vyn_token" }

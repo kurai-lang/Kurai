@@ -166,215 +166,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
-name = "kurai_ast"
-version = "0.4.9"
-dependencies = [
- "kurai_attr",
- "kurai_binop",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_attr"
-version = "0.4.9"
-dependencies = [
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_binop"
-version = "0.4.9"
-
-[[package]]
-name = "kurai_codegen"
-version = "0.4.9"
-dependencies = [
- "colored",
- "inkwell",
- "kurai_ast",
- "kurai_attr",
- "kurai_binop",
- "kurai_codegen_traits",
- "kurai_core",
- "kurai_expr",
- "kurai_parser",
- "kurai_parser_import_file",
- "kurai_stmt",
- "kurai_token",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_codegen_traits"
-version = "0.4.9"
-dependencies = [
- "inkwell",
-]
-
-[[package]]
-name = "kurai_core"
-version = "0.4.9"
-dependencies = [
- "kurai_ast",
- "kurai_expr",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_error"
-version = "0.4.9"
-dependencies = [
- "colored",
- "kurai_token",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_expr"
-version = "0.4.9"
-dependencies = [
- "kurai_binop",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_parser"
-version = "0.4.9"
-dependencies = [
- "colored",
- "kurai_ast",
- "kurai_attr",
- "kurai_binop",
- "kurai_core",
- "kurai_error",
- "kurai_expr",
- "kurai_stmt",
- "kurai_token",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_parser_function"
-version = "0.4.9"
-dependencies = [
- "colored",
- "kurai_ast",
- "kurai_attr",
- "kurai_core",
- "kurai_expr",
- "kurai_parser",
- "kurai_stmt",
- "kurai_token",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_parser_import_decl"
-version = "0.4.9"
-dependencies = [
- "kurai_ast",
- "kurai_core",
- "kurai_parser",
- "kurai_parser_import_file",
- "kurai_stmt",
- "kurai_token",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_parser_import_file"
-version = "0.4.9"
-dependencies = [
- "kurai_ast",
- "kurai_core",
- "kurai_parser",
- "kurai_stmt",
- "kurai_token",
-]
-
-[[package]]
-name = "kurai_parser_loop"
-version = "0.4.9"
-dependencies = [
- "kurai_ast",
- "kurai_binop",
- "kurai_core",
- "kurai_expr",
- "kurai_parser",
- "kurai_stmt",
- "kurai_token",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_stdlib"
-version = "0.4.9"
-dependencies = [
- "inkwell",
- "kurai_codegen",
- "kurai_codegen_traits",
- "kurai_core",
- "kurai_expr",
- "kurai_stmt",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_stmt"
-version = "0.4.9"
-dependencies = [
- "inkwell",
- "kurai_ast",
- "kurai_attr",
- "kurai_expr",
- "kurai_typedArg",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_token"
-version = "0.4.9"
-dependencies = [
- "kurai_ast",
- "kurai_stmt",
- "kurai_types",
-]
-
-[[package]]
-name = "kurai_typedArg"
-version = "0.4.9"
-
-[[package]]
-name = "kurai_types"
-version = "0.4.9"
-dependencies = [
- "inkwell",
-]
-
-[[package]]
-name = "kuraic"
-version = "0.4.9"
-dependencies = [
- "clap",
- "colored",
- "inkwell",
- "kurai_codegen",
- "kurai_core",
- "kurai_parser",
- "kurai_parser_function",
- "kurai_parser_import_decl",
- "kurai_parser_loop",
- "kurai_stdlib",
- "kurai_token",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -496,6 +287,215 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
+
+[[package]]
+name = "vyn_ast"
+version = "0.4.9"
+dependencies = [
+ "vyn_attr",
+ "vyn_binop",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_attr"
+version = "0.4.9"
+dependencies = [
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_binop"
+version = "0.4.9"
+
+[[package]]
+name = "vyn_codegen"
+version = "0.4.9"
+dependencies = [
+ "colored",
+ "inkwell",
+ "vyn_ast",
+ "vyn_attr",
+ "vyn_binop",
+ "vyn_codegen_traits",
+ "vyn_core",
+ "vyn_expr",
+ "vyn_parser",
+ "vyn_parser_import_file",
+ "vyn_stmt",
+ "vyn_token",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_codegen_traits"
+version = "0.4.9"
+dependencies = [
+ "inkwell",
+]
+
+[[package]]
+name = "vyn_core"
+version = "0.4.9"
+dependencies = [
+ "vyn_ast",
+ "vyn_expr",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_error"
+version = "0.4.9"
+dependencies = [
+ "colored",
+ "vyn_token",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_expr"
+version = "0.4.9"
+dependencies = [
+ "vyn_binop",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_parser"
+version = "0.4.9"
+dependencies = [
+ "colored",
+ "vyn_ast",
+ "vyn_attr",
+ "vyn_binop",
+ "vyn_core",
+ "vyn_error",
+ "vyn_expr",
+ "vyn_stmt",
+ "vyn_token",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_parser_function"
+version = "0.4.9"
+dependencies = [
+ "colored",
+ "vyn_ast",
+ "vyn_attr",
+ "vyn_core",
+ "vyn_expr",
+ "vyn_parser",
+ "vyn_stmt",
+ "vyn_token",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_parser_import_decl"
+version = "0.4.9"
+dependencies = [
+ "vyn_ast",
+ "vyn_core",
+ "vyn_parser",
+ "vyn_parser_import_file",
+ "vyn_stmt",
+ "vyn_token",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_parser_import_file"
+version = "0.4.9"
+dependencies = [
+ "vyn_ast",
+ "vyn_core",
+ "vyn_parser",
+ "vyn_stmt",
+ "vyn_token",
+]
+
+[[package]]
+name = "vyn_parser_loop"
+version = "0.4.9"
+dependencies = [
+ "vyn_ast",
+ "vyn_binop",
+ "vyn_core",
+ "vyn_expr",
+ "vyn_parser",
+ "vyn_stmt",
+ "vyn_token",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_stdlib"
+version = "0.4.9"
+dependencies = [
+ "inkwell",
+ "vyn_codegen",
+ "vyn_codegen_traits",
+ "vyn_core",
+ "vyn_expr",
+ "vyn_stmt",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_stmt"
+version = "0.4.9"
+dependencies = [
+ "inkwell",
+ "vyn_ast",
+ "vyn_attr",
+ "vyn_expr",
+ "vyn_typedArg",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_token"
+version = "0.4.9"
+dependencies = [
+ "vyn_ast",
+ "vyn_stmt",
+ "vyn_types",
+]
+
+[[package]]
+name = "vyn_typedArg"
+version = "0.4.9"
+
+[[package]]
+name = "vyn_types"
+version = "0.4.9"
+dependencies = [
+ "inkwell",
+]
+
+[[package]]
+name = "vync"
+version = "0.4.9"
+dependencies = [
+ "clap",
+ "colored",
+ "inkwell",
+ "vyn_codegen",
+ "vyn_core",
+ "vyn_parser",
+ "vyn_parser_function",
+ "vyn_parser_import_decl",
+ "vyn_parser_loop",
+ "vyn_stdlib",
+ "vyn_token",
+]
 
 [[package]]
 name = "windows-sys"

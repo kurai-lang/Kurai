@@ -1,0 +1,4 @@
+[package]
+name = "vyn_typedArg"
+version = "0.4.9"
+edition = "2024"
