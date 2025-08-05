@@ -174,9 +174,9 @@ impl<'ctx> CodeGen<'ctx> {
                 #[cfg(debug_assertions)]
                 println!("{} raw_str: {}", "[printf_format()]".green().bold(), raw_str);
 
-                let parsed = self.parse_escape_sequences(raw_str);
-                #[cfg(debug_assertions)]
-                println!("{} parsed: {}", "[printf_format()]".green().bold(), parsed);
+                // let parsed = self.parse_escape_sequences(raw_str);
+                // #[cfg(debug_assertions)]
+                // println!("{} parsed: {}", "[printf_format()]".green().bold(), parsed);
 
                 values.push(val);
                 match ty {
@@ -188,58 +188,6 @@ impl<'ctx> CodeGen<'ctx> {
         });
 
         values
-    }
-
-    fn parse_escape_sequences(&self, content: String) -> String {
-        let mut out = String::new();
-        let mut chars = content.chars().peekable();
-
-        while let Some(ch) = chars.next() {
-            if ch == '\\' {
-                match chars.clone().peek() {
-                    Some('n') => {
-                        chars.next();
-                        out.push('\n');
-                    }
-                    Some('t') => {
-                        chars.next();
-                        out.push('\t');
-                    }
-                    Some('r') => {
-                        chars.next();
-                        out.push('\r');
-                    }
-                    Some('0'..='7') => {
-                        let mut octal = String::new();
-
-                        for _ in 0..3 {
-                            if let Some(digit) = chars.clone().peek() {
-                                if digit.is_digit(8) {
-                                    chars.next();
-                                    octal.push(*digit);
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-
-                        if let Ok(val) = u8::from_str_radix(&octal, 8) {
-                            out.push(val as char);
-                        }
-                    }
-                    Some(other) => {
-                        chars.next();
-                        out.push(*other);
-                    }
-                    _ => out.push('\\'),
-                }
-            } else {
-                // no `\`? then store it as itself, the usual lol
-                out.push(ch);
-            }
-        }
-
-        out
     }
 
     fn extract_string_from_llvm_decl(&self, content: String) -> String {

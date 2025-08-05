@@ -66,12 +66,68 @@ impl<'ctx> CodeGen<'ctx> {
                 //     Some(global_str.unwrap().as_basic_value_enum())
                 // }
                 Value::Str(s) => {
+                    fn parse_escape_sequences(content: String) -> String {
+                        let mut out = String::new();
+                        let mut chars = content.chars().peekable();
+
+                        while let Some(ch) = chars.next() {
+                            if ch == '\\' {
+                                match chars.clone().peek() {
+                                    Some('n') => {
+                                        chars.next();
+                                        out.push('\n');
+                                    }
+                                    Some('t') => {
+                                        chars.next();
+                                        out.push('\t');
+                                    }
+                                    Some('r') => {
+                                        chars.next();
+                                        out.push('\r');
+                                    }
+                                    Some('0'..='7') => {
+                                        let mut octal = String::new();
+
+                                        for _ in 0..3 {
+                                            if let Some(digit) = chars.clone().peek() {
+                                                if digit.is_digit(8) {
+                                                    chars.next();
+                                                    octal.push(*digit);
+                                                } else {
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if let Ok(val) = u8::from_str_radix(&octal, 8) {
+                                            out.push(val as char);
+                                        }
+                                    }
+                                    Some(other) => {
+                                        chars.next();
+                                        out.push(*other);
+                                    }
+                                    _ => out.push('\\'),
+                                }
+                            } else {
+                                // no `\`? then store it as itself, the usual lol
+                                out.push(ch);
+                            }
+                        }
+
+                        out
+                    }
+
                     let id = format!("str_{}", self.string_counter);
                     self.string_counter += 1;
 
                     // @str_{} = constant [3 x i8] c"hi\00"
                     // let llvm_string_type = self.context.i8_type().array_type((s.len() + 1) as u32);
                     // let global_str = self.module.lock().unwrap().add_global(llvm_string_type, None, &id);
+
+                    let s = parse_escape_sequences(s.to_string());
+                    #[cfg(debug_assertions)]
+                    println!("{} s: {}", "[lower_expr_to_llvm()]".green().bold(), s);
 
                     let str_bytes = s.as_bytes();
                     let str_len = str_bytes.len();

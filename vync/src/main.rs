@@ -109,23 +109,25 @@ fn main() {
     );
     let result = codegen.show_result(); //result returns String
 
-    let output_path_ll = format!("{}.ll", output_name);
-    let output_path_opt_ll = format!("{}_opt.ll", output_name);
-    let output_path_bc = format!("{}.bc", output_name);
-    let output_path_opt_bc = format!("{}_opt.bc", output_name);
-    let output_path_s = format!("{}.s", output_name);
-    let output_path_o = format!("{}.o", output_name);
+    let output_path_ll = format!("{output_name}.ll");
+    let output_path_opt_ll = format!("{output_name}_opt.ll");
+    let output_path_bc = format!("{output_name}.bc");
+    let output_path_opt_bc = format!("{output_name}_opt.bc");
+    let output_path_s = format!("{output_name}.s");
+    let output_path_o = format!("{output_name}.o");
 
     let mut llvm_ir_code_file = File::create(&output_path_ll).unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
 
+    // WHATS THIS NAME LMFAO
+    let install_llvm_bro = "install llvm bro";
     let start_time = Instant::now();
     Command::new("llvm-as")
         .arg(&output_path_ll)
         .arg("-o")
         .arg(&output_path_bc)
         .status()
-        .unwrap();
+        .expect(install_llvm_bro);
     Command::new("opt")
         .arg(format!("-O{}", cli.opt_level))
         .arg("-S")
@@ -133,16 +135,16 @@ fn main() {
         .arg("-o")
         .arg(&output_path_opt_ll)
         .status()
-        .unwrap();
+        .expect(install_llvm_bro);
     Command::new("llc")
         .arg(&output_path_opt_ll)
         .arg("-o")
         .arg(&output_path_s)
         .status()
-        .unwrap();
+        .expect(install_llvm_bro);
 
     let mut binding = Command::new("clang");
-    let mut cmd = binding
+    let cmd = binding
         .arg(&output_path_opt_ll)
         .arg("-o")
         .arg(&output_name);
