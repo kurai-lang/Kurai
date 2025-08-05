@@ -13,7 +13,7 @@ use vyn_ast::expr::Expr;
 use vyn_ast::stmt::Stmt;
 use vyn_ast::typedArg::TypedArg;
 use inkwell::{
-    basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
+    basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{AnyValue, BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
 use std::{cell::{Ref, RefCell}, collections::{HashMap, HashSet}, rc::Rc, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
@@ -152,7 +152,7 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn printf_format(&mut self, args: &Vec<Expr>, parser: &mut Parser, format: &mut String) -> Vec<BasicValueEnum<'ctx>> {
+    fn printf_format(&mut self, args: &[Expr], parser: &mut Parser, format: &mut String) -> Vec<BasicValueEnum<'ctx>> {
         let mut values = Vec::new();
 
         args.iter().for_each(|arg| {
@@ -162,6 +162,22 @@ impl<'ctx> CodeGen<'ctx> {
                 parser,
                 None
             ).map(|(val, ty)| {
+                #[cfg(debug_assertions)]
+                println!("{} value: {:?}", "[printf_format()]".green().bold(), val);
+
+                let llvm_value = val.print_to_string().to_string();
+                #[cfg(debug_assertions)]
+                println!("{} llvm_value: {}", "[printf_format()]".green().bold(), llvm_value);
+
+                // handling the \ lol
+                let raw_str = self.extract_string_from_llvm_decl(llvm_value);
+                #[cfg(debug_assertions)]
+                println!("{} raw_str: {}", "[printf_format()]".green().bold(), raw_str);
+
+                let parsed = self.parse_escape_sequences(raw_str);
+                #[cfg(debug_assertions)]
+                println!("{} parsed: {}", "[printf_format()]".green().bold(), parsed);
+
                 values.push(val);
                 match ty {
                     Type::I64 => format.push_str("%ld"),
@@ -174,13 +190,73 @@ impl<'ctx> CodeGen<'ctx> {
         values
     }
 
-    pub fn printf(&mut self, args: &Vec<Expr>, expected_type: Option<&Type>, parser: &mut Parser) -> Result<(), String>{
+    fn parse_escape_sequences(&self, content: String) -> String {
+        let mut out = String::new();
+        let mut chars = content.chars().peekable();
+
+        while let Some(ch) = chars.next() {
+            if ch == '\\' {
+                match chars.clone().peek() {
+                    Some('n') => {
+                        chars.next();
+                        out.push('\n');
+                    }
+                    Some('t') => {
+                        chars.next();
+                        out.push('\t');
+                    }
+                    Some('r') => {
+                        chars.next();
+                        out.push('\r');
+                    }
+                    Some('0'..='7') => {
+                        let mut octal = String::new();
+
+                        for _ in 0..3 {
+                            if let Some(digit) = chars.clone().peek() {
+                                if digit.is_digit(8) {
+                                    chars.next();
+                                    octal.push(*digit);
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+
+                        if let Ok(val) = u8::from_str_radix(&octal, 8) {
+                            out.push(val as char);
+                        }
+                    }
+                    Some(other) => {
+                        chars.next();
+                        out.push(*other);
+                    }
+                    _ => out.push('\\'),
+                }
+            } else {
+                // no `\`? then store it as itself, the usual lol
+                out.push(ch);
+            }
+        }
+
+        out
+    }
+
+    fn extract_string_from_llvm_decl(&self, content: String) -> String {
+        let start = content.find("c\"").unwrap() + 2;
+        let end = content[start..].find('"').unwrap() + start;
+        content[start..end].to_string()
+    }
+
+    pub fn printf(&mut self, args: &[Expr], expected_type: Option<&Type>, parser: &mut Parser) -> Result<(), String>{
         let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
         let mut format = String::new();
         let mut final_args: Vec<BasicMetadataValueEnum> = Vec::new();
 
         let compiled_args = self.printf_format(args, parser, &mut format);
+        #[cfg(debug_assertions)]
+        println!("Compiled args: {:?}", compiled_args.len());
 
         let format_str = self.builder
             .build_global_string_ptr(&format, &format!("fmt_{id}"))
@@ -188,13 +264,11 @@ impl<'ctx> CodeGen<'ctx> {
             .as_pointer_value()
             .as_basic_value_enum();
 
-        #[cfg(debug_assertions)]
-        println!("Compiled args: {:?}", compiled_args.len());
-
         let module = self.module
             .lock()
             .unwrap();
 
+        // the format
         final_args.insert(0, format_str.into());
 
         final_args.extend(
@@ -207,6 +281,8 @@ impl<'ctx> CodeGen<'ctx> {
             .get_function("printf")
             .expect("printf isnt defined. Did you mean to import printf?");
 
+        #[cfg(debug_assertions)]
+        println!("Final args: {:?}", final_args);
         self.builder.
             build_call(printf_fn, &final_args, &format!("printf_call_{}", id))
             .unwrap();

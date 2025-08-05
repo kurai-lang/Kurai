@@ -12,3 +12,6 @@ build:
 # Installs vyn into system
 install: build
     bash $(realpath install.sh)
+
+output:
+    $(realpath ./vync/exec)

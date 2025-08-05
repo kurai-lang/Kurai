@@ -73,8 +73,7 @@ impl<'ctx> CodeGen<'ctx> {
                     // let llvm_string_type = self.context.i8_type().array_type((s.len() + 1) as u32);
                     // let global_str = self.module.lock().unwrap().add_global(llvm_string_type, None, &id);
 
-                    let cstr = format!("{}\0", s);
-                    let str_bytes = cstr.as_bytes();
+                    let str_bytes = s.as_bytes();
                     let str_len = str_bytes.len();
 
                     let str_type = self.context.i8_type().array_type(str_len as u32);

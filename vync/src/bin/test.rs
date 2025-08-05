@@ -31,7 +31,7 @@ fn main() {
 
         # test, inline
         fn test() void {
-            printf("hello");
+            printf("hello\n");
             let x = 0;
             let y = 0;
             if x == 0 {
