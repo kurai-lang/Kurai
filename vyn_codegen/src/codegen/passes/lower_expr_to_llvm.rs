@@ -125,7 +125,8 @@ impl<'ctx> CodeGen<'ctx> {
                     // let llvm_string_type = self.context.i8_type().array_type((s.len() + 1) as u32);
                     // let global_str = self.module.lock().unwrap().add_global(llvm_string_type, None, &id);
 
-                    let s = parse_escape_sequences(s.to_string());
+                    let mut s = parse_escape_sequences(s.to_string());
+                    s.push('\0');
                     #[cfg(debug_assertions)]
                     println!("{} s: {}", "[lower_expr_to_llvm()]".green().bold(), s);
 
