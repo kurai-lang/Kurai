@@ -1,13 +1,9 @@
 use clap::Parser;
 use colored::Colorize;
-// use bahasac::scope::Scope;
-// use bahasac::value::Value;
 use inkwell::context::Context;
 use vyn_codegen::codegen::CodeGen;
 
 use vyn_parser::parse::Parser as VyncParser;
-use vyn_token::token::token::Token;
-use vyn_core::scope::Scope;
 use std::fs::{self, remove_file, File};
 use std::io::prelude::*;
 use std::process::Command;
@@ -38,7 +34,6 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    // let output_name = format!("target/{}", cli.output_name);
     let output_name = cli.output_name;
     let output_name_clone = output_name.clone();
 
@@ -65,30 +60,25 @@ fn main() {
 
     let context = Context::create();
 
-    let mut code = String::new();
-
     let file_path = cli.input;
+    let code = fs::read_to_string(file_path).unwrap(); 
 
-    if !(cfg!(debug_assertions)) { 
-        code = fs::read_to_string(file_path).unwrap(); 
-    }
-
-    let mut scope = Scope::new();
+    // TODO: Scopin xD
+    // let mut scope = Scope::new();
 
     // let tokens = Token::tokenize(code.as_str());
-    let mut parser = VyncParser::new().with_tokens(code.as_str());
+    let mut parser = VyncParser::new().with_src_code(code.as_str());
 
-    let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parser.parse_out_vec_stmt();
     let parsed_expr_vec = parser.parse_out_vec_expr();
     let mut codegen = CodeGen::new(&context, &code, parser).init();
     // codegen.printf("hi");
 
     // pub fn generate_code(&self, parsed_stmt: Vec<Stmt>, context: &'ctx Context, builder: &Builder, module: &mut Module<'ctx>)
-    // #[cfg(debug_assertions)]
+    #[cfg(debug_assertions)]
     {
-        println!("STATEMENTS:\n{:?}", parsed_stmt_vec);
-        println!("EXPRESSIONS:\n{:?}", parsed_expr_vec);
+        println!("STATEMENTS:\n{parsed_stmt_vec:?}");
+        println!("EXPRESSIONS:\n{parsed_expr_vec:?}");
         println!("VARIABLES:\n{:?}", codegen.variables);
     }
 
@@ -97,14 +87,16 @@ fn main() {
         parsed_expr_vec.unwrap(), 
     );
 
+    // == UNUSED == 
+    // let output_path_opt_bc = format!("{output_name}_opt.bc");
+    // let output_path_o = format!("{output_name}.o");
+
     let output_path_ll = format!("{output_name}.ll");
     let output_path_opt_ll = format!("{output_name}_opt.ll");
     let output_path_bc = format!("{output_name}.bc");
-    let output_path_opt_bc = format!("{output_name}_opt.bc");
     let output_path_s = format!("{output_name}.s");
-    let output_path_o = format!("{output_name}.o");
 
-    let result = codegen.show_result(); //result returns String
+    let result = codegen.show_result();
 
     let mut llvm_ir_code_file = File::create(&output_path_ll).unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
@@ -142,12 +134,12 @@ fn main() {
 
         //lib_dirs, link_libs
     for dir in &cli.lib_dirs {
-        cmd.arg(format!("-L{}", dir));
+        cmd.arg(format!("-L{dir}"));
         println!("{}{}{}: searching for libraries in: {}", "[".green(), "external library paths".green().bold(), "]".green(), dir);
     }
 
     for lib in &cli.link_libs {
-        cmd.arg(format!("-l{}", lib));
+        cmd.arg(format!("-l{lib}"));
         println!("{}{}{}: linking external libraries: {}", "[".green(), "external libraries".green().bold(), "]".green(), lib);
     }
 
@@ -166,7 +158,7 @@ fn main() {
             remove_file(&output_path_s).unwrap();
         }
 
-        Command::new(format!("./{}", output_name)).status().unwrap();
+        Command::new(format!("./{output_name}")).status().unwrap();
     } else {
         println!("{}: Compilation unsuccessful", "error".red());
     }

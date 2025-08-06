@@ -1,9 +1,6 @@
-use colored::Colorize;
 use inkwell::context::Context;
 use vyn_codegen::codegen::CodeGen;
-use vyn_core::scope::Scope;
 use vyn_parser::parse::Parser;
-use vyn_token::token::token::Token;
 
 fn main() {
     // let code = r#"
@@ -47,7 +44,7 @@ fn main() {
         "#.to_string();
 
     let context = Context::create();
-    let mut parser = Parser::new().with_tokens(code.as_str());
+    let mut parser = Parser::new().with_src_code(code.as_str());
 
     let parsed_stmt_vec = parser.parse_out_vec_stmt();
     // println!("{:?}", parsed_stmt_vec);

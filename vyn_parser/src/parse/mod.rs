@@ -41,7 +41,7 @@ impl Parser {
         }
     }
 
-    pub fn with_tokens(&self, src: &str) -> Self {
+    pub fn with_src_code(&self, src: &str) -> Self {
         let (tokens, spanned_tokens) = Token::tokenize(src);
         Self {
             tokens,
