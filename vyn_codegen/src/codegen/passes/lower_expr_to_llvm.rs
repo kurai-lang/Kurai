@@ -1,12 +1,12 @@
 use colored::Colorize;
-use inkwell::{basic_block::BasicBlock, module::Linkage, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, IntPredicate};
+use inkwell::{basic_block::BasicBlock, module::Linkage, types::{BasicType, BasicTypeEnum}, values::{BasicMetadataValueEnum, BasicValue, BasicValueEnum}, IntPredicate};
 
 use vyn_ast::expr::Expr;
 use vyn_binop::bin_op::BinOp;
 
 use vyn_parser::parse::Parser;
 use vyn_types::{typ::Type, value::Value};
-use crate::{codegen::{passes::utils::{basic_type_enum_to_string, basic_value_enum_to_string}, CodeGen}, vyn_panic, print_error};
+use crate::{codegen::{passes::utils::{basic_type_enum_to_string, basic_value_enum_to_string, TypeInfer}, CodeGen}, print_error, vyn_panic};
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn lower_expr_to_llvm(
@@ -158,13 +158,41 @@ impl<'ctx> CodeGen<'ctx> {
                 // _ => None
             }
             Expr::Id(name) => {
+                let type_infer = TypeInfer{};
                 if let Some(ptr) = self.variables.get(name) {
-                    let loaded = self.builder.build_load(
+                    let loaded_no_alignment = self.builder.build_load(
                         self.context.i64_type(),
                         ptr.ptr_value,
                         &format!("load_{name}")
-                    );
-                    Some((loaded.unwrap(), ptr.var_type.clone()))
+                    ).unwrap();
+
+                    if loaded_no_alignment.is_int_value() {
+                        let raw_val = loaded_no_alignment
+                            .into_int_value()
+                            .get_sign_extended_constant()
+                            .unwrap_or(0);
+                        let alignment_val = type_infer.infer_alignment_int_type(raw_val);
+
+                        loaded_no_alignment
+                            .as_instruction_value()
+                            .unwrap()
+                            .set_alignment(alignment_val.try_into().unwrap())
+                            .unwrap();
+                    } else if loaded_no_alignment.is_float_value() {
+                        let raw_val: f64 = loaded_no_alignment
+                            .into_float_value()
+                            .get_constant()
+                            .unwrap_or((0.0, false))
+                            .0;
+                        let alignment_val = type_infer.infer_alignment_float_type(raw_val);
+
+                        loaded_no_alignment
+                            .as_instruction_value()
+                            .unwrap()
+                            .set_alignment(alignment_val.try_into().unwrap())
+                            .unwrap();
+                    }
+                    Some((loaded_no_alignment, ptr.var_type.clone()))
                 } else {
                     println!("Variable {name} not found!");
                     None
@@ -449,14 +477,19 @@ impl<'ctx> CodeGen<'ctx> {
                         );
                     }
 
+                    let value_to_push = last_expr_value.unwrap_or_else(|| {
+                        (
+                            self.context.i32_type().const_zero().as_basic_value_enum(),
+                            Type::I32
+                        )
+                    });
+                    branch_blocks.push(then_block);
+                    branch_values.push(value_to_push);
+
                     self.builder.build_unconditional_branch(merge_block).unwrap(); // jumps
                                                                                              // to
                                                                                              // merge
                                                                                              // lol
-                    if let Some(val) = last_expr_value {
-                        branch_blocks.push(then_block);
-                        branch_values.push(val);
-                    }
 
                     // NOTE: `else if`
                     // next_check_block = check_next_block;
@@ -485,10 +518,14 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.builder.build_unconditional_branch(merge_block).unwrap();
 
-                    if let Some(val) = last_expr_value {
-                        branch_blocks.push(else_block);
-                        branch_values.push(val);
-                    }
+                    let value_to_push = last_expr_value.unwrap_or_else(|| {
+                        (
+                            self.context.i32_type().const_zero().as_basic_value_enum(),
+                            Type::I32
+                        )
+                    });
+                    branch_blocks.push(else_block);
+                    branch_values.push(value_to_push);
                 } else {
                     // for when theres no else
                     for final_block in self.final_check_blocks.drain(..) {
@@ -498,18 +535,27 @@ impl<'ctx> CodeGen<'ctx> {
                 }
 
                 self.builder.position_at_end(merge_block);
+                println!("{} branch_blocks: {:?}", "[lower_expr_to_llvm()]".green().bold(), branch_blocks);
+                println!("{} branch_values: {:?}", "[lower_expr_to_llvm()]".green().bold(), branch_values);
 
-                if !branch_values.is_empty() {
-                    let phi = self.builder.build_phi(branch_values[0].0.get_type(), "if_result").unwrap();
+                let result = if !branch_values.is_empty() {
+                    let phi_type = branch_values[0].0.get_type();
+                    let phi = self.builder.build_phi(phi_type, "if_result").expect("Failed to build phi node");
 
-                    for (i, val) in branch_values.iter().enumerate() {
-                        phi.add_incoming(&[(&val.0, branch_blocks[i])]);
+                    for (i, (val, _)) in branch_values.iter().enumerate() {
+                        #[cfg(debug_assertions)]
+                        println!("{} phi incoming: {:?} from {:?}", "[lower_expr_to_llvm()]".green().bold(), val, branch_blocks[i]);
+                        phi.add_incoming(&[(val, branch_blocks[i])]);
                     }
 
-                    Some((phi.as_basic_value(), branch_values[0].1.clone()))
+                    phi.as_basic_value().as_basic_value_enum()
                 } else {
-                    None
-                }
+                    // dont return None xD
+                    self.context.i32_type().const_zero().as_basic_value_enum()
+                };
+
+                let location = branch_values.first().map(|v| v.1.clone()).unwrap_or_default();
+                Some((result, location))
             }
             Expr::Block { stmts, final_expr } => {
                 self.execute_every_stmt_in_code(stmts.to_vec(), parser, None);

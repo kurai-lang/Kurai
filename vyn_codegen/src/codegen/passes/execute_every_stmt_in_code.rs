@@ -9,53 +9,7 @@ use crate::{codegen::{passes::utils::basic_value_enum_to_string, CodeGen, Functi
 use vyn_ast::stmt::Stmt;
 use vyn_ast::expr::Expr;
 
-fn infer_int_type(value: i64) -> Type {
-    let min_i8 = i8::MIN as i64;
-    let max_i8 = i8::MAX as i64;
-    let min_i16 = i16::MIN as i64;
-    let max_i16 = i16::MAX as i64;
-    let min_i32 = i32::MIN as i64;
-    let max_i32 = i32::MAX as i64;
-
-    if (value >= min_i8) && (value <= max_i8)   { return Type::I8;  }
-    if (value >= min_i16) && (value <= max_i16) { return Type::I16; }
-    if (value >= min_i32) && (value <= max_i32) { Type::I32         }
-    else { Type::I64 }
-}
-
-fn infer_float_type(value: f64) -> Type {
-    let min_f32 = f32::MIN as f64;
-    let max_f32 = f32::MAX as f64;
-    // let min_f64 = f64::MIN as f64;
-    // let max_f64 = f64::MAX as f64;
-
-    if (value >= min_f32) && (value <= max_f32) { Type::F32 }
-    else { Type::F64 }
-}
-
-fn infer_alignment_int_type(value: i64) -> i64 {
-    let min_i8 = i8::MIN as i64;
-    let max_i8 = i8::MAX as i64;
-    let min_i16 = i16::MIN as i64;
-    let max_i16 = i16::MAX as i64;
-    let min_i32 = i32::MIN as i64;
-    let max_i32 = i32::MAX as i64;
-
-    if (value >= min_i8) && (value <= max_i8)   { return 1; }
-    if (value >= min_i16) && (value <= max_i16) { return 2; }
-    if (value >= min_i32) && (value <= max_i32) { 4         }
-    else { 8 }
-}
-
-fn infer_alignment_float_type(value: f64) -> i64 {
-    let min_f32 = f32::MIN as f64;
-    let max_f32 = f32::MAX as f64;
-    // let min_f64 = f64::MIN as f64;
-    // let max_f64 = f64::MAX as f64;
-
-    if (value >= min_f32) && (value <= max_f32) { 4 }
-    else { 8 }
-}
+use crate::codegen::passes::utils::TypeInfer;
 
 impl<'ctx> CodeGen<'ctx> {
     pub fn execute_every_stmt_in_code(
@@ -69,12 +23,13 @@ impl<'ctx> CodeGen<'ctx> {
                 Stmt::VarDecl { name, typ, value } => {
                     // checks type from string,
                     // if not found then check the value's type itself
+                    let type_infer = TypeInfer{};
                     let parsed_type = match typ {
                         Some(t) => Type::from_str(t).unwrap_or_else(|| panic!("Invalid type {typ:?}")),
                         None => {
                             match value {
-                                Some(Expr::Literal(Value::Int(v))) => infer_int_type(*v),
-                                Some(Expr::Literal(Value::Float(v))) => infer_float_type(*v),
+                                Some(Expr::Literal(Value::Int(v))) => type_infer.infer_int_type(*v),
+                                Some(Expr::Literal(Value::Float(v))) => type_infer.infer_float_type(*v),
                                 Some(Expr::Literal(Value::Bool(_))) => Type::Bool,
                                 Some(Expr::FnCall { name, .. }) => {
                                     let fn_info = self.functions.get(name).expect("Function not found");
@@ -113,13 +68,13 @@ impl<'ctx> CodeGen<'ctx> {
 
                         if val.is_int_value() {
                             let raw_val = val.into_int_value().get_sign_extended_constant().unwrap();
-                            let alignment_val = infer_alignment_int_type(raw_val);
+                            let alignment_val = type_infer.infer_alignment_int_type(raw_val);
 
                             self.builder.build_store(alloca, val).unwrap()
                                 .set_alignment(alignment_val.try_into().unwrap()).unwrap();
                         } else if val.is_float_value() {
                             let raw_val = val.into_float_value().get_constant().unwrap().0;
-                            let alignment_val = infer_alignment_float_type(raw_val);
+                            let alignment_val = type_infer.infer_alignment_float_type(raw_val);
 
                             self.builder.build_store(alloca, val).unwrap()
                                 .set_alignment(alignment_val.try_into().unwrap()).unwrap();
@@ -157,15 +112,17 @@ impl<'ctx> CodeGen<'ctx> {
                         panic!("{}: tried to lower an invalid expression `{:?}` into LLVM IR",
                         "internal error".red().bold(), value));
 
+                    let type_infer = TypeInfer{};
+
                     if llvm_value.is_int_value() {
                         let raw_val = llvm_value.into_int_value().get_sign_extended_constant().unwrap();
-                        let alignment_val = infer_alignment_int_type(raw_val);
+                        let alignment_val = type_infer.infer_alignment_int_type(raw_val);
 
                         self.builder.build_store(var_ptr, llvm_value).unwrap()
                             .set_alignment(alignment_val.try_into().unwrap()).unwrap();
                     } else if llvm_value.is_float_value() {
                         let raw_val = llvm_value.into_float_value().get_constant().unwrap().0;
-                        let alignment_val = infer_alignment_float_type(raw_val);
+                        let alignment_val = type_infer.infer_alignment_float_type(raw_val);
 
                         self.builder.build_store(var_ptr, llvm_value).unwrap()
                             .set_alignment(alignment_val.try_into().unwrap()).unwrap();

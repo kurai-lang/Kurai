@@ -33,8 +33,11 @@ fn main() {
             let y = 0;
             if x == 0 {
                 y = 2;
+                printf("yes");
             } else {
                 y = 1;
+                printf("no");
+
             }
         }
 
