@@ -1,13 +1,12 @@
-use std::{cell::RefCell, collections::HashMap, mem, rc::Rc, sync::{Arc, RwLock}};
+use std::{collections::HashMap, mem, sync::{Arc, RwLock}};
 
 use inkwell::attributes::AttributeLoc;
 use vyn_attr::attribute::Attribute;
 use vyn_ast::expr::Expr;
 use vyn_ast::stmt::Stmt;
-use vyn_core::scope::Scope;
 
 use vyn_parser::parse::Parser;
-use vyn_types::{typ::Type, value::Value};
+use vyn_types::value::Value;
 
 use crate::codegen::CodeGen;
 
@@ -57,23 +56,22 @@ impl AttributeRegistry {
         self.handlers.insert(name.to_string(), AttributeHandler::new(handler));
     }
 
-    pub fn register_all(&mut self, expected_type: Option<&Type>, discovered_modules: &mut Vec<String>) {
-        let scope = Arc::new(RwLock::new(Scope::new()));
-        let scope = Arc::clone(&scope);
-        let expected_type = expected_type.cloned(); // Option<Type>, not Option<&Type>
+    pub fn register_all(&mut self) {
+        // let scope = Arc::new(RwLock::new(Scope::new()));
+        // let scope = Arc::clone(&scope);
+        // let expected_type = expected_type.cloned(); // Option<Type>, not Option<&Type>
 
         let parser = Arc::new(RwLock::new(Parser::new()));
         let parser_ref = parser.clone();
 
         self.register(
             "test", 
-            move |attr_name, _, ctx| {
+            move | _, _, ctx| {
             // let mut local_modules: Vec<String> = vec![];
-            let mut scope_ref = scope.write().unwrap();
+            // let mut scope_ref = scope.write().unwrap();
             // let mut discovered_modules = vec![]; // empty or cloned vec
 
-            ctx.printf(&vec![Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string()))],
-                expected_type.as_ref(),
+            ctx.printf(&[Expr::Literal(Value::Str("TEST ATTRIBUTE HAS BEEN CALLED".to_string()))],
                 &mut parser_ref.write().unwrap()
             ).unwrap();
         });
@@ -135,7 +133,7 @@ impl AttributeRegistry {
 impl<'ctx> CodeGen<'ctx> {
     pub fn load_attributes(&mut self, attributes: &[Attribute], stmt: &Stmt) {
         let attr_registry = mem::take(&mut self.attr_registry);
-        let mut temp_registry = attr_registry;
+        let temp_registry = attr_registry;
 
         temp_registry._load_attributes(attributes, stmt, self);
         self.attr_registry = temp_registry;
@@ -148,7 +146,7 @@ pub struct AttributeHandler {
 
 impl AttributeHandler {
     pub fn new<T>(f: T) -> Self
-    where 
+    where
         T: Fn(&str, &Stmt, &mut CodeGen) + Send + Sync + Clone + 'static,
     {
         Self {

@@ -1,4 +1,4 @@
-use inkwell::{context::Context, types::{AnyType, BasicType, BasicTypeEnum, PointerType, VoidType}, values::BasicValueEnum};
+use inkwell::{context::Context, types::{BasicType, BasicTypeEnum}, values::BasicValueEnum};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
@@ -44,9 +44,9 @@ impl Type {
 
             Type::Bool => Some(ctx.bool_type().as_basic_type_enum()),
             Type::Str => Some(ctx.ptr_type(inkwell::AddressSpace::default()).as_basic_type_enum()),
-            Type::Ptr(ref inner) => {
-                let inner_ty = inner.to_llvm_type(ctx)?;
-                Some(inner_ty.ptr_type(inkwell::AddressSpace::default()).as_basic_type_enum())
+            Type::Ptr(_) => {
+                // let inner_ty = inner.to_llvm_type(ctx)?;
+                Some(ctx.ptr_type(inkwell::AddressSpace::default()).as_basic_type_enum())
             }
 
             _ => None,

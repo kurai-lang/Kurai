@@ -294,7 +294,7 @@ version = "0.4.9"
 dependencies = [
  "vyn_attr",
  "vyn_binop",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -325,7 +325,7 @@ dependencies = [
  "vyn_parser_import_file",
  "vyn_stmt",
  "vyn_token",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -375,7 +375,7 @@ dependencies = [
  "vyn_expr",
  "vyn_stmt",
  "vyn_token",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -391,7 +391,7 @@ dependencies = [
  "vyn_parser",
  "vyn_stmt",
  "vyn_token",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -405,7 +405,7 @@ dependencies = [
  "vyn_parser_import_file",
  "vyn_stmt",
  "vyn_token",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -444,7 +444,7 @@ dependencies = [
  "vyn_core",
  "vyn_expr",
  "vyn_stmt",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -456,7 +456,7 @@ dependencies = [
  "vyn_ast",
  "vyn_attr",
  "vyn_expr",
- "vyn_typedArg",
+ "vyn_typed_arg",
  "vyn_types",
 ]
 
@@ -470,7 +470,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "vyn_typedArg"
+name = "vyn_typed_arg"
 version = "0.4.9"
 
 [[package]]

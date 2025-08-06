@@ -1,4 +1,3 @@
-use vyn_core::scope::Scope;
 use vyn_ast::expr::Expr;
 use vyn_ast::stmt::Stmt;
 use vyn_token::token::token::Token;
@@ -6,47 +5,6 @@ use vyn_token::eat::eat;
 use colored::Colorize;
 
 use crate::parse::Parser;
-
-// pub struct BlockParserStruct;
-// impl BlockParser for BlockParserStruct {
-//     fn parse_block(
-//         &self,
-//         tokens: &[Token],
-//         pos: &mut usize,
-//         discovered_modules: &mut Vec<String>,
-//         
-//         scope: &mut Scope,
-//         src: &str,
-//     ) -> Result<Vec<Stmt>, String> {
-//         parse_block(
-//             tokens,
-//             pos,
-//             discovered_modules,
-//             parsers,
-//             scope,
-//             src
-//         )
-//     }
-//
-//     fn parse_block_stmt(
-//         &self,
-//         tokens: &[Token],
-//         pos: &mut usize,
-//         discovered_modules: &mut Vec<String>,
-//         
-//         scope: &mut Scope,
-//         src: &str,
-//     ) -> Result<Stmt, String> {
-//         parse_block_stmt(
-//             tokens,
-//             pos,
-//             discovered_modules,
-//             parsers,
-//             scope,
-//             src
-//         )
-//     }
-// }
 
 impl Parser {
     pub fn parse_block(

@@ -1,5 +1,4 @@
 use colored::Colorize;
-use vyn_token::token::token::Token;
 use vyn_types::value::Value;
 
 use crate::span::Span;
@@ -14,9 +13,9 @@ pub enum TypeErrorKind {
 impl std::fmt::Display for TypeErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TypeErrorKind::UnsupportedReturnType(t) => write!(f, "unsupported return type `{}`", t),
-            TypeErrorKind::TypeMismatch { expected, found } => write!(f, "type mismatch: expected `{}`, found `{}`", expected, found),
-            TypeErrorKind::UndefinedVariable(name) => write!(f, "undefined variable `{}`", name),
+            TypeErrorKind::UnsupportedReturnType(t) => write!(f, "unsupported return type `{t}`"),
+            TypeErrorKind::TypeMismatch { expected, found } => write!(f, "type mismatch: expected `{expected}`, found `{found}`"),
+            TypeErrorKind::UndefinedVariable(name) => write!(f, "undefined variable `{name}`"),
         }
     }
 }
@@ -34,7 +33,7 @@ pub enum ParseErrorKind {
 impl std::fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseErrorKind::ExpectedToken(err) => write!(f, "{}", err),
+            ParseErrorKind::ExpectedToken(err) => write!(f, "{err}"),
             ParseErrorKind::FnCallFailed(name) => write!(f, "{}: function named `{}` failed to be called", 
                                                                 "function call error".bold(), name),
             ParseErrorKind::FnDeclFailed(name) => write!(f, "{}: function named `{}` failed to be declared or defined",
@@ -58,8 +57,8 @@ pub enum CodegenErrorKind {
 impl std::fmt::Display for CodegenErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CodegenErrorKind::LowerExprFailed(err) => write!(f, "{}", err),
-            CodegenErrorKind::LowerStmtFailed(err) => write!(f, "{}", err),
+            CodegenErrorKind::LowerExprFailed(err) => write!(f, "{err}"),
+            CodegenErrorKind::LowerStmtFailed(err) => write!(f, "{err}"),
         }
     }
 }

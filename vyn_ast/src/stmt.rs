@@ -1,5 +1,5 @@
 use vyn_attr::attribute::Attribute;
-use crate::typedArg::TypedArg;
+use crate::typed_arg::TypedArg;
 use vyn_types::typ::Type;
 use std::fmt;
 
@@ -78,42 +78,42 @@ impl fmt::Display for Stmt {
             Stmt::VarDecl { name, typ, value } => {
                         // converts value to string datatype
                         let value_str = match value {
-                            Some(v) => format!("{:?}", v),
+                            Some(v) => format!("{v:?}"),
                             None => "None".to_string(),
                         };
-                        write!(f, "VarDecl(name: {}, type: {:?}, value: {})", name, typ, value_str)
+                        write!(f, "VarDecl(name: {name}, type: {typ:?}, value: {value_str})")
                     }
             Stmt::Assign { name, value } => {
-                        let value_str = format!("{:?}", value);
-                        write!(f, "Assign(name: {}, value: {})", name, value_str)
+                        let value_str = format!("{value:?}");
+                        write!(f, "Assign(name: {name}, value: {value_str})")
                     }
             Stmt::FnCall { name, args } => {
-                        write!(f, "FnCall(name: {}, args: {:?})", name, args)
+                        write!(f, "FnCall(name: {name}, args: {args:?})")
                     }
             Stmt::FnDecl { name, args, body, attributes, ret_type, is_extern } => {
-                        write!(f, "FnDecl(name: {}, args: {:?}, body: {:?}, attributes: {:?}, ret_type: {:?}, is_extern: {})", name, args, body, attributes, ret_type, is_extern)
+                        write!(f, "FnDecl(name: {name}, args: {args:?}, body: {body:?}, attributes: {attributes:?}, ret_type: {ret_type:?}, is_extern: {is_extern})")
                     }
-            Stmt::Import { path, nickname, is_glob } => {
+            Stmt::Import { path, nickname, .. } => {
                         if let Some(nickname) = nickname {
-                            write!(f, "Import(name: {:?}, nickname: {})", path, nickname)
+                            write!(f, "Import(name: {path:?}, nickname: {nickname})")
                         } else {
-                            write!(f, "Import(name: {:?}, nickname: {:?})", path, nickname)
+                            write!(f, "Import(name: {path:?}, nickname: {nickname:?})")
                         }
                     }
             Stmt::Loop { body } => {
-                        write!(f, "Loop(body: {:?})", body)
+                        write!(f, "Loop(body: {body:?})")
                     }
             Stmt::Break => {
                         write!(f, "Break")
                     }
             Stmt::Expr(expr) => {
-                        write!(f, "Expr(Expr: {:?})", expr)
+                        write!(f, "Expr(Expr: {expr:?})")
                     }
             Stmt::Block(stmts) => {
-                write!(f, "Block(stmts: {:?}", stmts)
+                write!(f, "Block(stmts: {stmts:?}")
             }
             Stmt::Return(expr) => {
-                write!(f, "Return(expr: {:?})", expr)
+                write!(f, "Return(expr: {expr:?})")
             }
         }
     }

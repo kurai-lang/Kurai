@@ -7,6 +7,6 @@ edition = "2024"
 inkwell = { version = "0.6.0", features = ["llvm18-1"] }
 vyn_types = { version = "0.4.9", path = "../vyn_types/"}
 vyn_expr = { version = "0.4.9", path = "../vyn_expr/"}
-vyn_typedArg = { version = "0.4.9", path = "../vyn_typedArg/"}
+vyn_typed_arg = { version = "0.4.9", path = "../vyn_typed_arg/"}
 vyn_attr = { version = "0.4.9", path = "../vyn_attr" }
 vyn_ast = { version = "0.4.9", path = "../vyn_ast" }

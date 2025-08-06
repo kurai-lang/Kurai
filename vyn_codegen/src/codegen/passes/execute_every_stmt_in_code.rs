@@ -70,7 +70,7 @@ impl<'ctx> CodeGen<'ctx> {
                     // checks type from string,
                     // if not found then check the value's type itself
                     let parsed_type = match typ {
-                        Some(t) => Type::from_str(t).unwrap_or_else(|| panic!("Invalid type {:?}", typ)),
+                        Some(t) => Type::from_str(t).unwrap_or_else(|| panic!("Invalid type {typ:?}")),
                         None => {
                             match value {
                                 Some(Expr::Literal(Value::Int(v))) => infer_int_type(*v),
@@ -104,8 +104,7 @@ impl<'ctx> CodeGen<'ctx> {
                             None,
                         ).unwrap_or_else(|| {
                             eprintln!(
-                                "warn: failed to lower expr for '{}': falling back to default value",
-                                name
+                                "warn: failed to lower expr for '{name}': falling back to default value"
                             );
 
                             let fallback_val = parsed_type.to_llvm_value_zero(self.context);
@@ -117,13 +116,13 @@ impl<'ctx> CodeGen<'ctx> {
                             let alignment_val = infer_alignment_int_type(raw_val);
 
                             self.builder.build_store(alloca, val).unwrap()
-                                .set_alignment(alignment_val.try_into().unwrap());
+                                .set_alignment(alignment_val.try_into().unwrap()).unwrap();
                         } else if val.is_float_value() {
                             let raw_val = val.into_float_value().get_constant().unwrap().0;
                             let alignment_val = infer_alignment_float_type(raw_val);
 
                             self.builder.build_store(alloca, val).unwrap()
-                                .set_alignment(alignment_val.try_into().unwrap());
+                                .set_alignment(alignment_val.try_into().unwrap()).unwrap();
                         } else {
                             panic!("I DONT KNOW?!?!")
                         }
@@ -141,7 +140,7 @@ impl<'ctx> CodeGen<'ctx> {
                 }
                 Stmt::Assign { name, value } => {
                     #[cfg(debug_assertions)]
-                    println!("Assign value AST: {:?}", value);
+                    println!("Assign value AST: {value:?}");
                     let var_ptr = match self.variables.get(name.as_str()) {
                         Some(ptr) => ptr.ptr_value,
                         None => {
@@ -163,59 +162,24 @@ impl<'ctx> CodeGen<'ctx> {
                         let alignment_val = infer_alignment_int_type(raw_val);
 
                         self.builder.build_store(var_ptr, llvm_value).unwrap()
-                            .set_alignment(alignment_val.try_into().unwrap());
+                            .set_alignment(alignment_val.try_into().unwrap()).unwrap();
                     } else if llvm_value.is_float_value() {
                         let raw_val = llvm_value.into_float_value().get_constant().unwrap().0;
                         let alignment_val = infer_alignment_float_type(raw_val);
 
                         self.builder.build_store(var_ptr, llvm_value).unwrap()
-                            .set_alignment(alignment_val.try_into().unwrap());
+                            .set_alignment(alignment_val.try_into().unwrap()).unwrap();
                     } else {
                         panic!("I DONT KNOW?!?!")
                     }
                 }
-                Stmt::FnCall { name, args } => {
-                    // match name.as_str() {
-                    //     "printf" => {
-                    //         self.import_printf().unwrap();
-                    //         self.printf(&args).unwrap();
-                    //     }
-                    //     _ => {
-                    //         let function = if name.contains("::") {
-                    //             self.get_or_compile_function(
-                    //                 name.as_str(),
-                    //                 discovered_modules,
-                    //                 parsers,
-                    //                 scope
-                    //             )
-                    //         } else {
-                    //             self.module.lock().unwrap().get_function(&name)
-                    //         };
-                    //
-                    //         if let Some(function) = function {
-                    //             let mut compiled_args: Vec<BasicMetadataValueEnum> = Vec::new();
-                    //             for arg in args {
-                    //                 let value = arg.value.as_ref().unwrap_or_else(||
-                    //                     panic!("{}: Failed to compile arguments for function {}",
-                    //                         "error".red().bold(),
-                    //                         name.bold()));
-                    //
-                    //                 self.lower_expr_to_llvm(value, None, parsers, scope)
-                    //                     .map(|expr| compiled_args.push(expr.into()));
-                    //             }
-                    //             self.builder.build_call(function, &compiled_args, &name).unwrap();
-                    //         } else {
-                    //             println!("{} {}", "Couldnt find function named:".red(), name.red());
-                    //         }
-                    //     }
-                    // }
-                    #[cfg(debug_assertions)]
-                    println!("broken lol (nah i just commented legacy code)");
+                Stmt::FnCall { .. } => {
+                    println!("DEPRECATED SHIT");
                 }
                 Stmt::FnDecl { name, args, body, attributes, ret_type, is_extern } => {
                     #[cfg(debug_assertions)] { println!("converting args to llvm args types"); }
 
-                    // Map the argument types to LLVM types 
+                    // Map the argument types to LLVM types
                     // remember, we need to speak LLVM IR language, not rust!
                     let arg_types: Vec<BasicMetadataTypeEnum> = args.iter().map(|arg| {
                         match arg.typ {
@@ -233,9 +197,9 @@ impl<'ctx> CodeGen<'ctx> {
                             Type::Bool => self.context.bool_type().into(),
 
                             Type::Str => self.context.ptr_type(AddressSpace::default()).into(),
-                            Type::Ptr(ref inner) => {
-                                let inner_ty = inner.to_llvm_type(self.context).unwrap();
-                                inner_ty.ptr_type(AddressSpace::default()).into()
+                            Type::Ptr(_) => {
+                                // let inner_ty = inner.to_llvm_type(self.context).unwrap();
+                                self.context.ptr_type(AddressSpace::default()).into()
                             }
                             _ => panic!("Unknown type: {:?}", arg.typ),
                             }
@@ -246,7 +210,7 @@ impl<'ctx> CodeGen<'ctx> {
                     #[cfg(debug_assertions)] {
                         println!("Module: {:?}", self.module.lock().unwrap());
                         println!("creating function named: {}", &name);
-                        println!("name={}, is_extern={}", name, is_extern);
+                        println!("name={name}, is_extern={is_extern}");
                     }
 
                     let fn_type = if *ret_type == Type::Void { 
@@ -256,13 +220,14 @@ impl<'ctx> CodeGen<'ctx> {
                             .unwrap_or_else(|| 
                                 panic!("{}: failed to lower return type to LLVM IR type", "internal error".red().bold()));
 
-                        #[cfg(debug_assertions)] { println!("{:?}", llvm_ret_type) }
-                        // let fn_type = self.context.i32_type().fn_type(&arg_types, false);
+                        #[cfg(debug_assertions)]
+                        println!("{llvm_ret_type:?}");
+
                         match llvm_ret_type {
                             BasicTypeEnum::IntType(int_type) => int_type.fn_type(&arg_types, false),
                             BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&arg_types, false),
                             BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&arg_types, false),
-                            _ => panic!("unsupported return type `{:?}` in fn_type gen", llvm_ret_type),
+                            _ => panic!("unsupported return type `{llvm_ret_type:?}` in fn_type gen"),
                         }
                     };
 
@@ -291,7 +256,7 @@ impl<'ctx> CodeGen<'ctx> {
 
                     self.current_fn_ret_type = ret_type.clone();
 
-                    self.attr_registry.register_all(Some(ret_type), &mut parser.discovered_modules);
+                    self.attr_registry.register_all();
                     self.load_attributes(attributes, &stmt);
 
                     #[cfg(debug_assertions)] {
@@ -303,8 +268,8 @@ impl<'ctx> CodeGen<'ctx> {
                         let pointee_type = llvm_arg.get_type();
                         let var_type = Type::from_llvm_type(pointee_type).unwrap_or(Type::Unknown);
 
-                        println!("{:?}", pointee_type);
-                        println!("{:?}", var_type);
+                        println!("{pointee_type:?}");
+                        println!("{var_type:?}");
                         println!("{:?}", llvm_arg.get_type());
 
                         let alloca = self.builder.build_alloca(
@@ -330,34 +295,36 @@ impl<'ctx> CodeGen<'ctx> {
                     #[cfg(debug_assertions)] { println!("self.current_fn_ret_type = {:?}", self.current_fn_ret_type); }
                     if *ret_type == Type::Void {
                         #[cfg(debug_assertions)] {
-                            println!("Auto-inserting `ret void` for void-returning fn: {}", name);
+                            println!("Auto-inserting `ret void` for void-returning fn: {name}");
                         }
 
                         self.builder.build_return(None).unwrap();
                     }
                 }
-                Stmt::Import { path, nickname, is_glob} => {
+                Stmt::Import { path, is_glob, .. } => {
                     let key = path.join("/");
                     // let modname = nickname.unwrap_or_else(|| path.last().unwrap().clone());
                     let modname = path[0].clone();
 
                     if self.loaded_modules.contains_key(&modname) {
-                        eprintln!("Module `{}` already loaded", modname);
+                        eprintln!("Module `{modname}` already loaded");
                         return;
                     }
 
-                    let path_str = format!("{}.kurai", key);
+                    let file_ext = ".kurai";
+
+                    let path_str = format!("{key}.{file_ext}");
                     let code = std::fs::read_to_string(&path_str)
-                        .unwrap_or_else(|_| panic!("Failed to load module {}", path_str));
+                        .unwrap_or_else(|_| panic!("Failed to load module {path_str}"));
                     let (tokens, _) = Token::tokenize(&code);
 
-                    let mut pos = 0;
+                    let pos = 0;
                     let mut stmts = Vec::new();
 
                     while pos < tokens.len() {
                         match parser.parse_imported_file() {
                             Ok(stmt) => stmts.push(stmt),
-                            Err(e) => panic!("Failed to parse stmt at pos: {}\nError: {}", pos, e)
+                            Err(e) => panic!("Failed to parse stmt at pos: {pos}\nError: {e}")
                         }
                     }
 
@@ -375,10 +342,7 @@ impl<'ctx> CodeGen<'ctx> {
                             println!("{}: Not global import. Just a testing", "testing".cyan().bold());
                         }
 
-                        self.generate_code(
-                            stmts,
-                            vec![], 
-                        );
+                        self.generate_code(stmts);
                     }
 
                     // NOTE: Later
@@ -437,7 +401,7 @@ impl<'ctx> CodeGen<'ctx> {
                         jump_from
                     ) {
                         #[cfg(debug_assertions)]
-                        println!("Expression result (ignored): {:?}", val);
+                        println!("Expression result (ignored): {val:?}");
                     }
                 }
                 Stmt::Block(stmts) => {
@@ -471,7 +435,7 @@ impl<'ctx> CodeGen<'ctx> {
         }
     }
 
-    fn to_llvm_value(&mut self, ret_type: Type, value: BasicValueEnum<'ctx>) -> BasicValueEnum<'ctx>{
+    fn to_llvm_value(&self, ret_type: Type, value: BasicValueEnum<'ctx>) -> BasicValueEnum<'ctx>{
         match ret_type {
             Type::I32 => {
                 let val = match value {
@@ -529,7 +493,7 @@ impl<'ctx> CodeGen<'ctx> {
                 panic!("Tried to return a value from a function that returns void");
             }
             _ => {
-                panic!("Unsupported return type: {:?}", ret_type);
+                panic!("Unsupported return type: {ret_type:?}");
             }
         }
     }

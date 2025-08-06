@@ -5,20 +5,19 @@ pub mod passes;
 pub mod value;
 
 use colored::Colorize;
-use vyn_core::scope::Scope;
 
 use vyn_parser::parse::Parser;
 use vyn_types::{typ::Type, value::Value};
 use vyn_ast::expr::Expr;
 use vyn_ast::stmt::Stmt;
-use vyn_ast::typedArg::TypedArg;
+use vyn_ast::typed_arg::TypedArg;
 use inkwell::{
     basic_block::BasicBlock, builder::Builder, context::Context, module::Module, values::{AnyValue, BasicMetadataValueEnum, BasicValue, BasicValueEnum, IntValue, PointerValue}, AddressSpace, IntPredicate
 };
-use std::{cell::{Ref, RefCell}, collections::{HashMap, HashSet}, rc::Rc, sync::atomic::{AtomicUsize, Ordering}};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, rc::Rc, sync::atomic::{AtomicUsize, Ordering}};
 use std::sync::{Arc, Mutex};
 
-use crate::{codegen::passes::lower_expr_to_llvm, registry::registry::AttributeRegistry};
+use crate::registry::registry::AttributeRegistry;
 
 static GLOBAL_STRING_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -107,22 +106,13 @@ impl<'ctx> CodeGen<'ctx> {
     pub fn generate_code(
         &mut self,
         parsed_stmt: Vec<Stmt>,
-        exprs: Vec<Expr>,
     ) {
-        // nothing lol, just for fun
-        // self.import_printf().expect("Couldnt import printf for unknown reasons");
-        let mut parser = Rc::clone(&self.parser);
+        let parser = Rc::clone(&self.parser);
         self.execute_every_stmt_in_code(
             parsed_stmt,
             &mut parser.borrow_mut(),
             None
         );
-
-        // self.builder.build_call(
-        //     printf_fn,
-        //     &[format_str.as_pointer_value().into(), some_value.into()],
-        //     "printf_call",
-        // );
     }
 
     pub fn lower_value_to_llvm(&self, value: &Value) -> Option<BasicValueEnum<'ctx>> {
@@ -182,7 +172,7 @@ impl<'ctx> CodeGen<'ctx> {
                 match ty {
                     Type::I64 => format.push_str("%ld"),
                     Type::Str | Type::Var | Type::Void => format.push_str("%s"),
-                    _ => panic!("unsupported print arg type {:?}", ty)
+                    _ => panic!("unsupported print arg type {ty:?}")
                 }
             });
         });
@@ -196,7 +186,7 @@ impl<'ctx> CodeGen<'ctx> {
         content[start..end].to_string()
     }
 
-    pub fn printf(&mut self, args: &[Expr], expected_type: Option<&Type>, parser: &mut Parser) -> Result<(), String>{
+    pub fn printf(&mut self, args: &[Expr], parser: &mut Parser) -> Result<(), String>{
         let id = GLOBAL_STRING_ID.fetch_add(1, Ordering::Relaxed);
 
         let mut format = String::new();
@@ -208,7 +198,7 @@ impl<'ctx> CodeGen<'ctx> {
 
         let format_str = self.builder
             .build_global_string_ptr(&format, &format!("fmt_{id}"))
-            .map_err(|e| format!("Error building global string pointer: {:?}", e))?
+            .map_err(|e| format!("Error building global string pointer: {e:?}"))?
             .as_pointer_value()
             .as_basic_value_enum();
 
@@ -222,7 +212,7 @@ impl<'ctx> CodeGen<'ctx> {
         final_args.extend(
             compiled_args
                 .into_iter()
-                .map(|arg| Into::<BasicMetadataValueEnum>::into(arg))
+                .map(Into::<BasicMetadataValueEnum>::into)
         );
 
         let printf_fn = module
@@ -230,9 +220,9 @@ impl<'ctx> CodeGen<'ctx> {
             .expect("printf isnt defined. Did you mean to import printf?");
 
         #[cfg(debug_assertions)]
-        println!("Final args: {:?}", final_args);
+        println!("Final args: {final_args:?}");
         self.builder.
-            build_call(printf_fn, &final_args, &format!("printf_call_{}", id))
+            build_call(printf_fn, &final_args, &format!("printf_call_{id}"))
             .unwrap();
 
         Ok(())
@@ -245,7 +235,7 @@ impl<'ctx> CodeGen<'ctx> {
         let module = self.module.lock().unwrap();
 
         let printf_type = self.context.i32_type().fn_type(
-            &[self.context.i8_type().ptr_type(AddressSpace::default()).into()], 
+            &[self.context.ptr_type(AddressSpace::default()).into()], 
             true
         );
         module.add_function("printf", printf_type, None);
@@ -259,8 +249,7 @@ impl<'ctx> CodeGen<'ctx> {
     pub fn show_result(&self) -> String {
         let module = self.module.lock().unwrap();
 
-        #[cfg(debug_assertions)]
-        {
+        #[cfg(debug_assertions)] {
             module.print_to_stderr();
             println!("{:#?}", *module.get_data_layout());
         }

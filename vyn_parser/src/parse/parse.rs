@@ -12,11 +12,6 @@ impl Parser {
         &mut self,
         in_condition: bool,
     ) -> Option<Expr> {
-        // parse_equal(tokens, pos)
-        // match tokens.get(*pos) {
-        //     Some(Token::If) => parse_if_else(tokens, pos, discovered_modules, parsers, scope).ok(),
-        //     _ => None
-        // };
         let mut left = match self.tokens.get(self.pos)? {
             Token::If => self.parse_if_else().ok(),
             Token::Number(v) => {
@@ -161,7 +156,7 @@ impl Parser {
             println!("TOKENS: {:?}", self.tokens);
 
             for stmt in &stmts {
-                println!("Parsed stmt: {:?}", stmt);
+                println!("Parsed stmt: {stmt:?}");
             }
         }
         stmts

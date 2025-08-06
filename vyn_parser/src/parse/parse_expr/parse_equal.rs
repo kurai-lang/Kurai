@@ -1,5 +1,4 @@
 use vyn_binop::bin_op::BinOp;
-use vyn_core::scope::Scope;
 use vyn_token::token::token::Token;
 use vyn_ast::expr::Expr;
 

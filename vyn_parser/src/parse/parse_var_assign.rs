@@ -1,5 +1,4 @@
 use colored::Colorize;
-use vyn_core::scope::Scope;
 use vyn_token::eat::eat;
 use vyn_token::token::token::Token;
 use vyn_ast::stmt::Stmt;
@@ -17,25 +16,8 @@ impl Parser {
         self.pos += 1;
 
         if !eat(&Token::Equal, &self.tokens, &mut self.pos) {
-            return Err(format!("Expected an equal sign `=` after `{}`", id));
+            return Err(format!("Expected an equal sign `=` after `{id}`"));
         }
-
-        // let value: Option<Value> = match self.tokens.get(*self.pos) {
-        //     Some(Token::Number(v)) => {
-        //         *self.pos += 1;
-        //         // Lets use .into() cuz im too lazy to use Some()
-        //         Value::Int(*v).into()
-        //     }
-        //     Some(Token::Float(v)) => {
-        //         *self.pos += 1;
-        //         Value::Float(*v as f64).into()
-        //     }
-        //     Some(Token::Id(id)) => {
-        //         *self.pos += 1;
-        //         Value::Str(id.clone()).into()
-        //     }
-        //     _ => return Err(format!("Unsupported value: {:?}", self.tokens.get(*self.pos)))
-        // };
 
         let expr = self.parse_arithmetic(0);
         let value = &expr.unwrap();
@@ -44,7 +26,7 @@ impl Parser {
         { println!("{} name = {}, value = {:?}", "[parse_var_assign()]".green().bold(), id.clone(), value); }
 
         if !eat(&Token::Semicolon, &self.tokens, &mut self.pos) {
-            return Err(format!("Expected a semicolon `;` after `{:?}`", value));
+            return Err(format!("Expected a semicolon `;` after `{value:?}`"));
         }
 
         Ok(Stmt::Assign {

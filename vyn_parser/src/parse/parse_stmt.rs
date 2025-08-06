@@ -2,25 +2,10 @@ use colored::Colorize;
 use vyn_ast::expr::Expr;
 use vyn_ast::stmt::Stmt;
 use vyn_token::{eat::eat, token::token::Token};
-use vyn_ast::typedArg::TypedArg;
+use vyn_ast::typed_arg::TypedArg;
 use vyn_types::typ::Type;
 
 use crate::parse::Parser;
-
-// pub struct StmtParserStruct;
-// impl StmtParser for StmtParserStruct {
-//     fn parse_stmt(
-//         &self,
-//         tokens: &[Token],
-//         pos: &mut usize,
-//         discovered_modules: &mut Vec<String>,
-//         
-//         scope: &mut Scope,
-//         src: &str,
-//     ) -> Result<Stmt, String> {
-//         // Parser::parse_stmt(tokens, pos, discovered_modules, parsers, scope, src)
-//     }
-// }
 
 impl Parser {
     pub fn parse_stmt(
@@ -42,9 +27,9 @@ impl Parser {
 
                 // NOTE: NEW ONES
                 Some(Token::Function) | Some(Token::Extern) => {
-                    let attrs_temp = attrs.clone();
+                    // let attrs_temp = attrs.clone();
                     attrs = Vec::new();
-                    self.parse_fn_decl(attrs_temp)
+                    self.parse_fn_decl(attrs)
                 }
                 Some(Token::Loop) => self.parse_for_loop(),
                 Some(Token::While) => self.parse_while_loop(),

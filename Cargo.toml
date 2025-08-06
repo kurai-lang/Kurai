@@ -7,7 +7,7 @@ members = [
   "vyn_types",
   "vyn_stmt",
   "vyn_expr",
-  "vyn_typedArg",
+  "vyn_typed_arg",
   "vyn_parser",
   "vyn_token",
   "vyn_parser_import_file",

@@ -6,5 +6,5 @@ edition = "2024"
 [dependencies]
 vyn_attr = { version = "0.4.9", path = "../vyn_attr" }
 vyn_binop = { version = "0.4.9", path = "../vyn_binop" }
-vyn_typedArg = { version = "0.4.9", path = "../vyn_typedArg" }
+vyn_typed_arg = { version = "0.4.9", path = "../vyn_typed_arg" }
 vyn_types = { version = "0.4.9", path = "../vyn_types" }

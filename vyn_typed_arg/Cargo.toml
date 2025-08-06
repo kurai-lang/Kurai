@@ -1,4 +1,4 @@
 [package]
-name = "vyn_typedArg"
+name = "vyn_typed_arg"
 version = "0.4.9"
 edition = "2024"

@@ -59,7 +59,7 @@ pub fn report_error(err: &Error, src_line: impl Into<String>) {
         " ".repeat(span.column),
         "^".repeat(span.width.max(1))
     );
-    eprintln!("{}", caret_line);
+    eprintln!("{caret_line}");
 
     if let Some(help) = &err.help {
         eprintln!("{}: {}", "help".cyan().bold(), help);

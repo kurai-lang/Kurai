@@ -81,7 +81,7 @@ impl Parser {
                     break;
                 }
                 Some(unexpected) => {
-                    return Err(format!("Unexpected token in args: {:?}", unexpected));
+                    return Err(format!("Unexpected token in args: {unexpected:?}"));
                 }
                 None => {
                     return Err("Unexpected end of tokens while parsing args".to_string());

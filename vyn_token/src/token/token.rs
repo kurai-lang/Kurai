@@ -193,20 +193,20 @@ impl Token {
                     let mut width = 1;
 
                     while let Some(&next_ch) = iter.peek() {
-                        if next_ch.is_digit(10) {
+                        if next_ch.is_ascii_digit() {
                             current.push(iter.next().unwrap());
                             width += 1;
                         } else if next_ch == '.' {
                             let mut clone = iter.clone();
                             clone.next();
                             if let Some(&after_dot) = clone.peek() {
-                                if after_dot.is_digit(10) {
+                                if after_dot.is_ascii_digit() {
                                     is_float = true;
                                     current.push(iter.next().unwrap());
                                     width += 1;
 
                                     while let Some(&float_ch) = iter.peek() {
-                                        if float_ch.is_digit(10) {
+                                        if float_ch.is_ascii_digit() {
                                             current.push(iter.next().unwrap());
                                             width += 1;
                                         } else {
@@ -282,7 +282,7 @@ impl Token {
                     current.clear();
                 }
                 ' ' | '\n' | '\t' => {}, // skip whitespace
-                _ => panic!("Unexpected character {}", ch),
+                _ => panic!("Unexpected character {ch}"),
             }
         }
 

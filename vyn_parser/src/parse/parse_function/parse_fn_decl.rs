@@ -1,10 +1,9 @@
 use colored::Colorize;
 use vyn_attr::attribute::Attribute;
-use vyn_core::scope::Scope;
 use vyn_token::eat::eat;
 use vyn_token::token::token::Token;
 use vyn_ast::stmt::Stmt;
-use vyn_ast::typedArg::TypedArg;
+use vyn_ast::typed_arg::TypedArg;
 use vyn_types::typ::Type;
 
 use crate::parse::Parser;
@@ -33,7 +32,7 @@ impl Parser {
         };
 
         if !eat(&Token::OpenParenthese, &self.tokens, &mut self.pos) {
-            return Err(format!("Expected an opening paranthese `(` after `{}`", name));
+            return Err(format!("Expected an opening paranthese `(` after `{name}`"));
         }
 
         // NOTE: arguments parsing time
@@ -52,7 +51,7 @@ impl Parser {
                         self.pos += 1;
 
                         if !eat(&Token::Colon, &self.tokens, &mut self.pos) {
-                            return Err(format!("Expected `:` after argument name {}", name));
+                            return Err(format!("Expected `:` after argument name {name}"));
                         }
 
                         let typ = match self.tokens.get(self.pos) {
@@ -60,7 +59,7 @@ impl Parser {
                                 self.pos += 1;
                                 typ.clone()
                             }
-                            _ => return Err(format!("Expected a type name after `:` in argument {}", name))
+                            _ => return Err(format!("Expected a type name after `:` in argument {name}"))
                         };
 
                         // name: type

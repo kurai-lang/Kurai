@@ -1,7 +1,6 @@
 use colored::Colorize;
 use vyn_binop::bin_op::BinOp;
 use vyn_ast::expr::Expr;
-use vyn_core::scope::Scope;
 use vyn_token::token::token::Token;
 
 use crate::parse::Parser;

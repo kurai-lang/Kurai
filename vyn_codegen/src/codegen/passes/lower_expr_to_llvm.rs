@@ -17,7 +17,7 @@ impl<'ctx> CodeGen<'ctx> {
         jump_from: Option<BasicBlock>
     ) -> Option<(BasicValueEnum<'ctx>, Type)> {
         #[cfg(debug_assertions)]
-        println!("Lowering expr: {:?}", expr);
+        println!("Lowering expr: {expr:?}");
 
         match expr {
             Expr::Literal(value) => match value {
@@ -155,30 +155,31 @@ impl<'ctx> CodeGen<'ctx> {
 
                     Some((ptr.as_basic_value_enum(), Type::Str))
                 }
-                _ => None
+                // _ => None
             }
             Expr::Id(name) => {
                 if let Some(ptr) = self.variables.get(name) {
                     let loaded = self.builder.build_load(
                         self.context.i64_type(),
                         ptr.ptr_value,
-                        &format!("load_{}", name)
+                        &format!("load_{name}")
                     );
                     Some((loaded.unwrap(), ptr.var_type.clone()))
                 } else {
-                    println!("Variable {} not found!", name);
+                    println!("Variable {name} not found!");
                     None
                 }
             }
             Expr::Binary { op, left, right } => {
-                #[cfg(debug_assertions)]
-                { println!("{:?}", op);
-                println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold()); }
+                #[cfg(debug_assertions)] {
+                    println!("{op:?}");
+                    println!("{} Entering Expr::Binary case", "[lower_expr_to_llvm()]".green().bold());
+                }
                 let mut left_val = self.lower_expr_to_llvm(left, Some(&Type::I32), parser, None)?;
                 let mut right_val = self.lower_expr_to_llvm(right, Some(&Type::I32), parser, None)?;
 
                 #[cfg(debug_assertions)]
-                { println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val); }
+                println!("{} left_val:{:?}\nright_val:{:?}", "[lower_expr_to_llvm()]".green().bold(), left_val, right_val);
 
                 match op {
                     BinOp::Lt | BinOp::Le | BinOp::Eq | BinOp::Ge | BinOp::Gt | BinOp::Ne => {
@@ -190,7 +191,7 @@ impl<'ctx> CodeGen<'ctx> {
                             BinOp::Gt => IntPredicate::SGT,
                             BinOp::Ne => IntPredicate::NE,
                             _ => {
-                                panic!("Operator {:?} not supported", op);
+                                panic!("Operator {op:?} not supported");
                                 // return None;
                             }
                         };
@@ -277,24 +278,22 @@ impl<'ctx> CodeGen<'ctx> {
 
                         Some((div.as_basic_value_enum(), Type::Bool))
                     }
-                    _ => panic!("Operator {:?} not supported yet", op),
+                    // _ => panic!("Operator {:?} not supported yet", op),
                 }
             }
             Expr::FnCall { name, args } => {
                 match name.as_str() {
                     "printf" => {
-                        self.printf(args, expected_type, parser).unwrap();
+                        self.printf(args, parser).unwrap();
                         None
                     }
                     _ => {
                         let function = if name.contains("::") {
                             self.get_or_compile_function(
-                                name.as_str(),
-                                &mut parser.discovered_modules,
-                                &mut parser.scope
+                                name.as_str()
                             )
                         } else {
-                            self.module.lock().unwrap().get_function(&name)
+                            self.module.lock().unwrap().get_function(name)
                         };
 
                         if let Some(function) = function {
@@ -307,7 +306,7 @@ impl<'ctx> CodeGen<'ctx> {
                                     });
                                 compiled_args.push(compiled.into());
                             }
-                            let call = self.builder.build_call(function, &compiled_args, &name).unwrap();
+                            let call = self.builder.build_call(function, &compiled_args, name).unwrap();
 
                             let ret_val = match call.try_as_basic_value() {
                                 inkwell::Either::Left(val) => Some(val),
@@ -366,19 +365,21 @@ impl<'ctx> CodeGen<'ctx> {
 
                 // tbh i dont even understand what is get_insert_block() lmfao
                 // nayways this is for chaining condition branches
-                let mut next_check_block = self.builder.get_insert_block().unwrap();
+                //
+                // NOTE: check_next_block is for `else if`, its not supported yet
+                // let mut next_check_block = self.builder.get_insert_block().unwrap();
                 let mut else_entry_block = None;
                 // let mut last_check_block = None;
 
                 for (i, branch) in branches.iter().enumerate() {
-                    let then_block = self.context.append_basic_block(current_function, &format!("then_{}", i));
+                    let then_block = self.context.append_basic_block(current_function, &format!("then_{i}"));
                     // branch_blocks.push(then_block);
 
                     let is_last_branch = i == branches.len() - 1;
                     let has_else = else_body.is_some();
 
                     let check_next_block = if !is_last_branch || has_else {
-                        let check_block = self.context.append_basic_block(current_function, &format!("check_next_{}", i));
+                        let check_block = self.context.append_basic_block(current_function, &format!("check_next_{i}"));
                         if is_last_branch && has_else {
                             // this is the last branch, we would have an else by that time
                             else_entry_block = Some(check_block);
@@ -388,7 +389,7 @@ impl<'ctx> CodeGen<'ctx> {
                         // OLD CODE: merge_block
                         // compared to this old code, we aint jumping straight to merge_block.
                         // just make a last check
-                        let fallback_block = self.context.append_basic_block(current_function, &format!("final_check_{}", i));
+                        let fallback_block = self.context.append_basic_block(current_function, &format!("final_check_{i}"));
                         self.final_check_blocks.push(fallback_block);
                         fallback_block
                     };
@@ -457,7 +458,8 @@ impl<'ctx> CodeGen<'ctx> {
                         branch_values.push(val);
                     }
 
-                    next_check_block = check_next_block;
+                    // NOTE: `else if`
+                    // next_check_block = check_next_block;
                 }
 
                 if let (Some(else_exprs), Some(else_block)) = (else_body, else_block) {

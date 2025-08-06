@@ -1,5 +1,4 @@
 use colored::Colorize;
-use vyn_core::scope::Scope;
 use vyn_error::error::{report_error, Error};
 use vyn_error::error_kind::{ErrorKind, ParseErrorKind};
 use vyn_error::span::Span;
@@ -30,7 +29,7 @@ impl Parser {
             let span = Span::new("dummy.kurai").with_range(2).with_width(3).with_line_column(15, 5);
             let src_line = self.src.lines().nth(span.line - 1).unwrap_or("");
             let err = Error::new(ErrorKind::Parse {
-                kind: ParseErrorKind::ExpectedToken(format!("Expected an equal sign `=` after `{}`", name)),
+                kind: ParseErrorKind::ExpectedToken(format!("Expected an equal sign `=` after `{name}`")),
                 span
             });
             report_error(&err, src_line);

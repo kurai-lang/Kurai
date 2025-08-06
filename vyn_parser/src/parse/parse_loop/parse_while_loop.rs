@@ -1,4 +1,3 @@
-use vyn_core::scope::Scope;
 use vyn_ast::expr::{Expr, IfBranch};
 use vyn_ast::stmt::Stmt;
 use vyn_token::{eat::eat, token::token::Token};

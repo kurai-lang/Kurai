@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 #[derive(Debug, Clone)]
 pub struct Span {
     pub file: String,

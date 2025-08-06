@@ -33,7 +33,7 @@ impl Parser {
                     break;
                 }
                 _ => return Err(
-                    format!("Invalid token `{:?}` inside attribute declaration", token))
+                    format!("Invalid token `{token:?}` inside attribute declaration"))
             };
         }
 
@@ -67,7 +67,7 @@ impl Parser {
                         self.pos += 1;
                     }
 
-                    Some(t) => return Err(format!("Unexpected token in attribute args: {:?}", t)),
+                    Some(t) => return Err(format!("Unexpected token in attribute args: {t:?}")),
                     None => return Err("Unexpected end in attribute args".to_string())
                 }
 

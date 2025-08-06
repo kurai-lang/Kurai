@@ -1,5 +1,5 @@
 use inkwell::values::BasicValueEnum;
-use vyn_ast::typedArg::TypedArg;
+use vyn_ast::typed_arg::TypedArg;
 
 use crate::codegen::CodeGen;
 

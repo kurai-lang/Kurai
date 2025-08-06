@@ -1,6 +1,5 @@
 use vyn_ast::{expr::{Expr, IfBranch}, stmt::Stmt};
 use vyn_binop::bin_op::BinOp;
-use vyn_core::scope::Scope;
 use vyn_token::{eat::eat, token::token::Token};
 use vyn_types::value::Value;
 
@@ -21,7 +20,7 @@ impl Parser {
         self.pos += 1;
 
         if !eat(&Token::In, &self.tokens, &mut self.pos) {
-            return Err(format!("Expected `in` after `{}`", id));
+            return Err(format!("Expected `in` after `{id}`"));
         }
 
         let starting_num  = match self.tokens.get(self.pos) {
@@ -81,7 +80,5 @@ impl Parser {
                 ],
             },
         ]));
-
-        Err("For loop failed".to_string())
     }
 }

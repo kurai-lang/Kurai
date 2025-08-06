@@ -9,7 +9,7 @@ vyn_expr = { version = "0.4.9", path = "../vyn_expr" }
 vyn_token = { version = "0.4.9", path = "../vyn_token/" }
 vyn_stmt = { version = "0.4.9", path = "../vyn_stmt/" }
 vyn_types = { version = "0.4.9", path = "../vyn_types/" }
-vyn_typedArg = { version = "0.4.9", path = "../vyn_typedArg/" }
+vyn_typed_arg = { version = "0.4.9", path = "../vyn_typed_arg/" }
 vyn_core = { version = "0.4.9", path = "../vyn_core" }
 colored = "3.0.0"
 vyn_attr = { version = "0.4.9", path = "../vyn_attr" }

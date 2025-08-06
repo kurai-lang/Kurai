@@ -1,10 +1,5 @@
-use std::rc::Rc;
-
 use inkwell::{types::BasicTypeEnum, values::{BasicValueEnum, FunctionValue}};
-use vyn_core::scope::Scope;
-
 use vyn_ast::stmt::Stmt;
-
 use crate::codegen::CodeGen;
 
 #[macro_export]
@@ -65,16 +60,12 @@ impl<'ctx> CodeGen<'ctx> {
     pub fn get_or_compile_function(
         &mut self,
         name: &str,
-        discovered_modules: &mut Vec<String>,
-        scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         if let Some((modname, funcname)) = Self::split_module_function_name(name) {
         // found modname and funcname? compile.
             self.get_function_from_module(
                 modname,
-                funcname,
-                discovered_modules,
-                scope
+                funcname
             )
         } else {
             // already compiled? ok reuse it
@@ -94,9 +85,6 @@ impl<'ctx> CodeGen<'ctx> {
         &mut self,
         modname: &str,
         funcname: &str,
-        discovered_modules: &mut Vec<String>,
-        
-        scope: &mut Scope,
     ) -> Option<FunctionValue<'ctx>> {
         let mod_stmts = self.loaded_modules.get(modname)?;
         let already_compiled: Option<FunctionValue<'ctx>> = self.module.lock().unwrap().get_function(funcname);
@@ -121,7 +109,7 @@ impl<'ctx> CodeGen<'ctx> {
 
             self.generate_code(
                 vec![stmt.clone()], 
-                vec![],
+                
             );
         }
         // try again after compiling
