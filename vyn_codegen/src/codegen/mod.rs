@@ -258,6 +258,7 @@ impl<'ctx> CodeGen<'ctx> {
 impl<'ctx> CodeGen<'ctx> {
     pub fn show_result(&self) -> String {
         let module = self.module.lock().unwrap();
+
         #[cfg(debug_assertions)]
         {
             module.print_to_stderr();
@@ -266,4 +267,3 @@ impl<'ctx> CodeGen<'ctx> {
         return module.print_to_string().to_string();
     }
 }
-

@@ -1,18 +1,17 @@
 use clap::Parser;
-use colored::{Colorize, CustomColor};
+use colored::Colorize;
 // use bahasac::scope::Scope;
 // use bahasac::value::Value;
 use inkwell::context::Context;
 use vyn_codegen::codegen::CodeGen;
 
-use vyn_parser::parse::Parser as KuraiParser;
+use vyn_parser::parse::Parser as VyncParser;
 use vyn_token::token::token::Token;
 use vyn_core::scope::Scope;
 use std::fs::{self, remove_file, File};
 use std::io::prelude::*;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 use std::time::Instant;
 
 static PANIC_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -65,20 +64,8 @@ fn main() {
     }));
 
     let context = Context::create();
-    let mut parser = KuraiParser::new();
 
     let mut code = String::new();
-
-    #[cfg(debug_assertions)]
-    {
-        let code = "
-            fn main() {
-                for i in 0..4 {
-                    printf(\"yes?\");
-                }
-            }
-        ";
-    }
 
     let file_path = cli.input;
 
@@ -88,15 +75,17 @@ fn main() {
 
     let mut scope = Scope::new();
 
-    let tokens = Token::tokenize(code.as_str());
+    // let tokens = Token::tokenize(code.as_str());
+    let mut parser = VyncParser::new().with_tokens(code.as_str());
+
     let mut discovered_modules: Vec<String> = Vec::new();
     let parsed_stmt_vec = parser.parse_out_vec_stmt();
     let parsed_expr_vec = parser.parse_out_vec_expr();
-    let mut codegen = CodeGen::new(&context, &code, parser);
+    let mut codegen = CodeGen::new(&context, &code, parser).init();
     // codegen.printf("hi");
 
     // pub fn generate_code(&self, parsed_stmt: Vec<Stmt>, context: &'ctx Context, builder: &Builder, module: &mut Module<'ctx>)
-    #[cfg(debug_assertions)]
+    // #[cfg(debug_assertions)]
     {
         println!("STATEMENTS:\n{:?}", parsed_stmt_vec);
         println!("EXPRESSIONS:\n{:?}", parsed_expr_vec);
@@ -107,7 +96,6 @@ fn main() {
         parsed_stmt_vec,
         parsed_expr_vec.unwrap(), 
     );
-    let result = codegen.show_result(); //result returns String
 
     let output_path_ll = format!("{output_name}.ll");
     let output_path_opt_ll = format!("{output_name}_opt.ll");
@@ -116,13 +104,15 @@ fn main() {
     let output_path_s = format!("{output_name}.s");
     let output_path_o = format!("{output_name}.o");
 
+    let result = codegen.show_result(); //result returns String
+
     let mut llvm_ir_code_file = File::create(&output_path_ll).unwrap();
     llvm_ir_code_file.write_all(result.as_bytes()).unwrap();
 
     // WHATS THIS NAME LMFAO
     let install_llvm_bro = "install llvm bro";
     let start_time = Instant::now();
-    Command::new("llvm-as")
+    Command::new("llvm-as-18")
         .arg(&output_path_ll)
         .arg("-o")
         .arg(&output_path_bc)
@@ -145,7 +135,7 @@ fn main() {
 
     let mut binding = Command::new("clang");
     let cmd = binding
-        .arg(&output_path_opt_ll)
+        .arg(&output_path_ll)
         .arg("-o")
         .arg(&output_name);
         // .arg("-g")
