@@ -56,7 +56,7 @@ impl Parser {
         // typ is automatically inferred in codegen process lol
         Ok(Stmt::VarDecl {
             name,
-            typ: None, 
+            typ: None,
             value: Some(expr),
         })
     }

@@ -67,17 +67,27 @@ impl<'ctx> CodeGen<'ctx> {
                         });
 
                         if val.is_int_value() {
-                            let raw_val = val.into_int_value().get_sign_extended_constant().unwrap();
-                            let alignment_val = type_infer.infer_alignment_int_type(raw_val);
+                            let int_val = val.into_int_value();
 
-                            self.builder.build_store(alloca, val).unwrap()
-                                .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                            // this if expression is like...
+                            // "raw_val exists? ok cool, give allignment"
+                            if let Some(raw_val) = int_val.get_sign_extended_constant() {
+                                let alignment_val = type_infer.infer_alignment_int_type(raw_val);
+
+                                self.builder.build_store(alloca, val).unwrap()
+                                    .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                            } else {
+                                self.builder.build_store(alloca, val).unwrap();
+                            }
                         } else if val.is_float_value() {
-                            let raw_val = val.into_float_value().get_constant().unwrap().0;
-                            let alignment_val = type_infer.infer_alignment_float_type(raw_val);
+                            let float_val = val.into_float_value();
 
-                            self.builder.build_store(alloca, val).unwrap()
-                                .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                            if let Some((raw_val, _)) = float_val.get_constant() {
+                                let alignment_val = type_infer.infer_alignment_float_type(raw_val);
+
+                                self.builder.build_store(alloca, val).unwrap()
+                                    .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                            }
                         } else {
                             panic!("I DONT KNOW?!?!")
                         }
@@ -115,17 +125,34 @@ impl<'ctx> CodeGen<'ctx> {
                     let type_infer = TypeInfer{};
 
                     if llvm_value.is_int_value() {
-                        let raw_val = llvm_value.into_int_value().get_sign_extended_constant().unwrap();
-                        let alignment_val = type_infer.infer_alignment_int_type(raw_val);
+                        let int_llvm_val = llvm_value.into_int_value();
+                        //
+                        // if let Some(raw_val) = int_llvm_val.get_sign_extended_constant() {
+                        //     let alignment_val = type_infer.infer_alignment_int_type(raw_val);
+                        //
+                        //     self.builder.build_store(var_ptr, llvm_value).unwrap()
+                        //         .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                        // } else {
+                        //     self.builder.build_store(var_ptr, llvm_value).unwrap();
+                        // }
 
-                        self.builder.build_store(var_ptr, llvm_value).unwrap()
-                            .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                        type_infer.store_with_alignment(
+                            self,
+                            var_ptr,
+                            llvm_value,
+                            |_| int_llvm_val.get_sign_extended_constant(),
+                            |raw| type_infer.infer_alignment_int_type(raw)
+                        );
                     } else if llvm_value.is_float_value() {
-                        let raw_val = llvm_value.into_float_value().get_constant().unwrap().0;
-                        let alignment_val = type_infer.infer_alignment_float_type(raw_val);
+                        let float_llvm_val = llvm_value.into_float_value();
 
-                        self.builder.build_store(var_ptr, llvm_value).unwrap()
-                            .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+                        type_infer.store_with_alignment(
+                            self,
+                            var_ptr,
+                            llvm_value,
+                            |_| float_llvm_val.get_constant().map(|(raw, _)| raw),
+                            |raw| type_infer.infer_alignment_float_type(raw)
+                        );
                     } else {
                         panic!("I DONT KNOW?!?!")
                     }

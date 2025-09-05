@@ -1,4 +1,4 @@
-use inkwell::{types::BasicTypeEnum, values::{BasicValueEnum, FunctionValue}};
+use inkwell::{types::BasicTypeEnum, values::{BasicValue, BasicValueEnum, FunctionValue, PointerValue}};
 use vyn_ast::stmt::Stmt;
 use vyn_types::typ::Type;
 use crate::codegen::CodeGen;
@@ -167,6 +167,28 @@ impl TypeInfer {
 
         if (value >= min_f32) && (value <= max_f32) { 4 }
         else { 8 }
+    }
+
+    pub fn store_with_alignment<F, G, T>(
+        &self, 
+        codegen: &CodeGen,
+        var_ptr: PointerValue,
+        llvm_value: BasicValueEnum,
+        try_get_const: F,
+        infer_alignment: G,
+    ) 
+    where
+        F: Fn(BasicValueEnum) -> Option<T>,
+        G: Fn(T) -> i64,
+    {
+        if let Some(raw_val) = try_get_const(llvm_value) {
+            let alignment_val = infer_alignment(raw_val);
+
+            codegen.builder.build_store(var_ptr, llvm_value).unwrap()
+                .set_alignment(alignment_val.try_into().unwrap()).unwrap();
+        } else {
+            codegen.builder.build_store(var_ptr, llvm_value).unwrap();
+        }
     }
 }
 

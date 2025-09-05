@@ -161,7 +161,7 @@ impl<'ctx> CodeGen<'ctx> {
                 let type_infer = TypeInfer{};
                 if let Some(ptr) = self.variables.get(name) {
                     let loaded_no_alignment = self.builder.build_load(
-                        self.context.i64_type(),
+                        ptr.var_type.to_llvm_type(self.context).unwrap(),
                         ptr.ptr_value,
                         &format!("load_{name}")
                     ).unwrap();

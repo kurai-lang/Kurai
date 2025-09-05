@@ -45,7 +45,7 @@ impl Parser {
             // let i = <starting_num>;
             Stmt::VarDecl {
                 name: id.clone(),
-                typ: Some("int".to_string()),
+                typ: Some("i128".to_string()),
                 value: Some(Expr::Literal(Value::Int(starting_num))),
             },
             // loop {}
