@@ -26,18 +26,25 @@ fn main() {
     let code = r#"
         // extern fn free_list_allocator_allocate(size: i64) *u8;
 
-        # test, inline
-        fn test() void {
-            printf("hello\n");
-            let x = 0;
-            let y = 0;
-            if x == 0 {
-                y = 2;
-                printf("yes");
-            } else {
-                y = 1;
-                printf("no");
+        // # test, inline
+        // fn test() void {
+        //     printf("hello\n");
+        //     let x = 0;
+        //     let y = 0;
+        //     if x == 0 {
+        //         y = 2;
+        //         printf("yes");
+        //     } else {
+        //         y = 1;
+        //         printf("no");
+        //
+        //     }
+        // }
 
+        # test, inline
+        fn hi_10() void {
+            for i in 0..10 {
+                printf("hi");
             }
         }
 
